@@ -1,0 +1,27 @@
+{
+  "expo": {
+    "name": "book-club",
+    "slug": "book-club",
+    "scheme": "book-club",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "backgroundColor": "#f7f1ea"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#f7f1ea"
+      }
+    },
+    "web": {
+      "bundler": "metro"
+    }
+  }
+}
