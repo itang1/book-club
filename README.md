@@ -16,6 +16,8 @@ This follows the spirit of a modern "Sisterhood of the Traveling Pants" style re
 This scaffold uses:
 - React Native + Expo
 - TypeScript
+- React Navigation
+- Supabase-ready data layer
 - Web, Android, and iOS from one codebase
 
 ## Getting started
@@ -43,240 +45,24 @@ This scaffold uses:
 
 ## Current MVP status
 
-This first version includes:
-- a home screen for active books
-- mock book data
-- book cards showing owner, next stop, notes, and last update
-- a warm editorial layout that feels like a shared reading club dashboard
+This version includes:
+- a tab-based navigation layout for Home, Friends, Add Book, and Profile
+- a home dashboard for active books
+- detail view for each book and its travel timeline
+- mock data for friends, book journeys, and reading activity
 
 ## Next features to build
 
-- add friends and their addresses
-- track USPS media mail shipments
-- note highlights and annotations per book
-- create “currently traveling” journey timelines
-- login and shared reading data
-- Goodreads-style polish for book profiles and shelves
+- real data storage with Supabase
+- add friend and address forms
+- USPS tracking integration
+- note and annotation uploads
+- Goodreads-style polish and social book profiles
 
-## Repository goal
+## Backend starter
 
-This project is designed to grow into a real app that could eventually be pitched for Goodreads integration or a book-club brand experience.
-
-## Project structure
-
-```text
-.
-├── App.tsx
-├── src/
-│   ├── components/
-│   ├── data/
-│   ├── theme.ts
-│   └── types.ts
-├── app.json
-├── babel.config.js
-├── package.json
-├── tsconfig.json
-└── README.md
-```
+This repo is prepared for a Supabase integration. Add your project URL and anon key to a local `.env` file or create your own secure config.
 
 ## Notes
 
-This is intentionally a clean starting point, not a finished product. It’s meant to be expanded with your real data model and app flow.
-
----
-
-If you want, the next step is to add:
-- a friend list screen
-- a book detail screen
-- a shipping timeline screen
-- backend storage with Supabase or Firebase
-- polished mobile navigation
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+This is a working foundation designed to grow into a real app experience.
