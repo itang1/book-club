@@ -1,73 +1,118 @@
-create table if not exists public.friends (
-  id text primary key,
-  name text not null,
-  city text not null,
-  state text not null,
-  status text not null default 'waiting' check (status in ('waiting', 'reading', 'done')),
-  address text,
-  email text,
-  created_at timestamptz not null default now()
-);
+# Book Club — Traveling Book Tracker
 
-create table if not exists public.books (
-  id text primary key,
-  title text not null,
-  author text not null,
-  cover_color text not null,
-  status text not null default 'in-transit' check (status in ('in-transit', 'reading', 'returned', 'annotated')),
-  current_owner text not null,
-  next_stop text not null,
-  last_updated text not null,
-  notes_count integer not null default 0,
-  tracking_number text,
-  friends jsonb not null default '[]'::jsonb,
-  created_at timestamptz not null default now()
-);
+A React Native app that tracks the journey of physical books as they travel between friends in your reading circle.
 
-create table if not exists public.annotations (
-  id uuid primary key default gen_random_uuid(),
-  book_id text not null references public.books(id) on delete cascade,
-  friend_id text,
-  page_number integer,
-  note text not null,
-  created_at timestamptz not null default now()
-);
+## What is Book Club?
 
-create table if not exists public.shipments (
-  id uuid primary key default gen_random_uuid(),
-  book_id text not null references public.books(id) on delete cascade,
-  tracking_number text not null,
-  from_name text not null,
-  to_name text not null,
-  status text not null default 'pending',
-  created_at timestamptz not null default now()
-);
+Book Club is a simple way to follow where a book is, who has it, and how it moves over time. Instead of wondering "who has that copy of *The Secret Life of Bees*?", you just open the app.
 
-alter table public.friends enable row level security;
-alter table public.books enable row level security;
-alter table public.annotations enable row level security;
-alter table public.shipments enable row level security;
+**The core idea:** shared copies of books travel between friends. This app is the ledger.
 
-create policy "Friends are viewable by anyone" on public.friends
-for select using (true);
+## Features
 
-create policy "Books are viewable by anyone" on public.books
-for select using (true);
+- **Home** — See all books currently in circulation, sorted by status
+- **Book Cards** — Quick view of title, author, current owner, next stop, and status
+- **Book Detail** — Full journey and history of where a book has traveled
+- **Friends** — Manage the reading circle
+- **Add Book** — Introduce a new traveling copy and assign it to a friend
+- **Profile** — Lightweight reading stats
 
-create policy "Annotations are viewable by anyone" on public.annotations
-for select using (true);
+## Getting Started
 
-create policy "Shipments are viewable by anyone" on public.shipments
-for select using (true);
+### Prerequisites
 
-create policy "Friends can be inserted by anyone" on public.friends
-for insert with check (true);
+- Node.js 18+
+- Expo CLI
+- A compatible device or simulator (iOS/Android)
 
-create policy "Books can be inserted by anyone" on public.books
-for insert with check (true);
+### Install Dependencies
 
-create policy "Annotations can be inserted by anyone" on public.annotations
-for insert with check (true);
+```bash
+npm install
+```
 
-create policy "Shipments can be inserted by anyone" on public.shipments
-for insert with check (true);
+### Run the App
+
+```bash
+# Start the Expo development server
+npm start
+
+# Run on Android
+npm run android
+
+# Run on iOS
+npm run ios
+
+# Run on web
+npm run web
+```
+
+### Lint
+
+```bash
+npm run lint
+```
+
+## Project Structure
+
+```
+src/
+├── components/
+│   └── BookCard.tsx           # Book summary card component
+├── screens/
+│   ├── HomeScreen.tsx         # Main book list view
+│   ├── BookDetailScreen.tsx   # Book journey and history
+│   ├── FriendsScreen.tsx      # Reading circle management
+│   ├── AddBookScreen.tsx      # Add/assign book form
+│   ├── NotesScreen.tsx        # Annotations view
+│   └── ProfileScreen.tsx      # Reading stats
+├── data/
+│   └── mockData.ts            # Sample books and friends
+├── lib/
+│   └── supabase.ts            # Supabase client setup
+├── theme.ts                   # App colors and styling
+└── types.ts                   # TypeScript definitions
+```
+
+## Database Schema
+
+The app uses Supabase for backend storage. Key tables:
+
+- **books** — book metadata, current owner, status, tracking number
+- **friends** — members of the reading circle with contact info
+- **annotations** — notes and highlights attached to books
+- **shipments** — tracking data for book transfers
+
+Row-level security (RLS) policies enable anyone to view and add data (demo mode).
+
+## Styling
+
+The app uses a warm, neutral palette designed to feel tactile and thoughtful:
+
+- **Background** — `#f7f1ea`
+- **Accent** — `#7a5c48` (warm brown)
+- **Card** — `#ffffff`
+- **Muted** — `#8a7d76` (taupe)
+- **Soft** — `#efe5dd` (light beige)
+
+## Tech Stack
+
+- **React Native** — cross-platform UI
+- **Expo** — development and deployment
+- **React Navigation** — tab and stack navigation
+- **TypeScript** — type safety
+- **Supabase** — backend and auth
+- **Ionicons** — tab bar icons
+
+## Future Ideas
+
+- Push notifications when a book reaches you
+- Shared notes within the app
+- Book reading schedules
+- Analytics on which books travel the most
+- Export reading circle as a shareable list
+- Integration with Goodreads for book metadata
+
+## License
+
+MIT
