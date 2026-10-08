@@ -1,0 +1,96 @@
+name: Supabase keepalive
+
+# Supabase pauses free-tier projects after 7 days of inactivity. This runs a
+# tiny read query twice a week (Mon and Thu, so the longest gap is 4 days) to
+# keep the project counting as active. A paused project needs a manual restore
+# from the dashboard, which would otherwise greet the first person to open the
+# app after a quiet week.
+#
+# Two limits worth knowing:
+#   * GitHub disables scheduled workflows on repos with no activity for 60
+#     days. If this repo goes quiet that long the cron stops and the project
+#     will eventually pause. Re-enable it in the Actions tab.
+#   * A ping prevents pausing; it cannot wake an already-paused project.
+on:
+  schedule:
+    - cron: '17 9 * * 1,4'
+  workflow_dispatch:
+
+concurrency:
+  group: supabase-keepalive
+  cancel-in-progress: false
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Query Supabase
+        env:
+          EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
+          EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY }}
+        run: |
+          set -euo pipefail
+
+          # Trim stray whitespace so a trailing newline in a pasted secret
+          # doesn't end up in a header.
+          url=$(printf '%s' "${EXPO_PUBLIC_SUPABASE_URL:-}" | tr -d '[:space:]')
+          key=$(printf '%s' "${EXPO_PUBLIC_SUPABASE_ANON_KEY:-}" | tr -d '[:space:]')
+
+          # Skip quietly until the project exists and the secrets are set, so
+          # this doesn't sit red in the Actions tab in the meantime.
+          if [ -z "${url}" ] || [ -z "${key}" ]; then
+            echo "::notice title=Skipped::Set the EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY repository secrets to enable the keepalive."
+            exit 0
+          fi
+
+          # Retries are a hand-rolled loop rather than curl's --retry: curl
+          # writes its -w output once per attempt, so --retry plus a fallback
+          # concatenates the codes into nonsense like "000000".
+          attempt=1
+          attempts=3
+          status=000
+
+          while [ "${attempt}" -le "${attempts}" ]; do
+            if status="$(
+              curl --silent --show-error --max-time 30 \
+                -o /tmp/keepalive-body -w '%{http_code}' \
+                "${url%/}/rest/v1/books?select=id&limit=1" \
+                -H "apikey: ${key}" \
+                -H "Authorization: Bearer ${key}" \
+                2>/tmp/keepalive-err
+            )"; then
+              :
+            else
+              status=000
+              echo "attempt ${attempt}: $(head -c 200 /tmp/keepalive-err 2>/dev/null || true)"
+            fi
+
+            # Guard against anything non-numeric reaching the comparisons.
+            case "${status}" in
+              ''|*[!0-9]*) status=000 ;;
+            esac
+
+            if [ "${status}" -ge 200 ] && [ "${status}" -lt 400 ]; then
+              echo "::notice title=Awake::Supabase responded ${status}."
+              exit 0
+            fi
+
+            # A 404 means PostgREST reached the database and found no `books`
+            # table — the project is awake, the schema just has not been run.
+            if [ "${status}" -eq 404 ]; then
+              echo "::warning title=Awake, schema missing::Supabase responded 404. The project is active, but no 'books' table exists yet — run supabase/schema.sql."
+              exit 0
+            fi
+
+            echo "attempt ${attempt}/${attempts} returned ${status}"
+            attempt=$((attempt + 1))
+
+            if [ "${attempt}" -le "${attempts}" ]; then
+              sleep 10
+            fi
+          done
+
+          echo "::error title=Keepalive failed::Supabase returned ${status} after ${attempts} attempts. If the project was already paused, restore it from the dashboard — a ping cannot wake a paused project."
+          head -c 2000 /tmp/keepalive-body 2>/dev/null || true
+          exit 1
