@@ -101,13 +101,42 @@ create index if not exists handoffs_book_idx on public.handoffs (book_id, happen
 -- Convenience view: current location per book, derived from the log.
 -- The app derives this client-side too; the view is for ad-hoc queries.
 -- ---------------------------------------------------------------
-create or replace view public.book_current_location as
+-- security_invoker runs the view with the *caller's* permissions. Without it a
+-- view is evaluated as its owner (postgres) and silently bypasses the RLS on
+-- handoffs underneath — a view becomes a hole straight through row security.
+create or replace view public.book_current_location
+with (security_invoker = true) as
 select distinct on (h.book_id)
   h.book_id,
   h.to_friend as current_owner,
   h.happened_at as last_activity_at
 from public.handoffs h
 order by h.book_id, h.happened_at desc;
+
+-- ---------------------------------------------------------------
+-- Data API privileges
+--
+-- Table grants and RLS are two separate layers: a grant opens the door, RLS
+-- decides which rows come back. Both must allow an operation.
+--
+-- These are written explicitly so the schema works whether or not the project
+-- has "Automatically expose new tables" enabled. With that setting off, new
+-- tables get no grants by default and the API returns "permission denied for
+-- table" even when the RLS policies are correct. Any new table added later
+-- needs its own grant here.
+-- ---------------------------------------------------------------
+grant usage on schema public to anon, authenticated;
+
+grant select, insert, update on public.friends to anon, authenticated;
+grant select, insert, update on public.books to anon, authenticated;
+grant select, insert, update on public.reading_queue to anon, authenticated;
+
+-- No update or delete on handoffs, deliberately. The journey log is
+-- append-only at the privilege layer as well as the policy layer, so history
+-- cannot be rewritten even if a policy is added by mistake later.
+grant select, insert on public.handoffs to anon, authenticated;
+
+grant select on public.book_current_location to anon, authenticated;
 
 -- ---------------------------------------------------------------
 -- Row level security — DEMO MODE. See the warning at the top of this file.

@@ -72,3 +72,21 @@ create policy "signed-in users can read handoffs"
 
 create policy "signed-in users can record a handoff"
   on public.handoffs for insert to authenticated with check (true);
+
+-- ---------------------------------------------------------------
+-- Close the door as well as the lock.
+--
+-- The policies above already deny the anon role, since none of them apply to
+-- it and RLS fails closed. Revoking its table privileges too means a policy
+-- added carelessly later ("for select using (true)" with no role) cannot
+-- accidentally re-expose the data to an unauthenticated caller.
+-- ---------------------------------------------------------------
+revoke all on public.friends from anon;
+revoke all on public.books from anon;
+revoke all on public.reading_queue from anon;
+revoke all on public.handoffs from anon;
+revoke all on public.book_current_location from anon;
+
+-- The authenticated role keeps the grants from schema.sql. handoffs stays
+-- select+insert only, so history remains append-only.
+grant update on public.friends to authenticated;
