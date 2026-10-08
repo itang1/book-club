@@ -1,156 +1,94 @@
-import { StyleSheet, Text, View } from 'react-native';
+import * as React from 'react';
+import { NavigationContainer } from '@react-navigation/native';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { Ionicons } from '@expo/vector-icons';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
-import { Book } from '../types';
-import { theme } from '../theme';
+import { Book, Friend, RootStackParamList, RootTabParamList } from './src/types';
+import { booksSeed, friends as friendsSeed } from './src/data/mockData';
+import { HomeScreen } from './src/screens/HomeScreen';
+import { FriendsScreen } from './src/screens/FriendsScreen';
+import { AddBookScreen } from './src/screens/AddBookScreen';
+import { NotesScreen } from './src/screens/NotesScreen';
+import { ProfileScreen } from './src/screens/ProfileScreen';
+import { BookDetailScreen } from './src/screens/BookDetailScreen';
 
-type BookDetailScreenProps = {
-  route: { params: { bookId: string; bookTitle: string } };
-  books: Book[];
-};
+const Tab = createBottomTabNavigator<RootTabParamList>();
+const Stack = createNativeStackNavigator<RootStackParamList>();
 
-export function BookDetailScreen({ route, books }: BookDetailScreenProps) {
-  const { bookId } = route.params;
-  const book = books.find((item) => item.id === bookId);
-
-  if (!book) {
-    return (
-      <View style={styles.container}>
-        <Text style={styles.title}>Book not found.</Text>
-      </View>
-    );
-  }
-
+function HomeStack({ books }: { books: Book[] }) {
   return (
-    <View style={styles.container}>
-      <View style={[styles.cover, { backgroundColor: book.coverColor }]}>
-        <Text style={styles.coverText}>{book.title}</Text>
-      </View>
-
-      <Text style={styles.title}>{book.title}</Text>
-      <Text style={styles.author}>{book.author}</Text>
-
-      <View style={styles.infoRow}>
-        <Text style={styles.label}>Current owner</Text>
-        <Text style={styles.value}>{book.currentOwner}</Text>
-      </View>
-      <View style={styles.infoRow}>
-        <Text style={styles.label}>Next stop</Text>
-        <Text style={styles.value}>{book.nextStop}</Text>
-      </View>
-      <View style={styles.infoRow}>
-        <Text style={styles.label}>Tracking</Text>
-        <Text style={styles.value}>{book.trackingNumber ?? 'Pending'}</Text>
-      </View>
-      <View style={styles.infoRow}>
-        <Text style={styles.label}>Notes</Text>
-        <Text style={styles.value}>{book.notesCount}</Text>
-      </View>
-
-      <View style={styles.timelineBox}>
-        <Text style={styles.timelineTitle}>Journey</Text>
-        {book.friends.map((person) => (
-          <View key={person.id} style={styles.timelineItem}>
-            <Text style={styles.timelineDot} />
-            <View>
-              <Text style={styles.timelineName}>{person.name}</Text>
-              <Text style={styles.timelineLocation}>{person.city}, {person.state}</Text>
-            </View>
-            <Text style={styles.timelineStatus}>{person.status}</Text>
-          </View>
-        ))}
-      </View>
-    </View>
+    <Stack.Navigator>
+      <Stack.Screen
+        name="Home"
+        children={(props) => <HomeScreen {...props} books={books} />}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="BookDetail"
+        children={(props) => <BookDetailScreen {...props} books={books} />}
+        options={({ route }) => ({
+          title: route.params?.bookTitle ?? 'Book Detail',
+        })}
+      />
+    </Stack.Navigator>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: theme.colors.background,
-    padding: 20,
-  },
-  cover: {
-    width: '100%',
-    height: 180,
-    borderRadius: 24,
-    justifyContent: 'flex-end',
-    padding: 18,
-    marginBottom: 20,
-  },
-  coverText: {
-    color: '#fff',
-    fontSize: 22,
-    fontWeight: '800',
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: theme.colors.text,
-  },
-  author: {
-    fontSize: 16,
-    color: theme.colors.muted,
-    marginBottom: 18,
-  },
-  infoRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 12,
-  },
-  label: {
-    color: theme.colors.muted,
-    fontSize: 13,
-  },
-  value: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: theme.colors.text,
-    maxWidth: '60%',
-    textAlign: 'right',
-  },
-  timelineBox: {
-    backgroundColor: theme.colors.card,
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    padding: 18,
-    marginTop: 20,
-  },
-  timelineTitle: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: theme.colors.text,
-    marginBottom: 12,
-  },
-  timelineItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  timelineDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: '#c38e63',
-    marginRight: 12,
-  },
-  timelineName: {
-    color: theme.colors.text,
-    fontWeight: '700',
-  },
-  timelineLocation: {
-    color: theme.colors.muted,
-    fontSize: 12,
-  },
-  timelineStatus: {
-    marginLeft: 'auto',
-    textTransform: 'capitalize',
-    color: theme.colors.accent,
-    fontSize: 10,
-    fontWeight: '700',
-    backgroundColor: theme.colors.soft,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 999,
-  },
-});
+export default function App() {
+  const [books, setBooks] = React.useState<Book[]>(booksSeed);
+  const [friends, setFriends] = React.useState<Friend[]>(friendsSeed);
+
+  const handleAddBook = (book: Book) => {
+    setBooks((currentBooks) => [book, ...currentBooks]);
+  };
+
+  const handleAddFriend = (friend: Friend) => {
+    setFriends((currentFriends) => [friend, ...currentFriends]);
+  };
+
+  return (
+    <NavigationContainer>
+      <Tab.Navigator
+        screenOptions={({ route }) => ({
+          tabBarIcon: ({ color, size }) => {
+            const iconName =
+              route.name === 'Home'
+                ? 'book-outline'
+                : route.name === 'Friends'
+                  ? 'people-outline'
+                  : route.name === 'AddBook'
+                    ? 'add-circle-outline'
+                    : route.name === 'Notes'
+                      ? 'chatbubble-ellipses-outline'
+                      : 'person-outline';
+
+            return <Ionicons name={iconName} size={size} color={color} />;
+          },
+          tabBarActiveTintColor: '#7a5c48',
+          tabBarInactiveTintColor: '#8a7d76',
+          headerStyle: { backgroundColor: '#f7f1ea' },
+          headerTitleStyle: { color: '#1f1a17' },
+        })}
+      >
+        <Tab.Screen
+          name="Home"
+          children={() => <HomeStack books={books} />}
+          options={{ headerShown: false }}
+        />
+        <Tab.Screen name="Friends">
+          {(props) => <FriendsScreen {...props} friends={friends} />}
+        </Tab.Screen>
+        <Tab.Screen name="AddBook">
+          {(props) => <AddBookScreen {...props} friends={friends} onAddBook={handleAddBook} onAddFriend={handleAddFriend} />}
+        </Tab.Screen>
+        <Tab.Screen name="Notes">
+          {(props) => <NotesScreen {...props} books={books} />}
+        </Tab.Screen>
+        <Tab.Screen name="Profile">
+          {(props) => <ProfileScreen {...props} books={books} />}
+        </Tab.Screen>
+      </Tab.Navigator>
+    </NavigationContainer>
+  );
+}
