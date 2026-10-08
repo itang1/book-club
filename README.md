@@ -1,122 +1,179 @@
 # Sisterhood of the Traveling Book
 
-One book, many readers, a shared reading journey.
+**One book, many readers, a shared reading journey.**
 
-A React Native app that tracks the journey of physical books as they travel between friends in your reading circle.
+[![Expo](https://img.shields.io/badge/Expo-52-000020?logo=expo&logoColor=white)](https://expo.dev)
+[![React Native](https://img.shields.io/badge/React%20Native-0.76-61DAFB?logo=react&logoColor=black)](https://reactnative.dev)
+[![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org)
+[![Supabase](https://img.shields.io/badge/Supabase-Postgres-3ECF8E?logo=supabase&logoColor=white)](https://supabase.com)
+[![License: MIT](https://img.shields.io/badge/License-MIT-c38e63.svg)](#license)
 
-## What is Sisterhood of the Traveling Book?
+A reading club for people who share **physical** copies. One book goes around the
+group, one person at a time, and the app keeps track of where it is and
+everywhere it's been.
 
-It's a simple way to follow where a book is, who has it, and how it moves over time. Instead of wondering "who has that copy of *The Secret Life of Bees*?", you just open the app.
+> **Live demo:** _placeholder_ — https://itang1.github.io/book-club
+> (not deployed yet; see [Deploying the web build](#deploying-the-web-build))
 
-This is a **book circulation tracker**, not a shipping app — no tracking numbers, no carriers, no parcels. Just the book, the circle, and where the copy is right now.
+---
 
-**The core idea:** shared copies of books travel between friends. This app is the ledger.
+## Why it exists
+
+Goodreads and StoryGraph catalogue books you've *finished*. This tracks a single
+object that can only be in one place at a time — which is the entire point. The
+waiting is a feature. Your turn means something because someone has to hand it
+to you.
+
+Instead of asking the group chat "who has that copy of *The Secret Life of
+Bees*?", you open the app.
+
+## Example: a book's journey
+
+Four readers pass one copy around. Here's what the app knows after three
+handoffs:
+
+```
+The Secret Life of Bees — Sue Monk Kidd
+  3 stops · 3 cities · 94 days out                      [ reading ]
+
+  Current owner   Lena Kaligaris
+  Next stop       Tibby Rollins
+  Last activity   12d ago
+
+  READING PATH
+  ○ Carmen Lowell      Charleston, SC         done
+  ● Lena Kaligaris     Santorini, Greece      reading   ← has it now
+  ○ Tibby Rollins      Bethesda, MD           waiting   ← up next
+  ○ Bridget Vreeland   Baja California        waiting
+
+  TRAVEL HISTORY
+  Carmen Lowell → Lena Kaligaris
+    Aug 26, 2026 · held 29 days
+  Entered circulation with Carmen Lowell
+    Jul 28, 2026 · held 29 days
+
+  [ Pass on to Tibby Rollins ]
+```
+
+Tapping **Pass on** appends a leg to the history. It never overwrites the last
+one — which is why "3 cities over 94 days" is answerable at all.
+
+The demo data is the four girls from the novel, in the places they spend that
+first summer: Lena with her grandparents on Santorini, Bridget at soccer camp in
+Baja, Carmen visiting her dad in Charleston, Tibby holding down the summer at
+home in Bethesda.
 
 ## Features
 
-- **Home** — See all books currently in circulation, sorted by status
-- **Book Cards** — Quick view of title, author, current owner, next stop, and status
-- **Book Detail** — The reading path, the full travel history, and a "pass it on" action
-- **Friends** — The reading circle, with each person's status derived per book
-- **Add Book** — Introduce a new traveling copy and pick its first reader
-- **Profile** — Your own view: what's in your hands, what's coming to you
+- **Home** — every copy in circulation, with who has it and who's next
+- **Book Detail** — the reading path, the full travel history, and a one-tap
+  handoff
+- **Friends** — the reading circle, each person's status derived *per book*
+- **Add Book** — introduce a copy and pick its first reader; the queue follows
+  the circle from there
+- **Profile** — your own view: what's in your hands, what's heading your way
 
 ## How location works
 
-A book's current location is **not stored**. It is derived from the newest row in
-an append-only `handoffs` log:
+A book's current location is **not stored**. It's derived from the newest row in
+an append-only log:
 
-```
+```sql
 handoffs(id, book_id, from_friend, to_friend, happened_at)
 ```
 
-Passing a book on appends a leg; it never overwrites the last one. That's what
-makes travel history possible — "this copy has visited 3 cities over 94 days"
-is a query over the log, not a field someone has to maintain. `from_friend` is
-null for the leg that first put a book into circulation.
+Passing a book on appends a leg. `from_friend` is `null` for the leg that first
+put a book into circulation, and the journey log has no update or delete policy —
+history can't be rewritten, even by a signed-in user.
 
-Reading status lives on the `reading_queue` table, keyed by (book, friend),
-rather than on the friend — the same person can be reading one copy while
-waiting on another.
+Reading status lives on `reading_queue`, keyed by *(book, friend)*, rather than
+on the friend — the same person can be reading one copy while waiting on
+another.
+
+## Design
+
+A warm, tactile palette, chosen to feel like a used bookstore rather than a SaaS
+dashboard.
+
+| Token | Hex | Role |
+| --- | --- | --- |
+| Background | `#f7f1ea` | warm paper |
+| Card | `#fffdfb` | off-white |
+| Text | `#1f1a17` | near-black |
+| Muted | `#54473f` | taupe |
+| Accent | `#7a5c48` | warm brown |
+| Border | `#eaded3` | hairline |
+| Soft | `#f0e5dc` | light beige |
+
+All of it lives in `src/theme.ts`.
 
 ## Getting Started
 
 ### Prerequisites
 
 - Node.js 18+
-- Expo CLI
-- A compatible device or simulator (iOS/Android)
+- A device, simulator, or just a browser
 
-### Install Dependencies
+### Install and run
 
 ```bash
 npm install
+
+npm start          # Expo dev server
+npm run ios        # iOS simulator
+npm run android    # Android emulator
+npm run web        # browser
 ```
 
-### Run the App
+Out of the box it runs on fictional seed data — no backend required.
+
+### Deploying the web build
 
 ```bash
-# Start the Expo development server
-npm start
-
-# Run on Android
-npm run android
-
-# Run on iOS
-npm run ios
-
-# Run on web
-npm run web
+npx expo export --platform web --output-dir dist
 ```
 
-### Lint
-
-```bash
-npm run lint
-```
+That produces a static site in `dist/`, deployable to GitHub Pages, Netlify, or
+Vercel. For GitHub Pages under a repo subpath, add `--base-url /book-club` so
+asset paths resolve.
 
 ## Project Structure
 
 ```
 src/
 ├── components/
-│   └── BookCard.tsx           # Book summary card component
+│   └── BookCard.tsx           # Book summary card
 ├── screens/
-│   ├── HomeScreen.tsx         # Main book list view
-│   ├── BookDetailScreen.tsx   # Book journey and history
-│   ├── FriendsScreen.tsx      # Reading circle management
-│   ├── AddBookScreen.tsx      # Add/assign book form
-│   └── ProfileScreen.tsx      # Reading stats
+│   ├── HomeScreen.tsx         # Books in circulation
+│   ├── BookDetailScreen.tsx   # Reading path, history, handoff
+│   ├── FriendsScreen.tsx      # The reading circle
+│   ├── AddBookScreen.tsx      # Add a copy / add a friend
+│   └── ProfileScreen.tsx      # Your own view
 ├── data/
-│   └── mockData.ts            # Sample books and friends
+│   └── mockData.ts            # Fictional seed circle
 ├── lib/
-│   ├── supabase.ts            # Supabase client setup
-│   ├── bookClubService.ts     # Row mappers + data layer with mock fallback
-│   └── bookState.ts           # Derives location/next stop/history from the log
-├── theme.ts                   # App colors and styling
-└── types.ts                   # TypeScript definitions
+│   ├── supabase.ts            # Client setup
+│   ├── bookClubService.ts     # Row mappers + fallback to mock data
+│   └── bookState.ts           # Derives location/next stop/history
+├── theme.ts
+└── types.ts
 ```
 
-## Database Schema
+## Database
 
-The app uses Supabase for backend storage. Key tables:
+Supabase (Postgres). Four tables:
 
 - **books** — title, author, cover color, status
-- **friends** — members of the reading circle (name, location, contact)
-- **reading_queue** — the order a book travels, plus each reader's progress
-- **handoffs** — the append-only journey log that current location derives from
+- **friends** — the reading circle (name, location, contact)
+- **reading_queue** — travel order plus each reader's progress
+- **handoffs** — the append-only journey log location derives from
 
-There's also a `book_current_location` view for ad-hoc queries, which the app
-recomputes client-side.
+Plus a `book_current_location` view for ad-hoc queries, which the app recomputes
+client-side.
 
-Row-level security (RLS) policies enable anyone to view and add data (demo
-mode). `handoffs` is granted insert but deliberately **no** update or delete, so
-history can't be rewritten from the client.
-
-Supabase returns `snake_case`; the app speaks `camelCase`. Every row crosses
-that boundary through an explicit mapper in `src/lib/bookClubService.ts` —
-casting a raw row to `Book` compiles but lies, and the mismatch only shows up at
-runtime.
+Supabase returns `snake_case`; the app speaks `camelCase`. Every row crosses that
+boundary through an explicit mapper in `src/lib/bookClubService.ts` — casting a
+raw row to `Book` compiles but lies, and the mismatch only surfaces at runtime.
 
 ### Setup
 
@@ -126,59 +183,44 @@ runtime.
    - `supabase/seed.example.sql` — fictional demo circle, committed
    - `supabase/seed.local.sql` — your real circle; **gitignored**, create it by
      copying the example
-4. Copy `.env.example` to `.env` and fill in your project URL and anon key.
+4. `cp .env.example .env` and fill in your project URL and anon key.
 
-The app loads real data when configured, and falls back to the fictional mock
-data in `src/data/mockData.ts` otherwise.
+The app loads live data when configured and falls back to the fictional seed
+otherwise.
 
 ### Keeping real names out of the repo
 
 This repository is public. Real names, cities, and emails belong only in
-Supabase, never in a committed file. Two rules enforce that:
+Supabase, never in a committed file. Two rules enforce it:
 
 - `src/data/mockData.ts` is the offline fallback and is **always fictional**
 - anything matching `*.local.sql` is gitignored
 
 ### Security status
 
-The policies in `schema.sql` are **demo-open**: they allow anyone to read and
-write every row. The anon key is prefixed `EXPO_PUBLIC_`, so it is compiled into
-the client bundle — an open policy plus a published key means the data is
-effectively public.
+The policies in `schema.sql` are **demo-open**: anyone may read and write every
+row. The anon key is prefixed `EXPO_PUBLIC_`, so it's compiled into the client
+bundle — an open policy plus a published key means the data is effectively
+public.
 
-Until Supabase Auth is wired up, treat the database as semi-public: fine for
-book titles and first names, not for addresses or emails. Once auth exists,
-apply `supabase/policies-authenticated.sql` to require a signed-in user.
+Until Supabase Auth is wired up, treat the database as semi-public: fine for book
+titles and first names, not for addresses or emails. Once auth exists, apply
+`supabase/policies-authenticated.sql` to require a signed-in user.
 
-## Styling
+## Roadmap
 
-The app uses a warm, neutral palette designed to feel tactile and thoughtful:
-
-- **Background** — `#f7f1ea` (warm paper)
-- **Card** — `#fffdfb` (off-white)
-- **Text** — `#1f1a17` (near-black)
-- **Muted** — `#54473f` (taupe)
-- **Accent** — `#7a5c48` (warm brown)
-- **Border** — `#eaded3`
-- **Soft** — `#f0e5dc` (light beige)
+- Accounts and friend requests, so a circle is built by invitation rather than by
+  hand-editing SQL
+- Per-book audience, so a friend-of-a-friend can spot a copy and ask for a spot
+  in its queue
+- Push notification when a book is handed to you
+- Margin notes attached to a specific leg of the journey
+- A map of everywhere a copy has been
 
 ## Tech Stack
 
-- **React Native** — cross-platform UI
-- **Expo** — development and deployment
-- **React Navigation** — tab and stack navigation
-- **TypeScript** — type safety
-- **Supabase** — backend and auth
-- **Ionicons** — tab bar icons
-
-## Future Ideas
-
-- Real auth, replacing the "I am ___" picker on Profile
-- Push notifications when a book is passed to you
-- Reader notes attached to a handoff leg (margin notes, per stop)
-- A map of everywhere a copy has been
-- Analytics on which books travel the most
-- Integration with Goodreads for book metadata
+React Native · Expo · TypeScript (strict) · React Navigation · Supabase ·
+Ionicons
 
 ## License
 
