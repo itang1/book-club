@@ -1,4 +1,4 @@
--- The Traveling Copy — Supabase schema (structure only)
+-- Sisterhood of the Traveling Book — Supabase schema (structure only)
 -- One book, many readers, a shared reading journey.
 --
 -- Run this in the Supabase SQL editor. It is safe to re-run, and safe to run

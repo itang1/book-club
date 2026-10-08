@@ -14,7 +14,7 @@ export function HomeScreen({ navigation, books }: HomeScreenProps) {
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <View style={styles.headerWrap}>
         <Text style={styles.eyebrow}>Book Club</Text>
-        <Text style={styles.title}>The traveling copy</Text>
+        <Text style={styles.title}>Sisterhood of the Traveling Book</Text>
         <Text style={styles.subtitle}>
           One book, many readers, and a shared reading journey.
         </Text>

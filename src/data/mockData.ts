@@ -1,14 +1,43 @@
 import type { Book, Friend } from '../types';
 
+/**
+ * Fictional demo circle: the four girls from The Sisterhood of the Traveling
+ * Pants, in the places they spend the first book's summer. Kept fictional on
+ * purpose — this file ships in the client bundle and the repo is public.
+ */
+
 const daysAgo = (days: number): string =>
   new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
 
 export const friends: Friend[] = [
-  { id: 'friend-1', name: 'Maya', city: 'Seattle', state: 'WA', email: 'maya@example.com' },
-  { id: 'friend-2', name: 'Leah', city: 'Austin', state: 'TX', email: 'leah@example.com' },
-  { id: 'friend-3', name: 'Priya', city: 'Boston', state: 'MA', email: 'priya@example.com' },
-  { id: 'friend-4', name: 'Nina', city: 'Chicago', state: 'IL', email: 'nina@example.com' },
-  { id: 'friend-5', name: 'Rina', city: 'New York', state: 'NY', email: 'rina@example.com' },
+  {
+    id: 'friend-lena',
+    name: 'Lena Kaligaris',
+    city: 'Santorini',
+    state: 'Greece',
+    email: 'lena@example.com',
+  },
+  {
+    id: 'friend-tibby',
+    name: 'Tibby Rollins',
+    city: 'Bethesda',
+    state: 'MD',
+    email: 'tibby@example.com',
+  },
+  {
+    id: 'friend-carmen',
+    name: 'Carmen Lowell',
+    city: 'Charleston',
+    state: 'SC',
+    email: 'carmen@example.com',
+  },
+  {
+    id: 'friend-bridget',
+    name: 'Bridget Vreeland',
+    city: 'Baja California',
+    state: 'Mexico',
+    email: 'bridget@example.com',
+  },
 ];
 
 const byId = (id: string): Friend => {
@@ -28,87 +57,87 @@ export const booksSeed: Book[] = [
     coverColor: '#d9a77d',
     status: 'reading',
     queue: [
-      { ...byId('friend-1'), position: 0, status: 'done' },
-      { ...byId('friend-2'), position: 1, status: 'reading' },
-      { ...byId('friend-3'), position: 2, status: 'waiting' },
-      { ...byId('friend-4'), position: 3, status: 'waiting' },
+      { ...byId('friend-carmen'), position: 0, status: 'done' },
+      { ...byId('friend-lena'), position: 1, status: 'reading' },
+      { ...byId('friend-tibby'), position: 2, status: 'waiting' },
+      { ...byId('friend-bridget'), position: 3, status: 'waiting' },
     ],
     handoffs: [
       {
         id: 'handoff-1a',
         bookId: 'book-1',
         fromFriend: null,
-        toFriend: 'friend-1',
+        toFriend: 'friend-carmen',
         happenedAt: daysAgo(41),
       },
       {
         id: 'handoff-1b',
         bookId: 'book-1',
-        fromFriend: 'friend-1',
-        toFriend: 'friend-2',
+        fromFriend: 'friend-carmen',
+        toFriend: 'friend-lena',
         happenedAt: daysAgo(12),
       },
     ],
   },
   {
     id: 'book-2',
-    title: 'Tomorrow, and Tomorrow, and Tomorrow',
-    author: 'Gabrielle Zevin',
+    title: 'Circe',
+    author: 'Madeline Miller',
     coverColor: '#b4b8a9',
     status: 'in-transit',
     queue: [
-      { ...byId('friend-5'), position: 0, status: 'done' },
-      { ...byId('friend-1'), position: 1, status: 'waiting' },
-      { ...byId('friend-2'), position: 2, status: 'waiting' },
+      { ...byId('friend-lena'), position: 0, status: 'done' },
+      { ...byId('friend-bridget'), position: 1, status: 'waiting' },
+      { ...byId('friend-tibby'), position: 2, status: 'waiting' },
     ],
     handoffs: [
       {
         id: 'handoff-2a',
         bookId: 'book-2',
         fromFriend: null,
-        toFriend: 'friend-5',
+        toFriend: 'friend-lena',
         happenedAt: daysAgo(63),
       },
       {
         id: 'handoff-2b',
         bookId: 'book-2',
-        fromFriend: 'friend-5',
-        toFriend: 'friend-1',
+        fromFriend: 'friend-lena',
+        toFriend: 'friend-bridget',
         happenedAt: daysAgo(0.2),
       },
     ],
   },
   {
     id: 'book-3',
-    title: 'Circe',
-    author: 'Madeline Miller',
+    title: 'Tomorrow, and Tomorrow, and Tomorrow',
+    author: 'Gabrielle Zevin',
     coverColor: '#c7a6b5',
     status: 'annotated',
     queue: [
-      { ...byId('friend-3'), position: 0, status: 'done' },
-      { ...byId('friend-5'), position: 1, status: 'done' },
-      { ...byId('friend-4'), position: 2, status: 'reading' },
+      { ...byId('friend-tibby'), position: 0, status: 'done' },
+      { ...byId('friend-carmen'), position: 1, status: 'done' },
+      { ...byId('friend-bridget'), position: 2, status: 'reading' },
     ],
     handoffs: [
       {
         id: 'handoff-3a',
         bookId: 'book-3',
         fromFriend: null,
-        toFriend: 'friend-3',
+        toFriend: 'friend-tibby',
         happenedAt: daysAgo(94),
       },
       {
         id: 'handoff-3b',
         bookId: 'book-3',
-        fromFriend: 'friend-3',
-        toFriend: 'friend-5',
+        fromFriend: 'friend-tibby',
+        toFriend: 'friend-carmen',
         happenedAt: daysAgo(38),
       },
       {
         id: 'handoff-3c',
         bookId: 'book-3',
-        fromFriend: 'friend-5',
-        toFriend: 'friend-4',
+        fromFriend: 'friend-carmen',
+        toFriend: 'friend-bridget',
         happenedAt: daysAgo(7),
       },
     ],
@@ -120,30 +149,30 @@ export const booksSeed: Book[] = [
     coverColor: '#93a7a5',
     status: 'returned',
     queue: [
-      { ...byId('friend-2'), position: 0, status: 'done' },
-      { ...byId('friend-4'), position: 1, status: 'done' },
-      { ...byId('friend-1'), position: 2, status: 'done' },
+      { ...byId('friend-bridget'), position: 0, status: 'done' },
+      { ...byId('friend-tibby'), position: 1, status: 'done' },
+      { ...byId('friend-carmen'), position: 2, status: 'done' },
     ],
     handoffs: [
       {
         id: 'handoff-4a',
         bookId: 'book-4',
         fromFriend: null,
-        toFriend: 'friend-2',
+        toFriend: 'friend-bridget',
         happenedAt: daysAgo(121),
       },
       {
         id: 'handoff-4b',
         bookId: 'book-4',
-        fromFriend: 'friend-2',
-        toFriend: 'friend-4',
+        fromFriend: 'friend-bridget',
+        toFriend: 'friend-tibby',
         happenedAt: daysAgo(88),
       },
       {
         id: 'handoff-4c',
         bookId: 'book-4',
-        fromFriend: 'friend-4',
-        toFriend: 'friend-1',
+        fromFriend: 'friend-tibby',
+        toFriend: 'friend-carmen',
         happenedAt: daysAgo(59),
       },
     ],

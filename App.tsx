@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { StyleSheet, View } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
@@ -21,6 +22,71 @@ import { BookDetailScreen } from './src/screens/BookDetailScreen';
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
 const Stack = createNativeStackNavigator<RootStackParamList>();
+
+/**
+ * Outline when idle, solid inside an accent pill when selected. Colour alone
+ * was too subtle to read at a glance, so the active tab also changes icon
+ * weight and gains a background.
+ */
+const TAB_ICONS: Record<
+  keyof RootTabParamList,
+  { active: keyof typeof Ionicons.glyphMap; idle: keyof typeof Ionicons.glyphMap }
+> = {
+  Home: { active: 'book', idle: 'book-outline' },
+  Friends: { active: 'people', idle: 'people-outline' },
+  AddBook: { active: 'add-circle', idle: 'add-circle-outline' },
+  Profile: { active: 'person', idle: 'person-outline' },
+};
+
+function TabIcon({
+  routeName,
+  focused,
+  color,
+  size,
+}: {
+  routeName: keyof RootTabParamList;
+  focused: boolean;
+  color: string;
+  size: number;
+}) {
+  const icons = TAB_ICONS[routeName];
+
+  return (
+    <View style={[tabStyles.iconWrap, focused && tabStyles.iconWrapActive]}>
+      <Ionicons
+        name={focused ? icons.active : icons.idle}
+        size={size - 2}
+        color={focused ? '#fff' : color}
+      />
+    </View>
+  );
+}
+
+const tabStyles = StyleSheet.create({
+  iconWrap: {
+    width: 46,
+    height: 30,
+    borderRadius: 999,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  iconWrapActive: {
+    backgroundColor: '#7a5c48',
+  },
+  bar: {
+    backgroundColor: '#fffdfb',
+    borderTopColor: '#eaded3',
+    borderTopWidth: 1,
+    height: 88,
+    paddingTop: 8,
+    paddingBottom: 26,
+  },
+  label: {
+    fontSize: 11,
+    fontWeight: '800',
+    marginTop: 2,
+  },
+});
 
 function HomeStack({
   books,
@@ -138,20 +204,18 @@ export default function App() {
     <NavigationContainer>
       <Tab.Navigator
         screenOptions={({ route }) => ({
-          tabBarIcon: ({ color, size }) => {
-            const iconName =
-              route.name === 'Home'
-                ? 'book-outline'
-                : route.name === 'Friends'
-                  ? 'people-outline'
-                  : route.name === 'AddBook'
-                    ? 'add-circle-outline'
-                    : 'person-outline';
-
-            return <Ionicons name={iconName} size={size} color={color} />;
-          },
+          tabBarIcon: ({ color, size, focused }) => (
+            <TabIcon
+              routeName={route.name}
+              focused={focused}
+              color={color}
+              size={size}
+            />
+          ),
           tabBarActiveTintColor: '#7a5c48',
           tabBarInactiveTintColor: '#8a7d76',
+          tabBarStyle: tabStyles.bar,
+          tabBarLabelStyle: tabStyles.label,
           headerStyle: { backgroundColor: '#f7f1ea' },
           headerTitleStyle: { color: '#1f1a17' },
         })}

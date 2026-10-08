@@ -1,10 +1,10 @@
-# The Traveling Copy
+# Sisterhood of the Traveling Book
 
 One book, many readers, a shared reading journey.
 
 A React Native app that tracks the journey of physical books as they travel between friends in your reading circle.
 
-## What is The Traveling Copy?
+## What is Sisterhood of the Traveling Book?
 
 It's a simple way to follow where a book is, who has it, and how it moves over time. Instead of wondering "who has that copy of *The Secret Life of Bees*?", you just open the app.
 
