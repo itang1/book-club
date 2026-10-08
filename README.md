@@ -1,6 +1,6 @@
 # Sisterhood of the Traveling Book
 
-**One book, many readers, a shared reading journey.**
+**Track the books your friends pass around.**
 
 [![Expo](https://img.shields.io/badge/Expo-52-000020?logo=expo&logoColor=white)](https://expo.dev)
 [![React Native](https://img.shields.io/badge/React%20Native-0.76-61DAFB?logo=react&logoColor=black)](https://reactnative.dev)
@@ -68,9 +68,9 @@ home in Bethesda.
 - **Home** — every copy in circulation, with who has it and who's next
 - **Book Detail** — the reading path, the full travel history, and a one-tap
   handoff
-- **Friends** — the reading circle, each person's status derived *per book*
+- **Friends** — the group, each person's status derived *per book*
 - **Add Book** — introduce a copy and pick its first reader; the queue follows
-  the circle from there
+  the group from there
 - **Profile** — your own view: what's in your hands, what's heading your way
 
 ## How location works
@@ -146,11 +146,11 @@ src/
 ├── screens/
 │   ├── HomeScreen.tsx         # Books in circulation
 │   ├── BookDetailScreen.tsx   # Reading path, history, handoff
-│   ├── FriendsScreen.tsx      # The reading circle
+│   ├── FriendsScreen.tsx      # The group
 │   ├── AddBookScreen.tsx      # Add a copy / add a friend
 │   └── ProfileScreen.tsx      # Your own view
 ├── data/
-│   └── mockData.ts            # Fictional seed circle
+│   └── mockData.ts            # Fictional seed group
 ├── lib/
 │   ├── supabase.ts            # Client setup
 │   ├── bookClubService.ts     # Row mappers + fallback to mock data
@@ -164,7 +164,7 @@ src/
 Supabase (Postgres). Four tables:
 
 - **books** — title, author, cover color, status
-- **friends** — the reading circle (name, location, contact)
+- **friends** — the group (name, location, contact)
 - **reading_queue** — travel order plus each reader's progress
 - **handoffs** — the append-only journey log location derives from
 
@@ -180,8 +180,8 @@ raw row to `Book` compiles but lies, and the mismatch only surfaces at runtime.
 1. Create a Supabase project.
 2. Run `supabase/schema.sql` in the SQL editor (structure only, safe to re-run).
 3. Seed it:
-   - `supabase/seed.example.sql` — fictional demo circle, committed
-   - `supabase/seed.local.sql` — your real circle; **gitignored**, create it by
+   - `supabase/seed.example.sql` — fictional demo group, committed
+   - `supabase/seed.local.sql` — your real group; **gitignored**, create it by
      copying the example
 4. `cp .env.example .env` and fill in your project URL and anon key.
 
@@ -209,7 +209,7 @@ titles and first names, not for addresses or emails. Once auth exists, apply
 
 ## Roadmap
 
-- Accounts and friend requests, so a circle is built by invitation rather than by
+- Accounts and friend requests, so a group is built by invitation rather than by
   hand-editing SQL
 - Per-book audience, so a friend-of-a-friend can spot a copy and ask for a spot
   in its queue

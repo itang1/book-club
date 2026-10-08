@@ -9,8 +9,8 @@
 -- read and write the whole database. Requiring an authenticated role means a
 -- leaked anon key alone is no longer sufficient.
 --
--- This is still coarse: any signed-in user can see the whole circle. Narrowing
--- it to "only circles you belong to" needs a membership table and a user id on
+-- This is still coarse: any signed-in user can see the whole group. Narrowing
+-- it to "only groups you belong to" needs a membership table and a user id on
 -- `friends`, which is a larger change.
 
 -- ---------------------------------------------------------------

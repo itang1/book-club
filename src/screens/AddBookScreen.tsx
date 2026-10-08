@@ -34,7 +34,7 @@ export function AddBookScreen({ friends, onAddBook, onAddFriend }: AddBookScreen
       return;
     }
 
-    // Start the reading queue at the chosen friend, then follow the rest of the circle.
+    // Start the reading queue at the chosen friend, then follow the rest of the group.
     const startIndex = friends.findIndex((friend) => friend.id === selectedFriend.id);
     const rotated = [...friends.slice(startIndex), ...friends.slice(0, startIndex)];
     const bookId = `book-${Date.now()}`;

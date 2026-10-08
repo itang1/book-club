@@ -1,4 +1,4 @@
--- Example seed — fictional circle, safe to commit.
+-- Example seed — fictional group, safe to commit.
 --
 -- The four girls from The Sisterhood of the Traveling Pants, in the places they
 -- spend the first book's summer: Lena with her grandparents on Santorini,
@@ -6,7 +6,7 @@
 -- Tibby holding down the summer at home in Bethesda.
 --
 -- This exists so the repo has runnable demo data without putting anyone's real
--- name in a public repository. For your own circle, copy this file to
+-- name in a public repository. For your own group, copy this file to
 -- supabase/seed.local.sql (gitignored) and edit it there.
 --
 -- Run supabase/schema.sql first. Safe to re-run.

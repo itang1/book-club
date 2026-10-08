@@ -16,7 +16,7 @@ export function HomeScreen({ navigation, books }: HomeScreenProps) {
         <Text style={styles.eyebrow}>Book Club</Text>
         <Text style={styles.title}>Sisterhood of the Traveling Book</Text>
         <Text style={styles.subtitle}>
-          One book, many readers, and a shared reading journey.
+          Track the books your friends pass around.
         </Text>
       </View>
 

@@ -5,8 +5,8 @@
 -- over an earlier version of this schema.
 --
 -- Seed data lives in separate files so that no real names are committed:
---   supabase/seed.example.sql  — fictional demo circle (committed)
---   supabase/seed.local.sql    — your real circle (gitignored)
+--   supabase/seed.example.sql  — fictional demo group (committed)
+--   supabase/seed.local.sql    — your real group (gitignored)
 --
 -- Design note: a book's current location is NOT stored. It is derived from the
 -- newest row in `handoffs`. That keeps the journey intact instead of
@@ -42,7 +42,7 @@ alter table if exists public.books drop column if exists last_updated;
 alter table if exists public.friends drop column if exists status;
 
 -- ---------------------------------------------------------------
--- Friends: the reading circle
+-- Friends: the group
 -- ---------------------------------------------------------------
 create table if not exists public.friends (
   id text primary key,

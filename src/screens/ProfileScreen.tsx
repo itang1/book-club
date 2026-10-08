@@ -26,7 +26,7 @@ export function ProfileScreen({
   const me = friends.find((friend) => friend.id === currentUserId) ?? null;
 
   // There is no auth yet, so "who am I" is a local choice. Every stat below is
-  // scoped to that person rather than the whole circle.
+  // scoped to that person rather than the whole group.
   const withMe = me ? books.filter((book) => currentOwnerId(book) === me.id) : [];
   const comingToMe = me ? books.filter((book) => nextStopId(book) === me.id) : [];
   const finished = me
@@ -46,7 +46,7 @@ export function ProfileScreen({
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <Text style={styles.title}>Your profile</Text>
       <Text style={styles.subtitle}>
-        {me ? `Reading as ${me.name} — ${me.city}, ${me.state}` : 'Pick who you are in the circle.'}
+        {me ? `Reading as ${me.name} — ${me.city}, ${me.state}` : 'Pick who you are in the group.'}
       </Text>
 
       <View style={styles.card}>
@@ -124,7 +124,7 @@ export function ProfileScreen({
                 <Text style={styles.bookMeta}>
                   Currently with{' '}
                   {book.queue.find((entry) => entry.id === currentOwnerId(book))?.name ??
-                    'someone in the circle'}
+                    'someone in the group'}
                 </Text>
               </View>
             </View>

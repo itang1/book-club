@@ -92,7 +92,7 @@ export function BookDetailScreen({ route, books, onPassOn }: BookDetailScreenPro
 
       <View style={styles.box}>
         <Text style={styles.boxTitle}>Reading path</Text>
-        <Text style={styles.boxCaption}>The order this copy travels the circle.</Text>
+        <Text style={styles.boxCaption}>The order this copy travels the group.</Text>
         {queue.map((person) => {
           const isCurrent = person.id === ownerId;
           const isNext = person.id === nextId;
