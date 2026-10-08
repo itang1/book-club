@@ -22,10 +22,10 @@ const coverPalette = ['#d9a77d', '#b4b8a9', '#c7a6b5', '#c89366', '#93a7a5'];
 export function AddBookScreen({ friends, onAddBook, onAddFriend }: AddBookScreenProps) {
   const [title, setTitle] = useState('');
   const [author, setAuthor] = useState('');
-  const [trackingNumber, setTrackingNumber] = useState('');
   const [selectedFriendId, setSelectedFriendId] = useState<string>(friends[0]?.id ?? '');
   const [newFriendName, setNewFriendName] = useState('');
   const [newFriendCity, setNewFriendCity] = useState('');
+  const [newFriendState, setNewFriendState] = useState('');
 
   const selectedFriend = friends.find((friend) => friend.id === selectedFriendId) ?? friends[0];
 
@@ -34,32 +34,29 @@ export function AddBookScreen({ friends, onAddBook, onAddFriend }: AddBookScreen
       return;
     }
 
+    // Start the reading queue at the chosen friend, then follow the rest of the circle.
+    const startIndex = friends.findIndex((friend) => friend.id === selectedFriend.id);
+    const queue = [...friends.slice(startIndex), ...friends.slice(0, startIndex)];
+
     const newBook: Book = {
       id: `book-${Date.now()}`,
       title: title.trim(),
       author: author.trim(),
       coverColor: coverPalette[Math.floor(Math.random() * coverPalette.length)],
       status: 'in-transit',
-      currentOwner: 'You',
-      nextStop: `${selectedFriend.city}, ${selectedFriend.state}`,
+      currentOwner: selectedFriend.id,
+      nextStop: queue[1]?.id ?? selectedFriend.id,
       lastUpdated: 'Just now',
       notesCount: 0,
-      trackingNumber: trackingNumber.trim() || 'Tracking pending',
-      friends: [
-        {
-          id: selectedFriend.id,
-          name: selectedFriend.name,
-          city: selectedFriend.city,
-          state: selectedFriend.state,
-          status: 'waiting',
-        },
-      ],
+      friends: queue.map((friend, index) => ({
+        ...friend,
+        status: index === 0 ? 'reading' : 'waiting',
+      })),
     };
 
     onAddBook(newBook);
     setTitle('');
     setAuthor('');
-    setTrackingNumber('');
     setSelectedFriendId(friends[0]?.id ?? '');
   };
 
@@ -72,15 +69,14 @@ export function AddBookScreen({ friends, onAddBook, onAddFriend }: AddBookScreen
       id: `friend-${Date.now()}`,
       name: newFriendName.trim(),
       city: newFriendCity.trim(),
-      state: 'New',
+      state: newFriendState.trim().toUpperCase() || '—',
       status: 'waiting',
-      address: `${newFriendCity.trim()}`,
-      email: `${newFriendName.trim().toLowerCase().replace(/\s+/g, '.')}@example.com`,
     };
 
     onAddFriend(friend);
     setNewFriendName('');
     setNewFriendCity('');
+    setNewFriendState('');
   };
 
   return (
@@ -105,15 +101,7 @@ export function AddBookScreen({ friends, onAddBook, onAddFriend }: AddBookScreen
           style={styles.input}
         />
 
-        <Text style={styles.fieldLabel}>Tracking number</Text>
-        <TextInput
-          value={trackingNumber}
-          onChangeText={setTrackingNumber}
-          placeholder="9400 1234 5678 9012 3456 78"
-          style={styles.input}
-        />
-
-        <Text style={styles.fieldLabel}>Choose recipient</Text>
+        <Text style={styles.fieldLabel}>First reader</Text>
         <View style={styles.friendRow}>
           {friends.map((friend) => (
             <Pressable
@@ -138,7 +126,7 @@ export function AddBookScreen({ friends, onAddBook, onAddFriend }: AddBookScreen
 
         {selectedFriend && (
           <Text style={styles.selectedFriend}>
-            Next reader: {selectedFriend.name} — {selectedFriend.city}, {selectedFriend.state}
+            Starts with {selectedFriend.name} — {selectedFriend.city}, {selectedFriend.state}
           </Text>
         )}
 
@@ -159,6 +147,14 @@ export function AddBookScreen({ friends, onAddBook, onAddFriend }: AddBookScreen
           value={newFriendCity}
           onChangeText={setNewFriendCity}
           placeholder="City"
+          style={styles.input}
+        />
+        <TextInput
+          value={newFriendState}
+          onChangeText={setNewFriendState}
+          placeholder="State (e.g. WA)"
+          maxLength={2}
+          autoCapitalize="characters"
           style={styles.input}
         />
 

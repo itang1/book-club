@@ -8,6 +8,9 @@ type BookCardProps = {
 };
 
 export function BookCard({ book, onPress }: BookCardProps) {
+  const nameFor = (friendId: string) =>
+    book.friends.find((person) => person.id === friendId)?.name ?? 'Unassigned';
+
   return (
     <Pressable style={styles.card} onPress={() => onPress?.(book)}>
       <View style={[styles.cover, { backgroundColor: book.coverColor }]}>
@@ -20,12 +23,12 @@ export function BookCard({ book, onPress }: BookCardProps) {
 
         <View style={styles.metaRow}>
           <Text style={styles.metaLabel}>Current owner</Text>
-          <Text style={styles.metaValue}>{book.currentOwner}</Text>
+          <Text style={styles.metaValue}>{nameFor(book.currentOwner)}</Text>
         </View>
 
         <View style={styles.metaRow}>
           <Text style={styles.metaLabel}>Next stop</Text>
-          <Text style={styles.metaValue}>{book.nextStop}</Text>
+          <Text style={styles.metaValue}>{nameFor(book.nextStop)}</Text>
         </View>
 
         <View style={styles.metaRow}>
@@ -34,7 +37,7 @@ export function BookCard({ book, onPress }: BookCardProps) {
         </View>
 
         <View style={styles.footer}>
-          <Text style={styles.status}>{book.status}</Text>
+          <Text style={styles.status}>{book.status.replace('-', ' ')}</Text>
           <Text style={styles.updated}>{book.lastUpdated}</Text>
         </View>
       </View>
@@ -115,6 +118,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: theme.colors.accent,
     textTransform: 'capitalize',
+    overflow: 'hidden',
   },
   updated: {
     fontSize: 11,

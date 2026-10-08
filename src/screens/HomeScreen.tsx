@@ -1,8 +1,8 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
-import { Book } from './src/types';
-import { BookCard } from './src/components/BookCard';
-import { theme } from './src/theme';
+import { Book } from '../types';
+import { BookCard } from '../components/BookCard';
+import { theme } from '../theme';
 
 type HomeScreenProps = {
   navigation: any;
@@ -11,7 +11,7 @@ type HomeScreenProps = {
 
 export function HomeScreen({ navigation, books }: HomeScreenProps) {
   return (
-    <View style={styles.container}>
+    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <View style={styles.headerWrap}>
         <Text style={styles.eyebrow}>Book Club</Text>
         <Text style={styles.title}>The traveling copy</Text>
@@ -21,7 +21,7 @@ export function HomeScreen({ navigation, books }: HomeScreenProps) {
       </View>
 
       <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>In transit</Text>
+        <Text style={styles.sectionTitle}>In circulation</Text>
         <Text style={styles.sectionMeta}>{books.length} active books</Text>
       </View>
 
@@ -32,7 +32,7 @@ export function HomeScreen({ navigation, books }: HomeScreenProps) {
           onPress={() => navigation.navigate('BookDetail', { bookId: book.id, bookTitle: book.title })}
         />
       ))}
-    </View>
+    </ScrollView>
   );
 }
 
@@ -40,6 +40,8 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: theme.colors.background,
+  },
+  content: {
     padding: 20,
     paddingBottom: 32,
   },

@@ -1,37 +1,49 @@
 import { StyleSheet, Text, View } from 'react-native';
 
-import { Book } from '../types';
+import { Book, Friend } from '../types';
 import { theme } from '../theme';
 
 type ProfileScreenProps = {
   books: Book[];
+  friends: Friend[];
 };
 
-export function ProfileScreen({ books }: ProfileScreenProps) {
-  const booksSent = books.length;
-  const booksWaiting = books.filter((book) => book.status === 'in-transit').length;
+export function ProfileScreen({ books, friends }: ProfileScreenProps) {
+  const booksInCirculation = books.length;
+  const booksInTransit = books.filter((book) => book.status === 'in-transit').length;
+  const booksBeingRead = books.filter((book) => book.status === 'reading').length;
   const notesTotal = books.reduce((sum, book) => sum + book.notesCount, 0);
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Your profile</Text>
-      <Text style={styles.subtitle}>Reading stats and mailing details.</Text>
+      <Text style={styles.subtitle}>Your reading circle at a glance.</Text>
 
       <View style={styles.grid}>
         <View style={styles.statCard}>
-          <Text style={styles.statValue}>{booksSent}</Text>
-          <Text style={styles.statLabel}>Books sent</Text>
+          <Text style={styles.statValue}>{booksInCirculation}</Text>
+          <Text style={styles.statLabel}>Books in circulation</Text>
         </View>
         <View style={styles.statCard}>
-          <Text style={styles.statValue}>{books.length > 0 ? books.length + 2 : 0}</Text>
+          <Text style={styles.statValue}>{friends.length}</Text>
           <Text style={styles.statLabel}>Friends in circle</Text>
         </View>
         <View style={styles.statCard}>
-          <Text style={styles.statValue}>{booksWaiting}</Text>
-          <Text style={styles.statLabel}>Books waiting</Text>
+          <Text style={styles.statValue}>{booksBeingRead}</Text>
+          <Text style={styles.statLabel}>Being read now</Text>
         </View>
         <View style={styles.statCard}>
-          <Text style={styles.statValue}>{Math.round((notesTotal / Math.max(booksSent, 1)) * 10) / 10}</Text>
+          <Text style={styles.statValue}>{booksInTransit}</Text>
+          <Text style={styles.statLabel}>On the way</Text>
+        </View>
+        <View style={styles.statCard}>
+          <Text style={styles.statValue}>{notesTotal}</Text>
+          <Text style={styles.statLabel}>Reader notes</Text>
+        </View>
+        <View style={styles.statCard}>
+          <Text style={styles.statValue}>
+            {Math.round((notesTotal / Math.max(booksInCirculation, 1)) * 10) / 10}
+          </Text>
           <Text style={styles.statLabel}>Avg notes/book</Text>
         </View>
       </View>
