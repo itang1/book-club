@@ -1,7 +1,17 @@
 import { StyleSheet, Text, View } from 'react-native';
+
+import { Book } from '../types';
 import { theme } from '../theme';
 
-export function ProfileScreen() {
+type ProfileScreenProps = {
+  books: Book[];
+};
+
+export function ProfileScreen({ books }: ProfileScreenProps) {
+  const booksSent = books.length;
+  const booksWaiting = books.filter((book) => book.status === 'in-transit').length;
+  const notesTotal = books.reduce((sum, book) => sum + book.notesCount, 0);
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Your profile</Text>
@@ -9,20 +19,20 @@ export function ProfileScreen() {
 
       <View style={styles.grid}>
         <View style={styles.statCard}>
-          <Text style={styles.statValue}>12</Text>
+          <Text style={styles.statValue}>{booksSent}</Text>
           <Text style={styles.statLabel}>Books sent</Text>
         </View>
         <View style={styles.statCard}>
-          <Text style={styles.statValue}>4</Text>
+          <Text style={styles.statValue}>{books.length > 0 ? books.length + 2 : 0}</Text>
           <Text style={styles.statLabel}>Friends in circle</Text>
         </View>
         <View style={styles.statCard}>
-          <Text style={styles.statValue}>6</Text>
+          <Text style={styles.statValue}>{booksWaiting}</Text>
           <Text style={styles.statLabel}>Books waiting</Text>
         </View>
         <View style={styles.statCard}>
-          <Text style={styles.statValue}>98%</Text>
-          <Text style={styles.statLabel}>On-time delivery</Text>
+          <Text style={styles.statValue}>{Math.round((notesTotal / Math.max(booksSent, 1)) * 10) / 10}</Text>
+          <Text style={styles.statLabel}>Avg notes/book</Text>
         </View>
       </View>
     </View>

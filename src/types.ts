@@ -1,5 +1,3 @@
-export type BookStatus = 'in-transit' | 'reading' | 'returned' | 'annotated';
-
 export type FriendStatus = 'waiting' | 'reading' | 'done';
 
 export type Friend = {
@@ -12,6 +10,8 @@ export type Friend = {
   email?: string;
 };
 
+export type BookStatus = 'in-transit' | 'reading' | 'returned' | 'annotated';
+
 export type Book = {
   id: string;
   title: string;
@@ -21,10 +21,9 @@ export type Book = {
   currentOwner: string;
   nextStop: string;
   lastUpdated: string;
-  friends: Friend[];
   notesCount: number;
-  isbn?: string;
   trackingNumber?: string;
+  friends: Friend[];
 };
 
 export type RootTabParamList = {
@@ -37,7 +36,4 @@ export type RootTabParamList = {
 export type RootStackParamList = {
   Home: undefined;
   BookDetail: { bookId: string; bookTitle: string };
-  Friends: undefined;
-  AddBook: undefined;
-  Profile: undefined;
 };
