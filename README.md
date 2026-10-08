@@ -121,10 +121,34 @@ runtime.
 ### Setup
 
 1. Create a Supabase project.
-2. Run `supabase/schema.sql` in the SQL editor (it is safe to re-run).
-3. Copy `.env.example` to `.env` and fill in your project URL and anon key.
+2. Run `supabase/schema.sql` in the SQL editor (structure only, safe to re-run).
+3. Seed it:
+   - `supabase/seed.example.sql` — fictional demo circle, committed
+   - `supabase/seed.local.sql` — your real circle; **gitignored**, create it by
+     copying the example
+4. Copy `.env.example` to `.env` and fill in your project URL and anon key.
 
-The app loads real data when configured, and falls back to seeded mock data otherwise.
+The app loads real data when configured, and falls back to the fictional mock
+data in `src/data/mockData.ts` otherwise.
+
+### Keeping real names out of the repo
+
+This repository is public. Real names, cities, and emails belong only in
+Supabase, never in a committed file. Two rules enforce that:
+
+- `src/data/mockData.ts` is the offline fallback and is **always fictional**
+- anything matching `*.local.sql` is gitignored
+
+### Security status
+
+The policies in `schema.sql` are **demo-open**: they allow anyone to read and
+write every row. The anon key is prefixed `EXPO_PUBLIC_`, so it is compiled into
+the client bundle — an open policy plus a published key means the data is
+effectively public.
+
+Until Supabase Auth is wired up, treat the database as semi-public: fine for
+book titles and first names, not for addresses or emails. Once auth exists,
+apply `supabase/policies-authenticated.sql` to require a signed-in user.
 
 ## Styling
 

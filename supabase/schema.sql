@@ -1,12 +1,31 @@
--- The Traveling Copy — Supabase schema
+-- The Traveling Copy — Supabase schema (structure only)
 -- One book, many readers, a shared reading journey.
 --
 -- Run this in the Supabase SQL editor. It is safe to re-run, and safe to run
 -- over an earlier version of this schema.
 --
+-- Seed data lives in separate files so that no real names are committed:
+--   supabase/seed.example.sql  — fictional demo circle (committed)
+--   supabase/seed.local.sql    — your real circle (gitignored)
+--
 -- Design note: a book's current location is NOT stored. It is derived from the
 -- newest row in `handoffs`. That keeps the journey intact instead of
 -- overwriting the past every time a book moves.
+--
+-- ===================================================================
+-- READ THIS BEFORE PUTTING REAL DATA IN
+--
+-- The policies at the bottom of this file are DEMO-OPEN: they let anyone
+-- read and write every row. That is not merely a database setting — the
+-- anon key is prefixed EXPO_PUBLIC_, so it is compiled into the client
+-- bundle and visible to anyone who loads the app. Open policies plus a
+-- published key means the data is effectively public.
+--
+-- Until Supabase Auth is wired up, treat this database as semi-public:
+-- fine for titles and first names, not for addresses or emails.
+-- Once auth exists, apply supabase/policies-authenticated.sql to require
+-- a signed-in user.
+-- ===================================================================
 
 -- ---------------------------------------------------------------
 -- Migration: retire the old shipping-era shape if it exists
@@ -91,7 +110,7 @@ from public.handoffs h
 order by h.book_id, h.happened_at desc;
 
 -- ---------------------------------------------------------------
--- Row level security (demo mode: open read + write)
+-- Row level security — DEMO MODE. See the warning at the top of this file.
 -- ---------------------------------------------------------------
 alter table public.friends enable row level security;
 alter table public.books enable row level security;
@@ -139,50 +158,3 @@ create policy "handoffs are viewable by everyone"
 drop policy if exists "anyone can record a handoff" on public.handoffs;
 create policy "anyone can record a handoff"
   on public.handoffs for insert with check (true);
-
--- ---------------------------------------------------------------
--- Seed data
--- ---------------------------------------------------------------
-insert into public.friends (id, name, city, state, email) values
-  ('friend-1', 'Maya',  'Seattle',  'WA', 'maya@example.com'),
-  ('friend-2', 'Leah',  'Austin',   'TX', 'leah@example.com'),
-  ('friend-3', 'Priya', 'Boston',   'MA', 'priya@example.com'),
-  ('friend-4', 'Nina',  'Chicago',  'IL', 'nina@example.com'),
-  ('friend-5', 'Rina',  'New York', 'NY', 'rina@example.com')
-on conflict (id) do nothing;
-
-insert into public.books (id, title, author, cover_color, status) values
-  ('book-1', 'The Secret Life of Bees', 'Sue Monk Kidd', '#d9a77d', 'reading'),
-  ('book-2', 'Tomorrow, and Tomorrow, and Tomorrow', 'Gabrielle Zevin', '#b4b8a9', 'in-transit'),
-  ('book-3', 'Circe', 'Madeline Miller', '#c7a6b5', 'annotated'),
-  ('book-4', 'Piranesi', 'Susanna Clarke', '#93a7a5', 'returned')
-on conflict (id) do nothing;
-
-insert into public.reading_queue (book_id, friend_id, position, status) values
-  ('book-1', 'friend-1', 0, 'done'),
-  ('book-1', 'friend-2', 1, 'reading'),
-  ('book-1', 'friend-3', 2, 'waiting'),
-  ('book-1', 'friend-4', 3, 'waiting'),
-  ('book-2', 'friend-5', 0, 'done'),
-  ('book-2', 'friend-1', 1, 'waiting'),
-  ('book-2', 'friend-2', 2, 'waiting'),
-  ('book-3', 'friend-3', 0, 'done'),
-  ('book-3', 'friend-5', 1, 'done'),
-  ('book-3', 'friend-4', 2, 'reading'),
-  ('book-4', 'friend-2', 0, 'done'),
-  ('book-4', 'friend-4', 1, 'done'),
-  ('book-4', 'friend-1', 2, 'done')
-on conflict (book_id, friend_id) do nothing;
-
-insert into public.handoffs (id, book_id, from_friend, to_friend, happened_at) values
-  ('handoff-1a', 'book-1', null,       'friend-1', now() - interval '41 days'),
-  ('handoff-1b', 'book-1', 'friend-1', 'friend-2', now() - interval '12 days'),
-  ('handoff-2a', 'book-2', null,       'friend-5', now() - interval '63 days'),
-  ('handoff-2b', 'book-2', 'friend-5', 'friend-1', now() - interval '5 hours'),
-  ('handoff-3a', 'book-3', null,       'friend-3', now() - interval '94 days'),
-  ('handoff-3b', 'book-3', 'friend-3', 'friend-5', now() - interval '38 days'),
-  ('handoff-3c', 'book-3', 'friend-5', 'friend-4', now() - interval '7 days'),
-  ('handoff-4a', 'book-4', null,       'friend-2', now() - interval '121 days'),
-  ('handoff-4b', 'book-4', 'friend-2', 'friend-4', now() - interval '88 days'),
-  ('handoff-4c', 'book-4', 'friend-4', 'friend-1', now() - interval '59 days')
-on conflict (id) do nothing;
