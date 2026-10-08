@@ -1,68 +1,73 @@
-# Book Club
+create table if not exists public.friends (
+  id text primary key,
+  name text not null,
+  city text not null,
+  state text not null,
+  status text not null default 'waiting' check (status in ('waiting', 'reading', 'done')),
+  address text,
+  email text,
+  created_at timestamptz not null default now()
+);
 
-A cross-platform app for tracking a shared book traveling across friends via USPS media mail.
+create table if not exists public.books (
+  id text primary key,
+  title text not null,
+  author text not null,
+  cover_color text not null,
+  status text not null default 'in-transit' check (status in ('in-transit', 'reading', 'returned', 'annotated')),
+  current_owner text not null,
+  next_stop text not null,
+  last_updated text not null,
+  notes_count integer not null default 0,
+  tracking_number text,
+  friends jsonb not null default '[]'::jsonb,
+  created_at timestamptz not null default now()
+);
 
-## What this app is about
+create table if not exists public.annotations (
+  id uuid primary key default gen_random_uuid(),
+  book_id text not null references public.books(id) on delete cascade,
+  friend_id text,
+  page_number integer,
+  note text not null,
+  created_at timestamptz not null default now()
+);
 
-Book Club is a concept app for the "one copy, many readers" experience:
-- a book is sent to one friend at a time
-- each person reads it, annotates it, and passes it along
-- the group tracks who has it, where it is, and what notes were added
+create table if not exists public.shipments (
+  id uuid primary key default gen_random_uuid(),
+  book_id text not null references public.books(id) on delete cascade,
+  tracking_number text not null,
+  from_name text not null,
+  to_name text not null,
+  status text not null default 'pending',
+  created_at timestamptz not null default now()
+);
 
-This follows the spirit of a modern "Sisterhood of the Traveling Pants" style reading club.
+alter table public.friends enable row level security;
+alter table public.books enable row level security;
+alter table public.annotations enable row level security;
+alter table public.shipments enable row level security;
 
-## Tech stack
+create policy "Friends are viewable by anyone" on public.friends
+for select using (true);
 
-This scaffold uses:
-- React Native + Expo
-- TypeScript
-- React Navigation
-- Supabase-ready data layer
-- Web, Android, and iOS from one codebase
+create policy "Books are viewable by anyone" on public.books
+for select using (true);
 
-## Getting started
+create policy "Annotations are viewable by anyone" on public.annotations
+for select using (true);
 
-1. Install dependencies:
-   ```bash
-   npm install
-   ```
+create policy "Shipments are viewable by anyone" on public.shipments
+for select using (true);
 
-2. Start the app:
-   ```bash
-   npm start
-   ```
+create policy "Friends can be inserted by anyone" on public.friends
+for insert with check (true);
 
-3. Run on web:
-   ```bash
-   npm run web
-   ```
+create policy "Books can be inserted by anyone" on public.books
+for insert with check (true);
 
-4. Run on Android/iOS:
-   ```bash
-   npm run android
-   npm run ios
-   ```
+create policy "Annotations can be inserted by anyone" on public.annotations
+for insert with check (true);
 
-## Current MVP status
-
-This version includes:
-- a tab-based navigation layout for Home, Friends, Add Book, and Profile
-- a home dashboard for active books
-- detail view for each book and its travel timeline
-- mock data for friends, book journeys, and reading activity
-
-## Next features to build
-
-- real data storage with Supabase
-- add friend and address forms
-- USPS tracking integration
-- note and annotation uploads
-- Goodreads-style polish and social book profiles
-
-## Backend starter
-
-This repo is prepared for a Supabase integration. Add your project URL and anon key to a local `.env` file or create your own secure config.
-
-## Notes
-
-This is a working foundation designed to grow into a real app experience.
+create policy "Shipments can be inserted by anyone" on public.shipments
+for insert with check (true);
