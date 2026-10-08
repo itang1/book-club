@@ -2,29 +2,30 @@ import * as React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
+import { Book, Friend, RootStackParamList, RootTabParamList } from './src/types';
+import { booksSeed, friends as friendsSeed } from './src/data/mockData';
 import { HomeScreen } from './src/screens/HomeScreen';
 import { FriendsScreen } from './src/screens/FriendsScreen';
 import { AddBookScreen } from './src/screens/AddBookScreen';
 import { ProfileScreen } from './src/screens/ProfileScreen';
 import { BookDetailScreen } from './src/screens/BookDetailScreen';
-import { RootStackParamList, RootTabParamList } from './src/types';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
-function HomeStack() {
+function HomeStack({ books }: { books: Book[] }) {
   return (
     <Stack.Navigator>
       <Stack.Screen
         name="Home"
-        component={HomeScreen}
+        children={(props) => <HomeScreen {...props} books={books} />}
         options={{ headerShown: false }}
       />
       <Stack.Screen
         name="BookDetail"
-        component={BookDetailScreen}
+        children={(props) => <BookDetailScreen {...props} books={books} />}
         options={({ route }) => ({
           title: route.params?.bookTitle ?? 'Book Detail',
         })}
@@ -34,6 +35,17 @@ function HomeStack() {
 }
 
 export default function App() {
+  const [books, setBooks] = React.useState<Book[]>(booksSeed);
+  const [friends, setFriends] = React.useState<Friend[]>(friendsSeed);
+
+  const handleAddBook = (book: Book) => {
+    setBooks((currentBooks) => [book, ...currentBooks]);
+  };
+
+  const handleAddFriend = (friend: Friend) => {
+    setFriends((currentFriends) => [friend, ...currentFriends]);
+  };
+
   return (
     <NavigationContainer>
       <Tab.Navigator
@@ -58,12 +70,18 @@ export default function App() {
       >
         <Tab.Screen
           name="Home"
-          component={HomeStack}
+          children={() => <HomeStack books={books} />}
           options={{ headerShown: false }}
         />
-        <Tab.Screen name="Friends" component={FriendsScreen} />
-        <Tab.Screen name="AddBook" component={AddBookScreen} />
-        <Tab.Screen name="Profile" component={ProfileScreen} />
+        <Tab.Screen name="Friends">
+          {(props) => <FriendsScreen {...props} friends={friends} />}
+        </Tab.Screen>
+        <Tab.Screen name="AddBook">
+          {(props) => <AddBookScreen {...props} friends={friends} onAddBook={handleAddBook} onAddFriend={handleAddFriend} />}
+        </Tab.Screen>
+        <Tab.Screen name="Profile">
+          {(props) => <ProfileScreen {...props} books={books} />}
+        </Tab.Screen>
       </Tab.Navigator>
     </NavigationContainer>
   );

@@ -1,5 +1,3 @@
-import { Book } from '../types';
-
 export const friends = [
   { id: 'friend-1', name: 'Maya', city: 'Seattle', state: 'WA', status: 'done', address: '429 Pine St, Seattle, WA', email: 'maya@example.com' },
   { id: 'friend-2', name: 'Leah', city: 'Austin', state: 'TX', status: 'reading', address: '88 Willow Dr, Austin, TX', email: 'leah@example.com' },
@@ -8,7 +6,7 @@ export const friends = [
   { id: 'friend-5', name: 'Rina', city: 'New York', state: 'NY', status: 'done', address: '98 7th Ave, New York, NY', email: 'rina@example.com' },
 ];
 
-export const mockBooks: Book[] = [
+export const booksSeed = [
   {
     id: 'book-1',
     title: 'The Secret Life of Bees',
@@ -19,7 +17,6 @@ export const mockBooks: Book[] = [
     nextStop: 'Austin, TX',
     lastUpdated: '2 days ago',
     notesCount: 14,
-    isbn: '9780142001745',
     trackingNumber: '9400 1234 5678 9012 3456 78',
     friends: [
       { id: 'friend-1', name: 'Maya', city: 'Seattle', state: 'WA', status: 'done' },
@@ -37,7 +34,6 @@ export const mockBooks: Book[] = [
     nextStop: 'Chicago, IL',
     lastUpdated: 'Today',
     notesCount: 9,
-    isbn: '9780141439518',
     trackingNumber: '9400 9876 5432 1098 7654 32',
     friends: [
       { id: 'friend-2', name: 'Leah', city: 'Austin', state: 'TX', status: 'reading' },
@@ -54,7 +50,6 @@ export const mockBooks: Book[] = [
     nextStop: 'New York, NY',
     lastUpdated: 'Yesterday',
     notesCount: 21,
-    isbn: '9780679723234',
     trackingNumber: '9400 6543 2109 8765 4321 09',
     friends: [
       { id: 'friend-3', name: 'Priya', city: 'Boston', state: 'MA', status: 'done' },

@@ -1,13 +1,15 @@
 import { StyleSheet, Text, View } from 'react-native';
-import { BookCard } from '../components/BookCard';
-import { mockBooks } from '../data/mockData';
-import { theme } from '../theme';
+
+import { Book } from './src/types';
+import { BookCard } from './src/components/BookCard';
+import { theme } from './src/theme';
 
 type HomeScreenProps = {
   navigation: any;
+  books: Book[];
 };
 
-export function HomeScreen({ navigation }: HomeScreenProps) {
+export function HomeScreen({ navigation, books }: HomeScreenProps) {
   return (
     <View style={styles.container}>
       <View style={styles.headerWrap}>
@@ -20,10 +22,10 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
 
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>In transit</Text>
-        <Text style={styles.sectionMeta}>{mockBooks.length} active books</Text>
+        <Text style={styles.sectionMeta}>{books.length} active books</Text>
       </View>
 
-      {mockBooks.map((book) => (
+      {books.map((book) => (
         <BookCard
           key={book.id}
           book={book}

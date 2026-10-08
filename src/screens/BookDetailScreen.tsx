@@ -1,14 +1,16 @@
 import { StyleSheet, Text, View } from 'react-native';
-import { mockBooks } from '../data/mockData';
+
+import { Book } from '../types';
 import { theme } from '../theme';
 
 type BookDetailScreenProps = {
   route: { params: { bookId: string; bookTitle: string } };
+  books: Book[];
 };
 
-export function BookDetailScreen({ route }: BookDetailScreenProps) {
+export function BookDetailScreen({ route, books }: BookDetailScreenProps) {
   const { bookId } = route.params;
-  const book = mockBooks.find((item) => item.id === bookId);
+  const book = books.find((item) => item.id === bookId);
 
   if (!book) {
     return (
@@ -37,7 +39,7 @@ export function BookDetailScreen({ route }: BookDetailScreenProps) {
       </View>
       <View style={styles.infoRow}>
         <Text style={styles.label}>Tracking</Text>
-        <Text style={styles.value}>{book.trackingNumber}</Text>
+        <Text style={styles.value}>{book.trackingNumber ?? 'Pending'}</Text>
       </View>
       <View style={styles.infoRow}>
         <Text style={styles.label}>Notes</Text>

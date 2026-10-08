@@ -1,9 +1,13 @@
 import { FlatList, StyleSheet, Text, View } from 'react-native';
 
-import { friends } from '../data/mockData';
+import { Friend } from '../types';
 import { theme } from '../theme';
 
-export function FriendsScreen() {
+type FriendsScreenProps = {
+  friends: Friend[];
+};
+
+export function FriendsScreen({ friends }: FriendsScreenProps) {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Friends</Text>
