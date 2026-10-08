@@ -188,6 +188,26 @@ raw row to `Book` compiles but lies, and the mismatch only surfaces at runtime.
 The app loads live data when configured and falls back to the fictional seed
 otherwise.
 
+### Keeping the free-tier project awake
+
+Supabase pauses free-tier projects after roughly a week of inactivity, and a
+paused project has to be restored by hand from the dashboard — so the first
+person to open the app after a quiet week would find it broken.
+
+`.github/workflows/keepalive.yml` pings the project every 3 days to keep it
+marked active. To enable it, add two **repository secrets** (Settings → Secrets
+and variables → Actions):
+
+| Secret | Value |
+| --- | --- |
+| `SUPABASE_URL` | your project URL |
+| `SUPABASE_ANON_KEY` | your anon key |
+
+Until those exist the workflow skips with a notice rather than failing. Two
+caveats: GitHub disables scheduled workflows on repos with no activity for 60
+days, and this is a workaround for platform behaviour rather than a guarantee —
+check the dashboard after the first quiet week to confirm it held.
+
 ### Keeping real names out of the repo
 
 This repository is public. Real names, cities, and emails belong only in
