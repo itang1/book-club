@@ -5,6 +5,6 @@
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
     "jsx": "react-jsx",
-    "types": ["react", "react-native"]
+    "types": ["react", "react-native", "node"]
   }
 }

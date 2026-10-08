@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "book-club",
+    "name": "The Traveling Copy",
     "slug": "book-club",
     "scheme": "book-club",
     "version": "1.0.0",
@@ -22,6 +22,9 @@
     },
     "web": {
       "bundler": "metro"
-    }
+    },
+    "plugins": [
+      "expo-asset"
+    ]
   }
 }

@@ -99,5 +99,6 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     fontSize: 10,
     fontWeight: '700',
+    overflow: 'hidden',
   },
 });

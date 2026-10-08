@@ -1,194 +1,60 @@
-import { StyleSheet, Text, View } from 'react-native';
+import type { Book, Friend } from '../types';
 
-import { Book } from '../types';
-import { theme } from '../theme';
+export const friends: Friend[] = [
+  { id: 'friend-1', name: 'Maya', city: 'Seattle', state: 'WA', status: 'done', email: 'maya@example.com' },
+  { id: 'friend-2', name: 'Leah', city: 'Austin', state: 'TX', status: 'reading', email: 'leah@example.com' },
+  { id: 'friend-3', name: 'Priya', city: 'Boston', state: 'MA', status: 'waiting', email: 'priya@example.com' },
+  { id: 'friend-4', name: 'Nina', city: 'Chicago', state: 'IL', status: 'waiting', email: 'nina@example.com' },
+  { id: 'friend-5', name: 'Rina', city: 'New York', state: 'NY', status: 'done', email: 'rina@example.com' },
+];
 
-type BookDetailScreenProps = {
-  route: { params: { bookId: string; bookTitle: string } };
-  books: Book[];
-};
-
-export function BookDetailScreen({ route, books }: BookDetailScreenProps) {
-  const { bookId } = route.params;
-  const book = books.find((item) => item.id === bookId);
-
-  if (!book) {
-    return (
-      <View style={styles.container}>
-        <Text style={styles.title}>Book not found.</Text>
-      </View>
-    );
-  }
-
-  return (
-    <View style={styles.container}>
-      <View style={[styles.cover, { backgroundColor: book.coverColor }]}>
-        <Text style={styles.coverText}>{book.title}</Text>
-      </View>
-
-      <Text style={styles.title}>{book.title}</Text>
-      <Text style={styles.author}>{book.author}</Text>
-
-      <View style={styles.infoRow}>
-        <Text style={styles.label}>Current owner</Text>
-        <Text style={styles.value}>{book.currentOwner}</Text>
-      </View>
-      <View style={styles.infoRow}>
-        <Text style={styles.label}>Next stop</Text>
-        <Text style={styles.value}>{book.nextStop}</Text>
-      </View>
-      <View style={styles.infoRow}>
-        <Text style={styles.label}>Tracking</Text>
-        <Text style={styles.value}>{book.trackingNumber ?? 'Pending'}</Text>
-      </View>
-      <View style={styles.infoRow}>
-        <Text style={styles.label}>Notes</Text>
-        <Text style={styles.value}>{book.notesCount}</Text>
-      </View>
-
-      <View style={styles.timelineBox}>
-        <Text style={styles.timelineTitle}>Journey</Text>
-        {book.friends.map((person) => (
-          <View key={person.id} style={styles.timelineItem}>
-            <Text style={styles.timelineDot} />
-            <View>
-              <Text style={styles.timelineName}>{person.name}</Text>
-              <Text style={styles.timelineLocation}>{person.city}, {person.state}</Text>
-            </View>
-            <Text style={styles.timelineStatus}>{person.status}</Text>
-          </View>
-        ))}
-      </View>
-
-      <View style={styles.timelineBox}>
-        <Text style={styles.timelineTitle}>Shipping</Text>
-        <Text style={styles.timelineName}>{book.shipment?.status ?? 'pending'}</Text>
-        <Text style={styles.timelineLocation}>{book.shipment?.trackingNumber ?? 'No tracking yet'}</Text>
-      </View>
-
-      <View style={styles.timelineBox}>
-        <Text style={styles.timelineTitle}>Annotations</Text>
-        {book.annotations.length > 0 ? (
-          book.annotations.map((annotation) => (
-            <View key={annotation.id} style={styles.annotationItem}>
-              <Text style={styles.annotationMeta}>
-                {annotation.friendName} • page {annotation.pageNumber ?? '—'} • {annotation.createdAt}
-              </Text>
-              <Text style={styles.annotationNote}>{annotation.note}</Text>
-            </View>
-          ))
-        ) : (
-          <Text style={styles.timelineLocation}>No notes yet.</Text>
-        )}
-      </View>
-    </View>
-  );
-}
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: theme.colors.background,
-    padding: 20,
+export const booksSeed: Book[] = [
+  {
+    id: 'book-1',
+    title: 'The Secret Life of Bees',
+    author: 'Sue Monk Kidd',
+    coverColor: '#d9a77d',
+    status: 'reading',
+    currentOwner: 'friend-2',
+    nextStop: 'friend-3',
+    lastUpdated: '2 days ago',
+    notesCount: 12,
+    friends: [friends[0], friends[1], friends[2], friends[3]],
   },
-  cover: {
-    width: '100%',
-    height: 180,
-    borderRadius: 24,
-    justifyContent: 'flex-end',
-    padding: 18,
-    marginBottom: 20,
+  {
+    id: 'book-2',
+    title: 'Tomorrow, and Tomorrow, and Tomorrow',
+    author: 'Gabrielle Zevin',
+    coverColor: '#b4b8a9',
+    status: 'in-transit',
+    currentOwner: 'friend-1',
+    nextStop: 'friend-5',
+    lastUpdated: '5 hours ago',
+    notesCount: 7,
+    friends: [friends[4], friends[0], friends[1]],
   },
-  coverText: {
-    color: '#fff',
-    fontSize: 22,
-    fontWeight: '800',
+  {
+    id: 'book-3',
+    title: 'Circe',
+    author: 'Madeline Miller',
+    coverColor: '#c7a6b5',
+    status: 'annotated',
+    currentOwner: 'friend-5',
+    nextStop: 'friend-4',
+    lastUpdated: '1 week ago',
+    notesCount: 23,
+    friends: [friends[2], friends[4], friends[3]],
   },
-  title: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: theme.colors.text,
+  {
+    id: 'book-4',
+    title: 'Piranesi',
+    author: 'Susanna Clarke',
+    coverColor: '#93a7a5',
+    status: 'returned',
+    currentOwner: 'friend-3',
+    nextStop: 'friend-1',
+    lastUpdated: '3 weeks ago',
+    notesCount: 4,
+    friends: [friends[1], friends[3], friends[0]],
   },
-  author: {
-    fontSize: 16,
-    color: theme.colors.muted,
-    marginBottom: 18,
-  },
-  infoRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 12,
-  },
-  label: {
-    color: theme.colors.muted,
-    fontSize: 13,
-  },
-  value: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: theme.colors.text,
-    maxWidth: '60%',
-    textAlign: 'right',
-  },
-  timelineBox: {
-    backgroundColor: theme.colors.card,
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    padding: 18,
-    marginTop: 20,
-  },
-  timelineTitle: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: theme.colors.text,
-    marginBottom: 12,
-  },
-  timelineItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  timelineDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: '#c38e63',
-    marginRight: 12,
-  },
-  timelineName: {
-    color: theme.colors.text,
-    fontWeight: '700',
-  },
-  timelineLocation: {
-    color: theme.colors.muted,
-    fontSize: 12,
-  },
-  timelineStatus: {
-    marginLeft: 'auto',
-    textTransform: 'capitalize',
-    color: theme.colors.accent,
-    fontSize: 10,
-    fontWeight: '700',
-    backgroundColor: theme.colors.soft,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 999,
-  },
-  annotationItem: {
-    marginBottom: 14,
-    paddingBottom: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
-  },
-  annotationMeta: {
-    color: theme.colors.muted,
-    fontSize: 11,
-    marginBottom: 6,
-  },
-  annotationNote: {
-    color: theme.colors.text,
-    lineHeight: 20,
-    fontSize: 14,
-  },
-});
+];
