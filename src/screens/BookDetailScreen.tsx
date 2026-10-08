@@ -1,14 +1,28 @@
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { Book } from '../types';
 import { theme } from '../theme';
+import {
+  citiesVisited,
+  currentOwnerId,
+  daysInCirculation,
+  formatDate,
+  friendNameIn,
+  heldForDays,
+  journey,
+  lastActivityAt,
+  nextStopId,
+  readingQueue,
+  relativeTime,
+} from '../lib/bookState';
 
 type BookDetailScreenProps = {
   route: { params: { bookId: string; bookTitle: string } };
   books: Book[];
+  onPassOn: (bookId: string) => void;
 };
 
-export function BookDetailScreen({ route, books }: BookDetailScreenProps) {
+export function BookDetailScreen({ route, books, onPassOn }: BookDetailScreenProps) {
   const { bookId } = route.params;
   const book = books.find((item) => item.id === bookId);
 
@@ -20,8 +34,10 @@ export function BookDetailScreen({ route, books }: BookDetailScreenProps) {
     );
   }
 
-  const nameFor = (friendId: string) =>
-    book.friends.find((person) => person.id === friendId)?.name ?? 'Unassigned';
+  const ownerId = currentOwnerId(book);
+  const nextId = nextStopId(book);
+  const legs = journey(book).reverse();
+  const queue = readingQueue(book);
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
@@ -32,52 +48,101 @@ export function BookDetailScreen({ route, books }: BookDetailScreenProps) {
       <Text style={styles.title}>{book.title}</Text>
       <Text style={styles.author}>{book.author}</Text>
 
+      <View style={styles.statRow}>
+        <View style={styles.stat}>
+          <Text style={styles.statValue}>{journey(book).length}</Text>
+          <Text style={styles.statLabel}>stops</Text>
+        </View>
+        <View style={styles.stat}>
+          <Text style={styles.statValue}>{citiesVisited(book)}</Text>
+          <Text style={styles.statLabel}>cities</Text>
+        </View>
+        <View style={styles.stat}>
+          <Text style={styles.statValue}>{daysInCirculation(book)}</Text>
+          <Text style={styles.statLabel}>days out</Text>
+        </View>
+      </View>
+
       <View style={styles.infoRow}>
         <Text style={styles.label}>Status</Text>
         <Text style={styles.value}>{book.status.replace('-', ' ')}</Text>
       </View>
       <View style={styles.infoRow}>
         <Text style={styles.label}>Current owner</Text>
-        <Text style={styles.value}>{nameFor(book.currentOwner)}</Text>
+        <Text style={styles.value}>{friendNameIn(book, ownerId)}</Text>
       </View>
       <View style={styles.infoRow}>
         <Text style={styles.label}>Next stop</Text>
-        <Text style={styles.value}>{nameFor(book.nextStop)}</Text>
+        <Text style={styles.value}>
+          {nextId ? friendNameIn(book, nextId) : 'End of the line'}
+        </Text>
       </View>
       <View style={styles.infoRow}>
-        <Text style={styles.label}>Reader notes</Text>
-        <Text style={styles.value}>{book.notesCount}</Text>
-      </View>
-      <View style={styles.infoRow}>
-        <Text style={styles.label}>Last updated</Text>
-        <Text style={styles.value}>{book.lastUpdated}</Text>
+        <Text style={styles.label}>Last activity</Text>
+        <Text style={styles.value}>{relativeTime(lastActivityAt(book))}</Text>
       </View>
 
-      <View style={styles.timelineBox}>
-        <Text style={styles.timelineTitle}>Reading path</Text>
-        <Text style={styles.timelineCaption}>
-          The order this copy travels through the circle.
-        </Text>
-        {book.friends.map((person) => {
-          const isCurrent = person.id === book.currentOwner;
-          const isNext = person.id === book.nextStop;
+      {nextId && (
+        <Pressable style={styles.passButton} onPress={() => onPassOn(book.id)}>
+          <Text style={styles.passButtonText}>
+            Pass on to {friendNameIn(book, nextId)}
+          </Text>
+        </Pressable>
+      )}
+
+      <View style={styles.box}>
+        <Text style={styles.boxTitle}>Reading path</Text>
+        <Text style={styles.boxCaption}>The order this copy travels the circle.</Text>
+        {queue.map((person) => {
+          const isCurrent = person.id === ownerId;
+          const isNext = person.id === nextId;
 
           return (
-            <View key={person.id} style={styles.timelineItem}>
-              <View style={[styles.timelineDot, isCurrent && styles.timelineDotActive]} />
-              <View style={styles.timelinePerson}>
-                <Text style={styles.timelineName}>
+            <View key={person.id} style={styles.pathItem}>
+              <View style={[styles.dot, isCurrent && styles.dotActive]} />
+              <View style={styles.pathPerson}>
+                <Text style={styles.pathName}>
                   {person.name}
                   {isCurrent ? ' · has it now' : isNext ? ' · up next' : ''}
                 </Text>
-                <Text style={styles.timelineLocation}>
+                <Text style={styles.pathLocation}>
                   {person.city}, {person.state}
                 </Text>
               </View>
-              <Text style={styles.timelineStatus}>{person.status}</Text>
+              <Text style={styles.pill}>{person.status}</Text>
             </View>
           );
         })}
+      </View>
+
+      <View style={styles.box}>
+        <Text style={styles.boxTitle}>Travel history</Text>
+        <Text style={styles.boxCaption}>Every leg of the journey, newest first.</Text>
+        {legs.length === 0 ? (
+          <Text style={styles.pathLocation}>This copy has not started travelling yet.</Text>
+        ) : (
+          legs.map((leg, index) => {
+            // `legs` is newest-first, so the held duration comes from the
+            // original chronological ordering.
+            const held = heldForDays(journey(book), legs.length - 1 - index);
+
+            return (
+              <View key={leg.id} style={styles.legItem}>
+                <Text style={styles.legRoute}>
+                  {leg.fromFriend
+                    ? `${friendNameIn(book, leg.fromFriend)} → ${friendNameIn(book, leg.toFriend)}`
+                    : `Entered circulation with ${friendNameIn(book, leg.toFriend)}`}
+                </Text>
+                <Text style={styles.legMeta}>
+                  {formatDate(leg.happenedAt)}
+                  {held === null
+                    ? ' · still reading'
+                    : ` · held ${held} ${held === 1 ? 'day' : 'days'}`}
+                </Text>
+              </View>
+            );
+          })
+        )}
       </View>
     </ScrollView>
   );
@@ -115,6 +180,29 @@ const styles = StyleSheet.create({
     color: theme.colors.muted,
     marginBottom: 18,
   },
+  statRow: {
+    flexDirection: 'row',
+    backgroundColor: theme.colors.card,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: 16,
+    paddingVertical: 14,
+    marginBottom: 18,
+  },
+  stat: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  statValue: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: theme.colors.text,
+  },
+  statLabel: {
+    fontSize: 11,
+    color: theme.colors.muted,
+    marginTop: 2,
+  },
   infoRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -132,7 +220,19 @@ const styles = StyleSheet.create({
     textAlign: 'right',
     textTransform: 'capitalize',
   },
-  timelineBox: {
+  passButton: {
+    marginTop: 10,
+    backgroundColor: theme.colors.accent,
+    borderRadius: 12,
+    paddingVertical: 13,
+    alignItems: 'center',
+  },
+  passButtonText: {
+    color: '#fff',
+    fontWeight: '800',
+    fontSize: 15,
+  },
+  box: {
     backgroundColor: theme.colors.card,
     borderRadius: 18,
     borderWidth: 1,
@@ -140,44 +240,44 @@ const styles = StyleSheet.create({
     padding: 18,
     marginTop: 20,
   },
-  timelineTitle: {
+  boxTitle: {
     fontSize: 18,
     fontWeight: '800',
     color: theme.colors.text,
   },
-  timelineCaption: {
+  boxCaption: {
     color: theme.colors.muted,
     fontSize: 12,
     marginTop: 4,
     marginBottom: 14,
   },
-  timelineItem: {
+  pathItem: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 12,
   },
-  timelineDot: {
+  dot: {
     width: 10,
     height: 10,
     borderRadius: 5,
     backgroundColor: theme.colors.border,
     marginRight: 12,
   },
-  timelineDotActive: {
+  dotActive: {
     backgroundColor: '#c38e63',
   },
-  timelinePerson: {
+  pathPerson: {
     flexShrink: 1,
   },
-  timelineName: {
+  pathName: {
     color: theme.colors.text,
     fontWeight: '700',
   },
-  timelineLocation: {
+  pathLocation: {
     color: theme.colors.muted,
     fontSize: 12,
   },
-  timelineStatus: {
+  pill: {
     marginLeft: 'auto',
     textTransform: 'capitalize',
     color: theme.colors.accent,
@@ -188,5 +288,21 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 999,
     overflow: 'hidden',
+  },
+  legItem: {
+    marginBottom: 14,
+    paddingBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+  },
+  legRoute: {
+    color: theme.colors.text,
+    fontWeight: '700',
+    fontSize: 14,
+  },
+  legMeta: {
+    color: theme.colors.muted,
+    fontSize: 11,
+    marginTop: 4,
   },
 });

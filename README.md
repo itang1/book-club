@@ -16,10 +16,28 @@ This is a **book circulation tracker**, not a shipping app — no tracking numbe
 
 - **Home** — See all books currently in circulation, sorted by status
 - **Book Cards** — Quick view of title, author, current owner, next stop, and status
-- **Book Detail** — The reading path: who has the copy now, who's up next, and the rest of the queue
-- **Friends** — Manage the reading circle (name, location, reading status)
+- **Book Detail** — The reading path, the full travel history, and a "pass it on" action
+- **Friends** — The reading circle, with each person's status derived per book
 - **Add Book** — Introduce a new traveling copy and pick its first reader
-- **Profile** — Lightweight reading stats
+- **Profile** — Your own view: what's in your hands, what's coming to you
+
+## How location works
+
+A book's current location is **not stored**. It is derived from the newest row in
+an append-only `handoffs` log:
+
+```
+handoffs(id, book_id, from_friend, to_friend, happened_at)
+```
+
+Passing a book on appends a leg; it never overwrites the last one. That's what
+makes travel history possible — "this copy has visited 3 cities over 94 days"
+is a query over the log, not a field someone has to maintain. `from_friend` is
+null for the leg that first put a book into circulation.
+
+Reading status lives on the `reading_queue` table, keyed by (book, friend),
+rather than on the friend — the same person can be reading one copy while
+waiting on another.
 
 ## Getting Started
 
@@ -73,7 +91,8 @@ src/
 │   └── mockData.ts            # Sample books and friends
 ├── lib/
 │   ├── supabase.ts            # Supabase client setup
-│   └── bookClubService.ts     # Data layer with mock-data fallback
+│   ├── bookClubService.ts     # Row mappers + data layer with mock fallback
+│   └── bookState.ts           # Derives location/next stop/history from the log
 ├── theme.ts                   # App colors and styling
 └── types.ts                   # TypeScript definitions
 ```
@@ -82,11 +101,22 @@ src/
 
 The app uses Supabase for backend storage. Key tables:
 
-- **books** — book metadata, current owner, next stop, status, note count
-- **friends** — members of the reading circle (name, location, reading status)
-- **book_friends** — the reading queue: the order a book travels through the circle
+- **books** — title, author, cover color, status
+- **friends** — members of the reading circle (name, location, contact)
+- **reading_queue** — the order a book travels, plus each reader's progress
+- **handoffs** — the append-only journey log that current location derives from
 
-Row-level security (RLS) policies enable anyone to view and add data (demo mode).
+There's also a `book_current_location` view for ad-hoc queries, which the app
+recomputes client-side.
+
+Row-level security (RLS) policies enable anyone to view and add data (demo
+mode). `handoffs` is granted insert but deliberately **no** update or delete, so
+history can't be rewritten from the client.
+
+Supabase returns `snake_case`; the app speaks `camelCase`. Every row crosses
+that boundary through an explicit mapper in `src/lib/bookClubService.ts` —
+casting a raw row to `Book` compiles but lies, and the mismatch only shows up at
+runtime.
 
 ### Setup
 
@@ -119,11 +149,11 @@ The app uses a warm, neutral palette designed to feel tactile and thoughtful:
 
 ## Future Ideas
 
-- Push notifications when a book reaches you
-- Shared notes within the app
-- Book reading schedules
+- Real auth, replacing the "I am ___" picker on Profile
+- Push notifications when a book is passed to you
+- Reader notes attached to a handoff leg (margin notes, per stop)
+- A map of everywhere a copy has been
 - Analytics on which books travel the most
-- Export reading circle as a shareable list
 - Integration with Goodreads for book metadata
 
 ## License

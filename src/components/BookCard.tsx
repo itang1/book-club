@@ -1,6 +1,14 @@
 import { StyleSheet, Text, View, Pressable } from 'react-native';
 import { Book } from '../types';
 import { theme } from '../theme';
+import {
+  currentOwnerId,
+  friendNameIn,
+  journey,
+  lastActivityAt,
+  nextStopId,
+  relativeTime,
+} from '../lib/bookState';
 
 type BookCardProps = {
   book: Book;
@@ -8,8 +16,9 @@ type BookCardProps = {
 };
 
 export function BookCard({ book, onPress }: BookCardProps) {
-  const nameFor = (friendId: string) =>
-    book.friends.find((person) => person.id === friendId)?.name ?? 'Unassigned';
+  const ownerId = currentOwnerId(book);
+  const nextId = nextStopId(book);
+  const stops = journey(book).length;
 
   return (
     <Pressable style={styles.card} onPress={() => onPress?.(book)}>
@@ -23,22 +32,24 @@ export function BookCard({ book, onPress }: BookCardProps) {
 
         <View style={styles.metaRow}>
           <Text style={styles.metaLabel}>Current owner</Text>
-          <Text style={styles.metaValue}>{nameFor(book.currentOwner)}</Text>
+          <Text style={styles.metaValue}>{friendNameIn(book, ownerId)}</Text>
         </View>
 
         <View style={styles.metaRow}>
           <Text style={styles.metaLabel}>Next stop</Text>
-          <Text style={styles.metaValue}>{nameFor(book.nextStop)}</Text>
+          <Text style={styles.metaValue}>
+            {nextId ? friendNameIn(book, nextId) : 'End of the line'}
+          </Text>
         </View>
 
         <View style={styles.metaRow}>
-          <Text style={styles.metaLabel}>Notes</Text>
-          <Text style={styles.metaValue}>{book.notesCount}</Text>
+          <Text style={styles.metaLabel}>Stops so far</Text>
+          <Text style={styles.metaValue}>{stops}</Text>
         </View>
 
         <View style={styles.footer}>
           <Text style={styles.status}>{book.status.replace('-', ' ')}</Text>
-          <Text style={styles.updated}>{book.lastUpdated}</Text>
+          <Text style={styles.updated}>{relativeTime(lastActivityAt(book))}</Text>
         </View>
       </View>
     </Pressable>

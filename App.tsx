@@ -6,7 +6,13 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import { Book, Friend, RootStackParamList, RootTabParamList } from './src/types';
 import { booksSeed, friends as friendsSeed } from './src/data/mockData';
-import { createBook, createFriend, getInitialBookClubData } from './src/lib/bookClubService';
+import {
+  createBook,
+  createFriend,
+  fetchBookClubData,
+  recordHandoff,
+} from './src/lib/bookClubService';
+import { currentOwnerId, nextStopId } from './src/lib/bookState';
 import { HomeScreen } from './src/screens/HomeScreen';
 import { FriendsScreen } from './src/screens/FriendsScreen';
 import { AddBookScreen } from './src/screens/AddBookScreen';
@@ -16,7 +22,13 @@ import { BookDetailScreen } from './src/screens/BookDetailScreen';
 const Tab = createBottomTabNavigator<RootTabParamList>();
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
-function HomeStack({ books }: { books: Book[] }) {
+function HomeStack({
+  books,
+  onPassOn,
+}: {
+  books: Book[];
+  onPassOn: (bookId: string) => void;
+}) {
   return (
     <Stack.Navigator>
       <Stack.Screen
@@ -26,7 +38,9 @@ function HomeStack({ books }: { books: Book[] }) {
       />
       <Stack.Screen
         name="BookDetail"
-        children={(props) => <BookDetailScreen {...props} books={books} />}
+        children={(props) => (
+          <BookDetailScreen {...props} books={books} onPassOn={onPassOn} />
+        )}
         options={({ route }) => ({
           title: route.params?.bookTitle ?? 'Book Detail',
         })}
@@ -38,17 +52,21 @@ function HomeStack({ books }: { books: Book[] }) {
 export default function App() {
   const [books, setBooks] = React.useState<Book[]>(booksSeed);
   const [friends, setFriends] = React.useState<Friend[]>(friendsSeed);
+  const [currentUserId, setCurrentUserId] = React.useState<string | null>(
+    friendsSeed[0]?.id ?? null,
+  );
 
   React.useEffect(() => {
     let active = true;
 
-    getInitialBookClubData().then((data) => {
+    fetchBookClubData().then((data) => {
       if (!active) {
         return;
       }
 
       setBooks(data.books);
       setFriends(data.friends);
+      setCurrentUserId((previous) => previous ?? data.friends[0]?.id ?? null);
     });
 
     return () => {
@@ -62,8 +80,58 @@ export default function App() {
   };
 
   const handleAddFriend = (friend: Friend) => {
-    setFriends((currentFriends) => [friend, ...currentFriends]);
+    setFriends((currentFriends) => [...currentFriends, friend]);
     createFriend(friend);
+  };
+
+  /**
+   * Append a leg to the book's journey. History is never rewritten: the new
+   * handoff becomes the newest entry, and location follows from it.
+   */
+  const handlePassOn = (bookId: string) => {
+    const book = books.find((candidate) => candidate.id === bookId);
+    if (!book) {
+      return;
+    }
+
+    const fromFriend = currentOwnerId(book);
+    const toFriend = nextStopId(book);
+    if (!toFriend) {
+      return;
+    }
+
+    const handoff = {
+      id: `handoff-${Date.now()}`,
+      bookId,
+      fromFriend,
+      toFriend,
+      happenedAt: new Date().toISOString(),
+    };
+
+    const nextStatus: Book['status'] = 'in-transit';
+
+    setBooks((currentBooks) =>
+      currentBooks.map((candidate) =>
+        candidate.id === bookId
+          ? {
+              ...candidate,
+              status: nextStatus,
+              handoffs: [...candidate.handoffs, handoff],
+              queue: candidate.queue.map((entry) => {
+                if (entry.id === fromFriend) {
+                  return { ...entry, status: 'done' as const };
+                }
+                if (entry.id === toFriend) {
+                  return { ...entry, status: 'reading' as const };
+                }
+                return entry;
+              }),
+            }
+          : candidate,
+      ),
+    );
+
+    recordHandoff(handoff, nextStatus);
   };
 
   return (
@@ -90,11 +158,11 @@ export default function App() {
       >
         <Tab.Screen
           name="Home"
-          children={() => <HomeStack books={books} />}
+          children={() => <HomeStack books={books} onPassOn={handlePassOn} />}
           options={{ headerShown: false }}
         />
         <Tab.Screen name="Friends">
-          {(props) => <FriendsScreen {...props} friends={friends} />}
+          {(props) => <FriendsScreen {...props} friends={friends} books={books} />}
         </Tab.Screen>
         <Tab.Screen name="AddBook" options={{ title: 'Add Book' }}>
           {(props) => (
@@ -107,7 +175,15 @@ export default function App() {
           )}
         </Tab.Screen>
         <Tab.Screen name="Profile">
-          {(props) => <ProfileScreen {...props} books={books} friends={friends} />}
+          {(props) => (
+            <ProfileScreen
+              {...props}
+              books={books}
+              friends={friends}
+              currentUserId={currentUserId}
+              onChangeUser={setCurrentUserId}
+            />
+          )}
         </Tab.Screen>
       </Tab.Navigator>
     </NavigationContainer>

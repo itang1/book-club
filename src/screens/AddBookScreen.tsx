@@ -36,22 +36,31 @@ export function AddBookScreen({ friends, onAddBook, onAddFriend }: AddBookScreen
 
     // Start the reading queue at the chosen friend, then follow the rest of the circle.
     const startIndex = friends.findIndex((friend) => friend.id === selectedFriend.id);
-    const queue = [...friends.slice(startIndex), ...friends.slice(0, startIndex)];
+    const rotated = [...friends.slice(startIndex), ...friends.slice(0, startIndex)];
+    const bookId = `book-${Date.now()}`;
 
     const newBook: Book = {
-      id: `book-${Date.now()}`,
+      id: bookId,
       title: title.trim(),
       author: author.trim(),
       coverColor: coverPalette[Math.floor(Math.random() * coverPalette.length)],
-      status: 'in-transit',
-      currentOwner: selectedFriend.id,
-      nextStop: queue[1]?.id ?? selectedFriend.id,
-      lastUpdated: 'Just now',
-      notesCount: 0,
-      friends: queue.map((friend, index) => ({
+      status: 'reading',
+      queue: rotated.map((friend, index) => ({
         ...friend,
+        position: index,
         status: index === 0 ? 'reading' : 'waiting',
       })),
+      // Opening the journey log is what puts the book in someone's hands:
+      // current location is derived from this entry.
+      handoffs: [
+        {
+          id: `handoff-${Date.now()}`,
+          bookId,
+          fromFriend: null,
+          toFriend: selectedFriend.id,
+          happenedAt: new Date().toISOString(),
+        },
+      ],
     };
 
     onAddBook(newBook);
@@ -70,7 +79,6 @@ export function AddBookScreen({ friends, onAddBook, onAddFriend }: AddBookScreen
       name: newFriendName.trim(),
       city: newFriendCity.trim(),
       state: newFriendState.trim().toUpperCase() || '—',
-      status: 'waiting',
     };
 
     onAddFriend(friend);
