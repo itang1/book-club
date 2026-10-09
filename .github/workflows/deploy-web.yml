@@ -87,6 +87,8 @@ jobs:
           EXPO_PUBLIC_APP_URL: https://itang1.github.io/book-club
           EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
           EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY }}
+      # Visit counts on the same GoatCounter dashboard as itang1.github.io.
+      - run: sed -i 's|</body>|<script data-goatcounter="https://itang1.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script></body>|' dist/index.html
       # Pages serves 404.html for unknown paths; make that the app too.
       - run: cp dist/index.html dist/404.html
       - uses: actions/upload-pages-artifact@v3
