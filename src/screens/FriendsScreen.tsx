@@ -27,12 +27,10 @@ function activityFor(friend: Friend, books: Book[]) {
     lines.push(`Has ${holding.map((book) => book.title).join(', ')}`);
   }
   if (waiting.length > 0) {
-    lines.push(`Waiting on ${waiting.map((book) => book.title).join(', ')}`);
+    lines.push(`Next in line for ${waiting.map((book) => book.title).join(', ')}`);
   }
 
-  const badge = holding.length > 0 ? 'reading' : waiting.length > 0 ? 'waiting' : 'free';
-
-  return { detail: lines.join(' · ') || 'No books in hand', badge };
+  return lines.join(' · ') || 'No books in hand';
 }
 
 export function FriendsScreen({ friends, books }: FriendsScreenProps) {
@@ -45,25 +43,20 @@ export function FriendsScreen({ friends, books }: FriendsScreenProps) {
         data={friends}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.list}
-        renderItem={({ item }) => {
-          const { detail, badge } = activityFor(item, books);
-
-          return (
-            <View style={styles.friendCard}>
-              <View style={styles.avatar}>
-                <Text style={styles.avatarText}>{item.name.charAt(0)}</Text>
-              </View>
-              <View style={styles.friendInfo}>
-                <Text style={styles.friendName}>{item.name}</Text>
-                <Text style={styles.friendLocation}>
-                  {item.city}, {item.state}
-                </Text>
-                <Text style={styles.friendDetail}>{detail}</Text>
-              </View>
-              <Text style={styles.friendStatus}>{badge}</Text>
+        renderItem={({ item }) => (
+          <View style={styles.friendCard}>
+            <View style={styles.avatar}>
+              <Text style={styles.avatarText}>{item.name.charAt(0)}</Text>
             </View>
-          );
-        }}
+            <View style={styles.friendInfo}>
+              <Text style={styles.friendName}>{item.name}</Text>
+              <Text style={styles.friendLocation}>
+                {item.city}, {item.state}
+              </Text>
+              <Text style={styles.friendDetail}>{activityFor(item, books)}</Text>
+            </View>
+          </View>
+        )}
       />
     </View>
   );
@@ -131,16 +124,5 @@ const styles = StyleSheet.create({
     fontSize: 11,
     marginTop: 4,
     lineHeight: 15,
-  },
-  friendStatus: {
-    textTransform: 'capitalize',
-    color: theme.colors.accent,
-    backgroundColor: theme.colors.soft,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 999,
-    fontSize: 10,
-    fontWeight: '700',
-    overflow: 'hidden',
   },
 });

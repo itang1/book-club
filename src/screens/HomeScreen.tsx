@@ -13,7 +13,6 @@ export function HomeScreen({ navigation, books }: HomeScreenProps) {
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <View style={styles.headerWrap}>
-        <Text style={styles.eyebrow}>Book Club</Text>
         <Text style={styles.title}>Sisterhood of the Traveling Book</Text>
         <Text style={styles.subtitle}>
           Track the books your friends pass around.
@@ -47,14 +46,6 @@ const styles = StyleSheet.create({
   },
   headerWrap: {
     marginBottom: 24,
-  },
-  eyebrow: {
-    fontSize: 12,
-    letterSpacing: 1.2,
-    textTransform: 'uppercase',
-    color: '#7a5c48',
-    fontWeight: '700',
-    marginBottom: 8,
   },
   title: {
     fontSize: 32,

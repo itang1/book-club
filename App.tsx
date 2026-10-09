@@ -64,11 +64,13 @@ function TabIcon({
 
 const tabStyles = StyleSheet.create({
   iconWrap: {
-    width: 46,
-    height: 30,
-    borderRadius: 999,
+    width: 40,
+    height: 26,
+    borderRadius: 13,
     alignItems: 'center',
     justifyContent: 'center',
+    // Keeps the active pill clear of the label underneath.
+    marginBottom: 6,
   },
   iconWrapActive: {
     backgroundColor: '#7a5c48',
@@ -77,14 +79,14 @@ const tabStyles = StyleSheet.create({
     backgroundColor: '#fffdfb',
     borderTopColor: '#eaded3',
     borderTopWidth: 1,
-    height: 88,
-    paddingTop: 8,
+    height: 92,
+    paddingTop: 10,
     paddingBottom: 26,
   },
   label: {
     fontSize: 11,
     fontWeight: '800',
-    marginTop: 2,
+    marginTop: 0,
   },
 });
 
