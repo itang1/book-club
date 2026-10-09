@@ -1,4 +1,14 @@
-import { Image, Linking, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  Image,
+  Linking,
+  Modal,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { theme } from '../theme';
@@ -54,60 +64,99 @@ export function AboutSheet({ visible, onClose }: AboutSheetProps) {
  * The page's body, shared with the one-time agreement screen: the Rules of
  * the Books, the Rules of the Pants taped beside them, and About.
  */
+/** Wide enough for the taped Rules of the Pants to sit beside ours. */
+export const SIDE_BY_SIDE_MIN_WIDTH = 900;
+
+/** The page's width when the note sits beside it, so headings above can line up. */
+export const SIDE_BY_SIDE_WIDTH = 560 + 40 + 360;
+
+/**
+ * On a phone: one column, the Rules of the Pants taped in under ours. On a
+ * computer-sized screen: ours and About on the left, the Pants' rules taped
+ * to the side of the page, so neither pushes the other down.
+ */
 export function AboutContent() {
-  // Capped width so lines stay readable on a computer screen.
-  return (
-    <View style={styles.column}>
-      <Text style={styles.heading}>The Rules of the Books</Text>
-      <View style={styles.card}>
-        {rules.map((rule, index) => (
-          <View key={rule} style={[styles.rule, index > 0 && styles.ruleDivider]}>
-            <Text style={styles.ruleNumber}>{index + 1}</Text>
-            <Text style={styles.ruleText}>{rule}</Text>
-          </View>
-        ))}
-      </View>
+  const { width } = useWindowDimensions();
+  const sideBySide = width >= SIDE_BY_SIDE_MIN_WIDTH;
 
-      {/* Where ours came from. */}
-      <TapedNote />
-
-      <Text style={styles.heading}>{noteTitle}</Text>
-      <View style={styles.card}>
-        <View style={styles.polaroid}>
-          {photo ? (
-            <Image source={photo} style={styles.photo} resizeMode="cover" />
-          ) : (
-            // A bookplate stands in when there's no photo.
-            <View style={[styles.photo, styles.photoPlaceholder]}>
-              <Text style={styles.exLibris}>Ex Libris</Text>
-              <Text style={styles.exLibrisName}>{authorName}</Text>
+  const rulesOfTheBooks = (
+    <>
+        <Text style={styles.heading}>The Rules of the Books</Text>
+        <View style={styles.card}>
+          {rules.map((rule, index) => (
+            <View key={rule} style={[styles.rule, index > 0 && styles.ruleDivider]}>
+              <Text style={styles.ruleNumber}>{index + 1}</Text>
+              <Text style={styles.ruleText}>{rule}</Text>
             </View>
-          )}
-          <Text style={styles.caption}>{photoCaption}</Text>
-          {photo && <Text style={styles.credit}>{photoCredit}</Text>}
+          ))}
         </View>
-
-        {bio.map((paragraph, index) => (
-          <Text key={index} style={styles.bio}>
-            {paragraph.map((run, runIndex) =>
-              typeof run === 'string' ? (
-                run
-              ) : (
-                <Text
-                  key={runIndex}
-                  style={[run.italic && styles.italic, run.href && styles.link]}
-                  onPress={run.href ? () => Linking.openURL(run.href as string) : undefined}
-                  accessibilityRole={run.href ? 'link' : undefined}
-                >
-                  {run.text}
-                </Text>
-              ),
+    </>
+  );
+  const about = (
+    <>
+        <Text style={styles.heading}>{noteTitle}</Text>
+        <View style={styles.card}>
+          <View style={styles.polaroid}>
+            {photo ? (
+              <Image source={photo} style={styles.photo} resizeMode="cover" />
+            ) : (
+              // A bookplate stands in when there's no photo.
+              <View style={[styles.photo, styles.photoPlaceholder]}>
+                <Text style={styles.exLibris}>Ex Libris</Text>
+                <Text style={styles.exLibrisName}>{authorName}</Text>
+              </View>
             )}
-          </Text>
-        ))}
-        <Text style={styles.signature}>— {authorName}</Text>
-      </View>
+            <Text style={styles.caption}>{photoCaption}</Text>
+            {photo && <Text style={styles.credit}>{photoCredit}</Text>}
+          </View>
 
+          {bio.map((paragraph, index) => (
+            <Text key={index} style={styles.bio}>
+              {paragraph.map((run, runIndex) =>
+                typeof run === 'string' ? (
+                  run
+                ) : (
+                  <Text
+                    key={runIndex}
+                    style={[run.italic && styles.italic, run.href && styles.link]}
+                    onPress={run.href ? () => Linking.openURL(run.href as string) : undefined}
+                    accessibilityRole={run.href ? 'link' : undefined}
+                  >
+                    {run.text}
+                  </Text>
+                ),
+              )}
+            </Text>
+          ))}
+          <Text style={styles.signature}>— {authorName}</Text>
+        </View>
+    </>
+  );
+
+  if (!sideBySide) {
+    // Capped width so lines stay readable.
+    return (
+      <View style={styles.column}>
+        {rulesOfTheBooks}
+        {/* Where ours came from. */}
+        <TapedNote />
+        {about}
+        <Text style={styles.homage}>{homage}</Text>
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.wideColumn}>
+      <View style={styles.sideBySide}>
+        <View style={styles.mainColumn}>
+          {rulesOfTheBooks}
+          {about}
+        </View>
+        <View style={styles.sideColumn}>
+          <TapedNote beside />
+        </View>
+      </View>
       <Text style={styles.homage}>{homage}</Text>
     </View>
   );
@@ -149,6 +198,24 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 560,
     alignSelf: 'center',
+  },
+  // Main column at the same reading width, plus the note beside it.
+  wideColumn: {
+    width: '100%',
+    maxWidth: SIDE_BY_SIDE_WIDTH,
+    alignSelf: 'center',
+  },
+  sideBySide: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  mainColumn: {
+    flex: 1,
+    maxWidth: 560,
+  },
+  sideColumn: {
+    width: 360,
+    marginLeft: 40,
   },
   // One heading style for both sections, so they read as equals.
   heading: {

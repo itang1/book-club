@@ -8,10 +8,10 @@ import { pantsCredit, pantsPreamble, pantsRules } from '../content/about';
  * ours: tilted, two strips of tape across the top corners, handwritten.
  * Credited underneath.
  */
-export function TapedNote() {
+export function TapedNote({ beside = false }: { beside?: boolean }) {
   return (
-    <View style={styles.wrap}>
-      <View style={styles.paper}>
+    <View style={[styles.wrap, beside && styles.wrapBeside]}>
+      <View style={[styles.paper, beside && styles.paperBeside]}>
         <View style={[styles.tape, styles.tapeLeft]} />
         <View style={[styles.tape, styles.tapeRight]} />
 
@@ -39,6 +39,14 @@ const styles = StyleSheet.create({
   wrap: {
     alignItems: 'center',
     marginTop: 28,
+  },
+  // Beside the main column on a wide screen: start level with the first
+  // card (below its heading), and fill the side column.
+  wrapBeside: {
+    marginTop: 72,
+  },
+  paperBeside: {
+    width: '100%',
   },
   paper: {
     width: '88%',
