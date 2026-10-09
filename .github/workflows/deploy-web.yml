@@ -1,9 +1,11 @@
-# Builds the web app and publishes it to GitHub Pages on every push to main.
+# On every push to main: applies supabase/schema.sql to the database, then
+# builds the web app and publishes it to GitHub Pages.
 #
 # One-time setup in the repo on GitHub:
 #   Settings → Pages → Source: "GitHub Actions"
 #   Settings → Secrets and variables → Actions → Secrets:
 #     EXPO_PUBLIC_SUPABASE_URL, EXPO_PUBLIC_SUPABASE_ANON_KEY
+#     SUPABASE_DB_URL  (optional; enables the schema sync, see below)
 #
 # Both values end up inside the published JavaScript, as all EXPO_PUBLIC_
 # values do; storing them as secrets only keeps them out of the build logs.
@@ -25,7 +27,33 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # schema.sql is written to be re-runnable, so applying it on every push is
+  # safe, and it keeps the database in step with the app that's about to ship.
+  # One transaction: if any statement fails, nothing changes and the deploy
+  # below doesn't run.
+  #
+  # SUPABASE_DB_URL is the "Session pooler" connection string from the
+  # Supabase dashboard (Connect button), with your database password filled in.
+  # The session pooler matters: GitHub's runners can't reach the direct
+  # connection, which is IPv6 only. Unlike the anon key, this is a real
+  # secret: it can do anything to the database, so it lives only here and
+  # never in an EXPO_PUBLIC_ variable.
+  schema:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply supabase/schema.sql
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          if [ -z "$SUPABASE_DB_URL" ]; then
+            echo "::notice::SUPABASE_DB_URL isn't set, so the schema wasn't synced. Run supabase/schema.sql by hand if it changed."
+            exit 0
+          fi
+          psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 --single-transaction --quiet -f supabase/schema.sql
+
   build:
+    needs: schema
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

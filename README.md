@@ -196,7 +196,17 @@ Every push to `main` builds the web app and publishes it to GitHub Pages
 2. **Settings → Secrets and variables → Actions:** add
    `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_ANON_KEY`. Leave them
    out to publish the fictional demo group instead.
-3. Push, or run the workflow from the Actions tab.
+3. Optional but recommended: add `SUPABASE_DB_URL`, the **Session pooler**
+   connection string from Supabase's **Connect** button with your database
+   password filled in. With it, every push applies `supabase/schema.sql` to the
+   database before the site builds, so you never paste SQL into the dashboard.
+   It runs in one transaction; if it fails, nothing changes and the site isn't
+   redeployed. This one is a real secret (full database access), so it lives
+   only in GitHub, never in an `EXPO_PUBLIC_` variable.
+4. Push, or run the workflow from the Actions tab.
+
+Seed files (`seed.example.sql`, `seed.local.sql`) and
+`policies-authenticated.sql` are never run automatically.
 
 The site lands at https://itang1.github.io/book-club. The workflow sets
 `EXPO_BASE_URL=/book-club` so asset paths resolve under the repo subpath

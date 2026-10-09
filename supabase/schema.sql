@@ -228,3 +228,9 @@ create policy "handoffs are viewable by everyone"
 drop policy if exists "anyone can record a handoff" on public.handoffs;
 create policy "anyone can record a handoff"
   on public.handoffs for insert with check (true);
+
+-- ---------------------------------------------------------------
+-- Tell the API about any new tables or columns straight away, rather than
+-- waiting for it to notice ("not in the schema cache" errors otherwise).
+-- ---------------------------------------------------------------
+notify pgrst, 'reload schema';
