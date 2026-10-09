@@ -13,8 +13,6 @@ type FriendRow = {
   name: string;
   city: string;
   state: string;
-  address: string | null;
-  email: string | null;
   user_id: string | null;
   agreed_rules_at: string | null;
 };
@@ -80,8 +78,6 @@ function toFriend(row: FriendRow): Friend {
     name: row.name,
     city: row.city,
     state: row.state,
-    address: row.address ?? undefined,
-    email: row.email ?? undefined,
     userId: row.user_id ?? undefined,
     agreedRulesAt: row.agreed_rules_at ?? undefined,
   };
@@ -93,8 +89,6 @@ function fromFriend(friend: Friend): FriendRow {
     name: friend.name,
     city: friend.city,
     state: friend.state,
-    address: friend.address ?? null,
-    email: friend.email ?? null,
     user_id: friend.userId ?? null,
     agreed_rules_at: friend.agreedRulesAt ?? null,
   };

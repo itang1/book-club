@@ -72,6 +72,9 @@ export function useBookClub() {
     write.then((reason) => {
       if (reason) {
         setSaveProblem({ action, reason: explain(reason) });
+        // The screen already shows the change; reload so it shows what was
+        // actually saved instead.
+        fetchBookClubData().then(applyData);
       }
     });
   };

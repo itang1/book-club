@@ -15,28 +15,24 @@ export const friends: Friend[] = [
     name: 'Lena Kaligaris',
     city: 'Santorini',
     state: 'Greece',
-    email: 'lena@example.com',
   },
   {
     id: 'friend-tibby',
     name: 'Tibby Rollins',
     city: 'Bethesda',
     state: 'MD',
-    email: 'tibby@example.com',
   },
   {
     id: 'friend-carmen',
     name: 'Carmen Lowell',
     city: 'Charleston',
     state: 'SC',
-    email: 'carmen@example.com',
   },
   {
     id: 'friend-bridget',
     name: 'Bridget Vreeland',
     city: 'Baja California',
     state: 'Mexico',
-    email: 'bridget@example.com',
   },
 ];
 

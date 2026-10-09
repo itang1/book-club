@@ -55,8 +55,6 @@ create table if not exists public.friends (
   name text not null,
   city text not null,
   state text not null,
-  address text,
-  email text,
   created_at timestamptz not null default now()
 );
 
@@ -111,6 +109,11 @@ alter table public.handoffs add column if not exists rating smallint
 -- ---------------------------------------------------------------
 alter table public.friends add column if not exists user_id uuid unique
   references auth.users (id) on delete set null;
+
+-- Never used, and readable by every member: dropped rather than left
+-- around to be filled in by mistake. Email lives in auth.users.
+alter table public.friends drop column if exists address;
+alter table public.friends drop column if exists email;
 
 -- When this person agreed to the Rules of the Books: the one screen everyone
 -- sees once, after joining. Null until they do. Set through "edit your own

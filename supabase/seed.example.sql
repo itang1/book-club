@@ -15,11 +15,11 @@
 -- ('Greece', 'Mexico'), which is why it is plain text rather than a
 -- two-letter code.
 
-insert into public.friends (id, name, city, state, email) values
-  ('friend-lena',    'Lena Kaligaris',   'Santorini',       'Greece', 'lena@example.com'),
-  ('friend-tibby',   'Tibby Rollins',    'Bethesda',        'MD',     'tibby@example.com'),
-  ('friend-carmen',  'Carmen Lowell',    'Charleston',      'SC',     'carmen@example.com'),
-  ('friend-bridget', 'Bridget Vreeland', 'Baja California', 'Mexico', 'bridget@example.com')
+insert into public.friends (id, name, city, state) values
+  ('friend-lena',    'Lena Kaligaris',   'Santorini',       'Greece'),
+  ('friend-tibby',   'Tibby Rollins',    'Bethesda',        'MD'),
+  ('friend-carmen',  'Carmen Lowell',    'Charleston',      'SC'),
+  ('friend-bridget', 'Bridget Vreeland', 'Baja California', 'Mexico')
 on conflict (id) do nothing;
 
 insert into public.books (id, title, author, cover_color) values

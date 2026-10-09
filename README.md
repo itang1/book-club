@@ -24,6 +24,8 @@ A book's location is never stored. It's the newest row of an append-only
 npm install
 npm start      # your Supabase project (.env); sign in by emailed link
 npm run demo   # the fictional demo group, with a DEV MODE bar to switch people
+npm test       # the rules: who has it, who's next, what's sealed
+npm run typecheck
 ```
 
 `.env` needs `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_ANON_KEY`
