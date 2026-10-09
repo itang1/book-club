@@ -110,6 +110,28 @@ export function hasLetter(leg: Handoff): boolean {
   return Boolean(leg.note?.trim() || leg.rating);
 }
 
+/** The newest legs across every book, for the "Recently" feed. */
+export function recentActivity(books: Book[], limit: number): { book: Book; leg: Handoff }[] {
+  return books
+    .flatMap((book) => book.handoffs.map((leg) => ({ book, leg })))
+    .sort((a, b) => Date.parse(b.leg.happenedAt) - Date.parse(a.leg.happenedAt))
+    .slice(0, limit);
+}
+
+/** One leg as a sentence: "Carmen passed Circe to Lena". First names only. */
+export function describeLeg(book: Book, leg: Handoff): string {
+  const first = (id: string | null) => friendNameIn(book, id).split(' ')[0];
+
+  if (!leg.fromFriend) {
+    return `${first(leg.toFriend)} put ${book.title} into circulation`;
+  }
+  if (leg.toFriend === copyOwnerId(book)) {
+    return `${book.title} went home to ${first(leg.toFriend)}`;
+  }
+
+  return `${first(leg.fromFriend)} passed ${book.title} to ${first(leg.toFriend)}`;
+}
+
 export function friendNameIn(book: Book, friendId: string | null): string {
   if (!friendId) {
     return 'Unassigned';

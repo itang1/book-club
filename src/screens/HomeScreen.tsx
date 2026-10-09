@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Book, RootStackParamList } from '../types';
 import { BookCard } from '../components/BookCard';
-import { holderId } from '../lib/bookState';
+import { describeLeg, hasLetter, holderId, recentActivity, relativeTime } from '../lib/bookState';
 import { theme } from '../theme';
 
 type HomeScreenProps = {
@@ -19,6 +19,7 @@ export function HomeScreen({ navigation, books, currentUserId }: HomeScreenProps
   // What's in your hands comes first: that's the one thing you can act on.
   const mine = books.filter((book) => currentUserId !== null && holderId(book) === currentUserId);
   const others = books.filter((book) => !mine.includes(book));
+  const recent = recentActivity(books, 4);
 
   const open = (book: Book) =>
     navigation.navigate('BookDetail', { bookId: book.id, bookTitle: book.title });
@@ -52,6 +53,23 @@ export function HomeScreen({ navigation, books, currentUserId }: HomeScreenProps
             <BookCard key={book.id} book={book} currentUserId={currentUserId} onPress={open} />
           ))}
         </>
+      )}
+
+      {/* Derived entirely from the handoff log; there's no separate feed. */}
+      {recent.length > 0 && (
+        <View style={styles.feed}>
+          <Text style={styles.feedTitle}>Recently</Text>
+          {recent.map(({ book, leg }) => (
+            <Pressable key={leg.id} style={styles.feedRow} onPress={() => open(book)}>
+              <View style={[styles.feedSwatch, { backgroundColor: book.coverColor }]} />
+              <Text style={styles.feedText} numberOfLines={2}>
+                {describeLeg(book, leg)}
+                {hasLetter(leg) ? ' · left a letter' : ''}
+              </Text>
+              <Text style={styles.feedTime}>{relativeTime(leg.happenedAt)}</Text>
+            </Pressable>
+          ))}
+        </View>
       )}
 
       <View style={styles.sectionHeader}>
@@ -134,6 +152,46 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: theme.colors.accent,
     fontWeight: '600',
+  },
+  feed: {
+    backgroundColor: theme.colors.card,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: 16,
+    paddingHorizontal: 14,
+    paddingTop: 12,
+    paddingBottom: 4,
+    marginBottom: 20,
+  },
+  feedTitle: {
+    fontSize: 12,
+    color: theme.colors.muted,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    fontWeight: '700',
+    marginBottom: 8,
+  },
+  feedRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  feedSwatch: {
+    width: 10,
+    height: 14,
+    borderRadius: 2,
+    marginRight: 10,
+  },
+  feedText: {
+    flex: 1,
+    fontSize: 13,
+    lineHeight: 18,
+    color: theme.colors.text,
+  },
+  feedTime: {
+    fontSize: 11,
+    color: theme.colors.muted,
+    marginLeft: 8,
   },
   empty: {
     color: theme.colors.muted,
