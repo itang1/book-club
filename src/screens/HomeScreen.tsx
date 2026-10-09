@@ -56,7 +56,7 @@ export function HomeScreen({
           accessibilityRole="button"
         >
           <Ionicons name="add" size={18} color={theme.colors.onAccent} />
-          <Text style={styles.addButtonText}>Lend a book</Text>
+          <Text style={styles.addButtonText}>Lend a new book</Text>
         </Pressable>
       </View>
 

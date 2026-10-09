@@ -10,6 +10,7 @@ import {
   joinLine,
   leaveLine,
   recordHandoff,
+  SaveError,
 } from './bookClubService';
 import { hasFinished, holderId } from './bookState';
 import { isDevMode } from './devMode';
@@ -17,6 +18,21 @@ import { clearReaderId, loadReaderId, saveReaderId } from './identity';
 import { isSupabaseConfigured } from './supabase';
 
 export type NewProfile = { name: string; city: string; region: string };
+
+export type SaveProblem = { action: string; reason: string };
+
+/**
+ * Turn the most likely failure into something you can act on. "Not in the
+ * schema cache" means the app expects a table or column the database doesn't
+ * have yet: the schema has moved on and schema.sql needs re-running.
+ */
+function explain(reason: string): string {
+  if (/schema cache|does not exist/i.test(reason)) {
+    return `The database is behind the app (${reason}). Re-run supabase/schema.sql in the Supabase SQL editor.`;
+  }
+
+  return reason;
+}
 
 /**
  * All of the club's state and every change to it, in one place. Screens get
@@ -88,14 +104,14 @@ export function useBookClub() {
   };
 
   /**
-   * Writes are optimistic. If one doesn't reach the database, say so rather
-   * than let the screen and the stored data quietly disagree.
+   * Writes are optimistic. If one doesn't reach the database, say which one
+   * and why, rather than let the screen and the stored data quietly disagree.
    */
-  const [syncFailed, setSyncFailed] = React.useState(false);
-  const track = (write: Promise<boolean>) => {
-    write.then((ok) => {
-      if (!ok) {
-        setSyncFailed(true);
+  const [saveProblem, setSaveProblem] = React.useState<SaveProblem | null>(null);
+  const track = (action: string, write: Promise<SaveError>) => {
+    write.then((reason) => {
+      if (reason) {
+        setSaveProblem({ action, reason: explain(reason) });
       }
     });
   };
@@ -108,7 +124,7 @@ export function useBookClub() {
 
   const handleAddBook = (book: Book) => {
     setBooks((currentBooks) => [book, ...currentBooks]);
-    track(createBook(book));
+    track(`add ${book.title}`, createBook(book));
   };
 
   /**
@@ -136,7 +152,10 @@ export function useBookClub() {
         { ...me, position, status: 'waiting' },
       ],
     }));
-    track(joinLine({ book_id: bookId, friend_id: me.id, position, status: 'waiting' }));
+    track(
+      `sign you up for ${book.title}`,
+      joinLine({ book_id: bookId, friend_id: me.id, position, status: 'waiting' }),
+    );
   };
 
   const handleLeaveLine = (bookId: string) => {
@@ -155,7 +174,10 @@ export function useBookClub() {
         return readBefore ? [{ ...entry, status: 'done' as const }] : [];
       }),
     }));
-    track(leaveLine(bookId, currentUserId, readBefore));
+    track(
+      `take you out of the line for ${book.title}`,
+      leaveLine(bookId, currentUserId, readBefore),
+    );
   };
 
   /**
@@ -195,7 +217,7 @@ export function useBookClub() {
       }),
     }));
 
-    track(recordHandoff(handoff));
+    track(`pass ${book.title} on`, recordHandoff(handoff));
   };
 
   const addFriend = (otherId: string) => {
@@ -204,8 +226,9 @@ export function useBookClub() {
     }
 
     const pair: Friendship = [currentUserId, otherId];
+    const name = members.find((person) => person.id === otherId)?.name ?? 'them';
     setFriendships((current) => [...current, pair]);
-    track(createFriendship(pair));
+    track(`add ${name} as a friend`, createFriendship(pair));
   };
 
   /**
@@ -224,16 +247,16 @@ export function useBookClub() {
     setMembers((current) => [...current, person]);
     chooseReader(person.id);
 
-    const write = createFriend(person).then((ok) => {
-      if (!ok || !invitedBy || !members.some((member) => member.id === invitedBy)) {
-        return ok;
+    const write = createFriend(person).then((reason) => {
+      if (reason || !invitedBy || !members.some((member) => member.id === invitedBy)) {
+        return reason;
       }
 
       const pair: Friendship = [person.id, invitedBy];
       setFriendships((current) => [...current, pair]);
       return createFriendship(pair);
     });
-    track(write);
+    track('create your profile', write);
   };
 
   return {
@@ -243,8 +266,8 @@ export function useBookClub() {
     members,
     friendships,
     currentUserId,
-    syncFailed,
-    dismissSyncError: () => setSyncFailed(false),
+    saveProblem,
+    dismissSaveProblem: () => setSaveProblem(null),
     refresh,
     chooseReader,
     signOut,

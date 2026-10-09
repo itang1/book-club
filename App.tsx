@@ -80,10 +80,22 @@ const tabStyles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 14,
   },
+  bannerTitle: {
+    color: theme.colors.card,
+    fontSize: 14,
+    fontWeight: '700',
+    marginBottom: 2,
+  },
   bannerText: {
     color: theme.colors.card,
     fontSize: 13,
     lineHeight: 18,
+  },
+  bannerHint: {
+    color: theme.colors.card,
+    opacity: 0.75,
+    fontSize: 11,
+    marginTop: 6,
   },
   loading: {
     flex: 1,
@@ -159,7 +171,7 @@ function HomeStack({ club }: { club: BookClub }) {
       </Stack.Screen>
       {/* Adding a book is occasional, so it lives behind the + on Home rather
           than taking a permanent tab. */}
-      <Stack.Screen name="AddBook" options={{ title: 'Lend a book' }}>
+      <Stack.Screen name="AddBook" options={{ title: 'Lend a new book' }}>
         {(props) => <AddBookScreen {...props} owner={me} onAddBook={club.addBook} />}
       </Stack.Screen>
     </Stack.Navigator>
@@ -250,10 +262,12 @@ function Root() {
       <SafeAreaInsetsContext.Provider value={isDevMode ? { ...insets, top: 0 } : insets}>
         <View style={tabStyles.root}>{body}</View>
       </SafeAreaInsetsContext.Provider>
-      {club.syncFailed && (
-        <Pressable style={tabStyles.banner} onPress={club.dismissSyncError}>
-          <Text style={tabStyles.bannerText}>
-            A change didn't save. It shows here but may be gone next time. Tap to dismiss.
+      {club.saveProblem && (
+        <Pressable style={tabStyles.banner} onPress={club.dismissSaveProblem}>
+          <Text style={tabStyles.bannerTitle}>Couldn't {club.saveProblem.action}.</Text>
+          <Text style={tabStyles.bannerText}>{club.saveProblem.reason}</Text>
+          <Text style={tabStyles.bannerHint}>
+            It shows here for now but won't be there next time. Tap to dismiss.
           </Text>
         </Pressable>
       )}

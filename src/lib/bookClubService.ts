@@ -211,21 +211,26 @@ export async function fetchBookClubData(): Promise<BookClubData> {
 
 /**
  * Writes are optimistic: the screen updates first, then these run. Each one
- * resolves to whether it reached the database, so the app can say so instead
- * of quietly drifting from what's stored. With no backend configured there is
- * nothing to fail, so they resolve true.
+ * resolves to null when it reached the database, or to the reason it didn't,
+ * so the app can say what went wrong instead of quietly drifting from what's
+ * stored. With no backend configured there is nothing to fail.
  */
+export type SaveError = string | null;
 
-export async function createBook(book: Book): Promise<boolean> {
+function describe(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
+export async function createBook(book: Book): Promise<SaveError> {
   if (!supabase) {
-    return true;
+    return null;
   }
 
   try {
     const { error } = await supabase.from('books').insert([fromBook(book)]);
     if (error) {
       console.warn('Supabase createBook failed:', error.message);
-      return false;
+      return error.message;
     }
 
     const queue = queueRowsFor(book);
@@ -233,7 +238,7 @@ export async function createBook(book: Book): Promise<boolean> {
       const { error: queueError } = await supabase.from('reading_queue').insert(queue);
       if (queueError) {
         console.warn('Supabase queue insert failed:', queueError.message);
-        return false;
+        return queueError.message;
       }
     }
 
@@ -243,40 +248,40 @@ export async function createBook(book: Book): Promise<boolean> {
         .insert(book.handoffs.map(fromHandoff));
       if (handoffError) {
         console.warn('Supabase handoff insert failed:', handoffError.message);
-        return false;
+        return handoffError.message;
       }
     }
 
-    return true;
+    return null;
   } catch (error) {
     console.warn('Create book error:', error);
-    return false;
+    return describe(error);
   }
 }
 
-export async function createFriend(friend: Friend): Promise<boolean> {
+export async function createFriend(friend: Friend): Promise<SaveError> {
   if (!supabase) {
-    return true;
+    return null;
   }
 
   try {
     const { error } = await supabase.from('friends').insert([fromFriend(friend)]);
     if (error) {
       console.warn('Supabase createFriend failed:', error.message);
-      return false;
+      return error.message;
     }
 
-    return true;
+    return null;
   } catch (error) {
     console.warn('Create friend error:', error);
-    return false;
+    return describe(error);
   }
 }
 
 /** Befriend two people, both ways. Stored smaller id first; see schema.sql. */
-export async function createFriendship([a, b]: Friendship): Promise<boolean> {
+export async function createFriendship([a, b]: Friendship): Promise<SaveError> {
   if (!supabase) {
-    return true;
+    return null;
   }
 
   try {
@@ -288,13 +293,13 @@ export async function createFriendship([a, b]: Friendship): Promise<boolean> {
       .upsert([row], { ignoreDuplicates: true });
     if (error) {
       console.warn('Supabase createFriendship failed:', error.message);
-      return false;
+      return error.message;
     }
 
-    return true;
+    return null;
   } catch (error) {
     console.warn('Create friendship error:', error);
-    return false;
+    return describe(error);
   }
 }
 
@@ -303,9 +308,9 @@ export async function createFriendship([a, b]: Friendship): Promise<boolean> {
  * past reader signing up again reuses their row: it goes back to "waiting"
  * with a new position. Their earlier read is still in the handoff log.
  */
-export async function joinLine(entry: QueueRow): Promise<boolean> {
+export async function joinLine(entry: QueueRow): Promise<SaveError> {
   if (!supabase) {
-    return true;
+    return null;
   }
 
   try {
@@ -314,13 +319,13 @@ export async function joinLine(entry: QueueRow): Promise<boolean> {
       .upsert([entry], { onConflict: 'book_id,friend_id' });
     if (error) {
       console.warn('Supabase joinLine failed:', error.message);
-      return false;
+      return error.message;
     }
 
-    return true;
+    return null;
   } catch (error) {
     console.warn('Join line error:', error);
-    return false;
+    return describe(error);
   }
 }
 
@@ -333,9 +338,9 @@ export async function leaveLine(
   bookId: string,
   friendId: string,
   readBefore: boolean,
-): Promise<boolean> {
+): Promise<SaveError> {
   if (!supabase) {
-    return true;
+    return null;
   }
 
   try {
@@ -349,13 +354,13 @@ export async function leaveLine(
       .eq('status', 'waiting');
     if (error) {
       console.warn('Supabase leaveLine failed:', error.message);
-      return false;
+      return error.message;
     }
 
-    return true;
+    return null;
   } catch (error) {
     console.warn('Leave line error:', error);
-    return false;
+    return describe(error);
   }
 }
 
@@ -367,16 +372,16 @@ export async function leaveLine(
  * Only a *waiting* recipient becomes "reading": a copy going home to an owner
  * who already read it leaves their "done" alone.
  */
-export async function recordHandoff(handoff: Handoff): Promise<boolean> {
+export async function recordHandoff(handoff: Handoff): Promise<SaveError> {
   if (!supabase) {
-    return true;
+    return null;
   }
 
   try {
     const { error } = await supabase.from('handoffs').insert([fromHandoff(handoff)]);
     if (error) {
       console.warn('Supabase recordHandoff failed:', error.message);
-      return false;
+      return error.message;
     }
 
     if (handoff.fromFriend) {
@@ -387,7 +392,7 @@ export async function recordHandoff(handoff: Handoff): Promise<boolean> {
         .eq('friend_id', handoff.fromFriend);
       if (fromError) {
         console.warn('Supabase queue update failed:', fromError.message);
-        return false;
+        return fromError.message;
       }
     }
 
@@ -399,12 +404,12 @@ export async function recordHandoff(handoff: Handoff): Promise<boolean> {
       .eq('status', 'waiting');
     if (toError) {
       console.warn('Supabase queue update failed:', toError.message);
-      return false;
+      return toError.message;
     }
 
-    return true;
+    return null;
   } catch (error) {
     console.warn('Record handoff error:', error);
-    return false;
+    return describe(error);
   }
 }

@@ -216,10 +216,15 @@ export function BookDetailScreen({
                     {person.city}, {person.state}
                   </Text>
                 </View>
+                {/* The holder is reading, whatever their row says: the log
+                    decides where the book is, and a stale status shouldn't
+                    contradict it. */}
                 <Text style={styles.pill}>
-                  {person.status === 'waiting' && hasFinished(book, person.id)
-                    ? 'rereading'
-                    : person.status}
+                  {isCurrent
+                    ? 'reading'
+                    : person.status === 'waiting' && hasFinished(book, person.id)
+                      ? 'rereading'
+                      : person.status}
                 </Text>
               </View>
             );
