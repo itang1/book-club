@@ -88,3 +88,14 @@ on conflict (id) do nothing;
 insert into public.group_members (group_id, person_id)
 select 'group-pants', id from public.friends
 on conflict do nothing;
+
+-- Covers from Open Library.
+update public.books b set cover_url = 'https://covers.openlibrary.org/b/id/' || c.cover_id || '-M.jpg'
+from (values
+  ('sample-pride',  '14348537'),
+  ('sample-room',   '1748132'),
+  ('sample-little', '8775559'),
+  ('sample-anne',   '14641084'),
+  ('sample-eyre',   '8235363')
+) as c(book_id, cover_id)
+where b.id = c.book_id and b.cover_url is null;

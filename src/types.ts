@@ -104,6 +104,8 @@ export type Book = {
   giftedBy?: string;
   /** The group it's lent within. */
   groupId?: string;
+  /** A cover image from Open Library; without one, the colour swatch. */
+  coverUrl?: string;
   queue: ReadingQueueEntry[];
   handoffs: Handoff[];
 };

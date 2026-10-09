@@ -1,5 +1,15 @@
 import { useState } from 'react';
-import { Modal, Pressable, ScrollView, Share, StyleSheet, Text, TextInput, View } from 'react-native';
+import {
+  Image,
+  Modal,
+  Pressable,
+  ScrollView,
+  Share,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import { Book, Group, Letter } from '../types';
@@ -35,6 +45,7 @@ type BookDetailScreenProps = {
   currentUserId: string | null;
   onHandOff: (bookId: string, toFriend: string, letter: Letter) => void;
   onMarkReceived: (bookId: string) => void;
+  onChangeCover: (bookId: string, mode: 'find' | 'clear') => void;
   onJoinLine: (bookId: string) => void;
   onLeaveLine: (bookId: string) => void;
 };
@@ -46,6 +57,7 @@ export function BookDetailScreen({
   currentUserId,
   onHandOff,
   onMarkReceived,
+  onChangeCover,
   onJoinLine,
   onLeaveLine,
 }: BookDetailScreenProps) {
@@ -209,16 +221,28 @@ export function BookDetailScreen({
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
         {/* Stands in for cover art: a colour swatch derived from the title,
             carrying title and author the way a real jacket would. */}
-        <View style={[styles.cover, { backgroundColor: book.coverColor }]}>
+        <View
+          style={[styles.cover, { backgroundColor: book.coverColor }, book.coverUrl && styles.coverWithImage]}
+        >
           <View style={styles.coverSpine} />
-          <Text style={styles.coverTitle}>{book.title}</Text>
-          <Text style={styles.coverAuthor}>{book.author}</Text>
-          {book.giftedBy ? (
-            <View style={styles.gift}>
-              <Ionicons name="gift-outline" size={13} color={theme.colors.coverInk} />
-              <Text style={styles.giftText}>A gift from {book.giftedBy}</Text>
-            </View>
+          {book.coverUrl ? (
+            <Image
+              source={{ uri: book.coverUrl }}
+              style={styles.coverImage}
+              resizeMode="cover"
+              accessibilityIgnoresInvertColors
+            />
           ) : null}
+          <View style={book.coverUrl ? styles.coverTextBeside : undefined}>
+            <Text style={styles.coverTitle}>{book.title}</Text>
+            <Text style={styles.coverAuthor}>{book.author}</Text>
+            {book.giftedBy ? (
+              <View style={styles.gift}>
+                <Ionicons name="gift-outline" size={13} color={theme.colors.coverInk} />
+                <Text style={styles.giftText}>A gift from {book.giftedBy}</Text>
+              </View>
+            ) : null}
+          </View>
         </View>
         {/* This copy's own address: for a message, or an NFC sticker. */}
         <Pressable
@@ -236,6 +260,17 @@ export function BookDetailScreen({
           <Ionicons name="link-outline" size={14} color={theme.colors.accent} />
           <Text style={styles.shareLinkText}>Share link</Text>
         </Pressable>
+        {/* The owner can fetch a cover, or go back to the colour if it's wrong. */}
+        {currentUserId !== null && currentUserId === owner && !isSample && (
+          <Pressable
+            style={styles.coverAction}
+            onPress={() => onChangeCover(book.id, book.coverUrl ? 'clear' : 'find')}
+          >
+            <Text style={styles.coverActionText}>
+              {book.coverUrl ? 'Wrong cover? Use the colour instead' : 'Find the cover'}
+            </Text>
+          </Pressable>
+        )}
         {shownLink && (
           <Text style={styles.shownLink} selectable>
             {shownLink}
@@ -453,6 +488,29 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
     fontSize: 13,
     color: theme.colors.coverInk,
+  },
+  coverWithImage: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+  },
+  coverImage: {
+    width: 96,
+    height: 144,
+    borderRadius: 4,
+    marginRight: 16,
+  },
+  coverTextBeside: {
+    flex: 1,
+  },
+  coverAction: {
+    alignSelf: 'flex-end',
+    marginTop: -10,
+    marginBottom: 10,
+  },
+  coverActionText: {
+    color: theme.colors.muted,
+    fontSize: 12,
+    textDecorationLine: 'underline',
   },
   shareLink: {
     flexDirection: 'row',

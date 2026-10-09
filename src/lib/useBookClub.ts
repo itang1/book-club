@@ -16,6 +16,7 @@ import {
   leaveLine,
   removeFriendship,
   requestFriend,
+  setCover,
   markReceived,
   recordHandoff,
   updateEmailPrefs,
@@ -25,6 +26,7 @@ import {
 } from './bookClubService';
 import type { BookClubData } from './bookClubService';
 import { claimProfile, onSessionChange, signOutEverywhere } from './auth';
+import { findCoverUrl } from './covers';
 import { hasFinished, holderId } from './bookState';
 import { isDevMode } from './devMode';
 import { clearReaderId, loadReaderId, saveReaderId } from './identity';
@@ -230,7 +232,40 @@ export function useBookClub() {
 
   const handleAddBook = (book: Book) => {
     setBooks((currentBooks) => [book, ...currentBooks]);
-    track(`add ${book.title}`, createBook(book));
+    // Lend straight away; find the cover alongside and add it once both
+    // are done, so a slow lookup never holds up lending.
+    const cover = findCoverUrl(book.title, book.author);
+    track(
+      `add ${book.title}`,
+      createBook(book).then(async (reason) => {
+        const url = await cover;
+        if (reason || !url) {
+          return reason;
+        }
+        updateBook(book.id, (candidate) => ({ ...candidate, coverUrl: url }));
+        return setCover(book.id, url);
+      }),
+    );
+  };
+
+  /** Owner only: find a cover now, or go back to the colour swatch. */
+  const handleChangeCover = async (bookId: string, mode: 'find' | 'clear') => {
+    const book = books.find((candidate) => candidate.id === bookId);
+    if (!book) {
+      return;
+    }
+
+    const url = mode === 'find' ? await findCoverUrl(book.title, book.author) : null;
+    if (mode === 'find' && !url) {
+      setSaveProblem({
+        action: `find a cover for ${book.title}`,
+        reason: "Open Library doesn't have one for this title and author.",
+      });
+      return;
+    }
+
+    updateBook(bookId, (candidate) => ({ ...candidate, coverUrl: url ?? undefined }));
+    track(mode === 'find' ? 'add the cover' : 'remove the cover', setCover(bookId, url));
   };
 
   /**
@@ -563,6 +598,7 @@ export function useBookClub() {
     joinGroup: handleJoinGroup,
     leaveGroup: handleLeaveGroup,
     addBook: handleAddBook,
+    changeCover: handleChangeCover,
     joinLine: handleJoinLine,
     markReceived: handleMarkReceived,
     updateProfile: handleUpdateProfile,

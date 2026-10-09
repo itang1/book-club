@@ -49,6 +49,7 @@ export const booksSeed: Book[] = [
   {
     id: 'book-1',
     title: 'Pride and Prejudice',
+    coverUrl: 'https://covers.openlibrary.org/b/id/14348537-M.jpg',
     author: 'Jane Austen',
     coverColor: '#c89366',
     queue: [
@@ -79,6 +80,7 @@ export const booksSeed: Book[] = [
   {
     id: 'book-2',
     title: 'A Room with a View',
+    coverUrl: 'https://covers.openlibrary.org/b/id/1748132-M.jpg',
     author: 'E. M. Forster',
     coverColor: '#c7a6b5',
     queue: [
@@ -108,6 +110,7 @@ export const booksSeed: Book[] = [
   {
     id: 'book-3',
     title: 'Little Women',
+    coverUrl: 'https://covers.openlibrary.org/b/id/8775559-M.jpg',
     author: 'Louisa May Alcott',
     giftedBy: 'Grandma',
     coverColor: '#a8927d',
@@ -147,6 +150,7 @@ export const booksSeed: Book[] = [
   {
     id: 'book-4',
     title: 'Anne of Green Gables',
+    coverUrl: 'https://covers.openlibrary.org/b/id/14641084-M.jpg',
     author: 'L. M. Montgomery',
     coverColor: '#8f9bb0',
     queue: [
@@ -196,6 +200,7 @@ export const booksSeed: Book[] = [
     // Lena's Jane Eyre: all the way round the group and home again.
     id: 'book-5',
     title: 'Jane Eyre',
+    coverUrl: 'https://covers.openlibrary.org/b/id/8235363-M.jpg',
     author: 'Charlotte Brontë',
     coverColor: '#b4b8a9',
     queue: [

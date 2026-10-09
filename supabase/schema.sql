@@ -73,6 +73,11 @@ create table if not exists public.books (
 -- it, so it can be someone outside the club ("Mom").
 alter table public.books add column if not exists gifted_by text;
 
+-- A cover image from Open Library, found when the book is lent (or later by
+-- its owner). Without one, the app shows the colour swatch.
+alter table public.books add column if not exists cover_url text
+  check (cover_url is null or cover_url like 'https://covers.openlibrary.org/%');
+
 -- ---------------------------------------------------------------
 -- Reading queue: who signed up for a book, in sign-up order, and each
 -- reader's progress. Nobody is added automatically; a row exists because that
@@ -665,9 +670,10 @@ create trigger join_sample_groups
 -- of your groups.
 drop function if exists public.lend_book(text, text, text, text, text);
 drop function if exists public.lend_book(text, text, text, text, text, text);
+drop function if exists public.lend_book(text, text, text, text, text, text, text);
 create or replace function public.lend_book(
   p_book_id text, p_title text, p_author text, p_cover_color text, p_handoff_id text,
-  p_gifted_by text default null, p_group_id text default null
+  p_gifted_by text default null, p_group_id text default null, p_cover_url text default null
 ) returns void
 language plpgsql security definer set search_path = public
 as $$
@@ -682,13 +688,30 @@ begin
     raise exception 'Pick one of your groups to lend it to';
   end if;
 
-  insert into public.books (id, title, author, cover_color, gifted_by, group_id)
-  values (p_book_id, p_title, p_author, p_cover_color, nullif(trim(p_gifted_by), ''), p_group_id);
+  insert into public.books (id, title, author, cover_color, gifted_by, group_id, cover_url)
+  values (p_book_id, p_title, p_author, p_cover_color, nullif(trim(p_gifted_by), ''), p_group_id,
+          p_cover_url);
   insert into public.reading_queue (book_id, friend_id, position, status)
   values (p_book_id, owner.id, 0, 'reading');
   insert into public.handoffs
     (id, book_id, from_friend, to_friend, received_at, place_city, place_region)
   values (p_handoff_id, p_book_id, null, owner.id, now(), owner.city, owner.state);
+end;
+$$;
+
+-- Set or clear a book's cover. Only its owner (the first leg went to them).
+create or replace function public.set_cover(p_book_id text, p_cover_url text) returns void
+language plpgsql security definer set search_path = public
+as $$
+begin
+  if not exists (
+    select 1 from public.handoffs
+    where book_id = p_book_id and from_friend is null and to_friend = public.me()
+  ) then
+    raise exception 'Only the book''s owner can change its cover';
+  end if;
+
+  update public.books set cover_url = p_cover_url where id = p_book_id;
 end;
 $$;
 
@@ -769,7 +792,8 @@ revoke all on function public.me(), public.is_member(text), public.can_see_book(
   public.can_see_person(text), public.claim_profile(text, text),
   public.unclaimed_in_group(text), public.group_preview(text),
   public.create_group(text, text), public.join_group(text), public.leave_group(text),
-  public.lend_book(text, text, text, text, text, text, text),
+  public.lend_book(text, text, text, text, text, text, text, text),
+  public.set_cover(text, text),
   public.pass_on(text, text, text, text, smallint),
   public.mark_received(text)
   from public, anon;
@@ -779,7 +803,8 @@ grant execute on function public.me(), public.is_member(text), public.can_see_bo
   public.can_see_person(text), public.claim_profile(text, text),
   public.unclaimed_in_group(text), public.group_preview(text),
   public.create_group(text, text), public.join_group(text), public.leave_group(text),
-  public.lend_book(text, text, text, text, text, text, text),
+  public.lend_book(text, text, text, text, text, text, text, text),
+  public.set_cover(text, text),
   public.pass_on(text, text, text, text, smallint),
   public.mark_received(text)
   to authenticated;

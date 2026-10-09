@@ -109,6 +109,13 @@ select test.as_user('00000000-0000-0000-0000-0000000000a3');
 delete from friendships where friend_a = 'p-irene' and friend_b = 'p-juhyae';
 select test.expect('Juhyae unfriended Irene', (select count(*) from friendships), 0);
 
+-- Covers: only the owner, and only Open Library images.
+select test.as_user('00000000-0000-0000-0000-0000000000a2');
+select set_cover('b-real', 'https://covers.openlibrary.org/b/id/1511890-M.jpg');
+select test.refused('Covers must come from Open Library', $$select set_cover('b-real', 'https://evil.example/x.jpg')$$);
+select test.as_user('00000000-0000-0000-0000-0000000000a3');
+select test.refused('Juhyae cannot change Irene''s cover', $$select set_cover('b-real', null)$$);
+
 -- "Nobody" means nobody: Irene turns friend requests off, and Juhyae (a
 -- groupmate) can no longer ask.
 select test.as_user('00000000-0000-0000-0000-0000000000a2');

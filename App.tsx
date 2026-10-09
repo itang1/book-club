@@ -113,6 +113,7 @@ function HomeStack({ club }: { club: BookClub }) {
             currentUserId={club.currentUserId}
             onHandOff={club.handOff}
             onMarkReceived={club.markReceived}
+            onChangeCover={club.changeCover}
             onJoinLine={club.joinLine}
             onLeaveLine={club.leaveLine}
           />

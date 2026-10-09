@@ -55,3 +55,29 @@ export function coverColorFor(title: string, author: string): string {
   const key = `${title.trim().toLowerCase()}|${author.trim().toLowerCase()}`;
   return coverPalette[hash(key) % coverPalette.length];
 }
+
+/**
+ * A cover image for a book from Open Library, or null if there isn't one
+ * (or the lookup fails: a cover is a nicety, never a reason to stop). Free
+ * and keyless; asks for the best match by title and author.
+ */
+export async function findCoverUrl(title: string, author: string): Promise<string | null> {
+  try {
+    const query = new URLSearchParams({
+      title: title.trim(),
+      author: author.trim(),
+      limit: '1',
+      fields: 'cover_i',
+    });
+    const response = await fetch(`https://openlibrary.org/search.json?${query}`);
+    if (!response.ok) {
+      return null;
+    }
+
+    const data = (await response.json()) as { docs?: { cover_i?: number }[] };
+    const id = data.docs?.[0]?.cover_i;
+    return id ? `https://covers.openlibrary.org/b/id/${id}-M.jpg` : null;
+  } catch {
+    return null;
+  }
+}

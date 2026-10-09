@@ -38,6 +38,7 @@ type BookRow = {
   cover_color: string;
   gifted_by: string | null;
   group_id: string | null;
+  cover_url: string | null;
 };
 
 export type QueueRow = {
@@ -184,6 +185,7 @@ function assembleBooks(
       coverColor: row.cover_color,
       giftedBy: row.gifted_by ?? undefined,
       groupId: row.group_id ?? undefined,
+      coverUrl: row.cover_url ?? undefined,
       queue,
       handoffs: handoffRows
         .filter((entry) => entry.book_id === row.id)
@@ -296,6 +298,7 @@ export async function createBook(book: Book): Promise<SaveError> {
       p_handoff_id: firstLeg.id,
       p_gifted_by: book.giftedBy ?? null,
       p_group_id: book.groupId ?? null,
+      p_cover_url: book.coverUrl ?? null,
     });
     if (error) {
       console.warn('Supabase lend_book failed:', error.message);
@@ -375,6 +378,10 @@ export const updateFriendRequestsFrom = (personId: string, value: 'groups' | 'no
   save('updateFriendRequestsFrom', (db) =>
     db.from('friends').update({ friend_requests_from: value }).eq('id', personId),
   );
+
+/** Set or clear a book's cover (owner only, enforced by the database). */
+export const setCover = (bookId: string, coverUrl: string | null) =>
+  save('setCover', (db) => db.rpc('set_cover', { p_book_id: bookId, p_cover_url: coverUrl }));
 
 /** Rows store each pair once, smaller id first (see schema.sql). */
 const pairOf = (x: string, y: string) =>

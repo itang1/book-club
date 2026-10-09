@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View, Pressable } from 'react-native';
+import { Image, StyleSheet, Text, View, Pressable } from 'react-native';
 import { Book } from '../types';
 import { theme } from '../theme';
 import {
@@ -60,11 +60,20 @@ export function BookCard({ book, currentUserId, isSample, onPress }: BookCardPro
 
   return (
     <Pressable style={styles.card} onPress={() => onPress?.(book)}>
-      <View style={[styles.cover, { backgroundColor: book.coverColor }]}>
-        <Text style={styles.coverText} numberOfLines={4}>
-          {book.title}
-        </Text>
-      </View>
+      {book.coverUrl ? (
+        <Image
+          source={{ uri: book.coverUrl }}
+          style={[styles.cover, styles.coverImage, { backgroundColor: book.coverColor }]}
+          resizeMode="cover"
+          accessibilityIgnoresInvertColors
+        />
+      ) : (
+        <View style={[styles.cover, { backgroundColor: book.coverColor }]}>
+          <Text style={styles.coverText} numberOfLines={4}>
+            {book.title}
+          </Text>
+        </View>
+      )}
 
       <View style={styles.details}>
         <Text style={styles.title}>{book.title}</Text>
@@ -107,6 +116,10 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
     padding: 10,
     marginRight: 12,
+  },
+  // A real cover fills the same slot; the colour shows while it loads.
+  coverImage: {
+    padding: 0,
   },
   coverText: {
     color: theme.colors.coverInk,
