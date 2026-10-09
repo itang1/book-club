@@ -1,6 +1,7 @@
 import { booksSeed, friends as mockFriends, friendshipsSeed, groupsSeed } from '../data/mockData';
 import type {
   Book,
+  EmailPrefs,
   Friend,
   FriendStatus,
   Friendship,
@@ -23,6 +24,10 @@ type FriendRow = {
   state: string;
   user_id: string | null;
   agreed_rules_at: string | null;
+  email_book_sent?: boolean;
+  email_book_arrived?: boolean;
+  email_next_in_line?: boolean;
+  email_friend_request?: boolean;
 };
 
 type BookRow = {
@@ -110,6 +115,12 @@ function toFriend(row: FriendRow): Friend {
     state: row.state,
     userId: row.user_id ?? undefined,
     agreedRulesAt: row.agreed_rules_at ?? undefined,
+    emails: {
+      bookSent: row.email_book_sent ?? true,
+      bookArrived: row.email_book_arrived ?? true,
+      nextInLine: row.email_next_in_line ?? true,
+      friendRequest: row.email_friend_request ?? true,
+    },
   };
 }
 
@@ -341,6 +352,20 @@ async function save(
 export const agreeToRules = (personId: string) =>
   save('agreeToRules', (db) =>
     db.from('friends').update({ agreed_rules_at: new Date().toISOString() }).eq('id', personId),
+  );
+
+/** Which emails you want; only your own row can be changed. */
+export const updateEmailPrefs = (personId: string, prefs: EmailPrefs) =>
+  save('updateEmailPrefs', (db) =>
+    db
+      .from('friends')
+      .update({
+        email_book_sent: prefs.bookSent,
+        email_book_arrived: prefs.bookArrived,
+        email_next_in_line: prefs.nextInLine,
+        email_friend_request: prefs.friendRequest,
+      })
+      .eq('id', personId),
   );
 
 /** Rows store each pair once, smaller id first (see schema.sql). */

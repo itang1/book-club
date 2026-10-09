@@ -772,6 +772,117 @@ grant execute on function public.me(), public.is_member(text), public.can_see_bo
   to authenticated;
 
 -- ---------------------------------------------------------------
+-- Email. Which emails each person wants (all on by default; they change
+-- them under You → Emails), and an outbox the database fills when
+-- something worth an email happens. A Supabase Edge Function
+-- (supabase/functions/notify) sends what's in the outbox and stamps it
+-- sent. Nobody can read or write the outbox through the API.
+-- ---------------------------------------------------------------
+alter table public.friends
+  add column if not exists email_book_sent boolean not null default true,
+  add column if not exists email_book_arrived boolean not null default true,
+  add column if not exists email_next_in_line boolean not null default true,
+  add column if not exists email_friend_request boolean not null default true;
+
+create table if not exists public.notifications (
+  id bigserial primary key,
+  person_id text not null references public.friends (id) on delete cascade,
+  kind text not null check (kind in ('book_sent', 'book_arrived', 'next_in_line', 'friend_request')),
+  book_id text references public.books (id) on delete cascade,
+  about_person text references public.friends (id) on delete cascade,
+  created_at timestamptz not null default now(),
+  sent_at timestamptz,
+  error text
+);
+alter table public.notifications enable row level security;
+revoke all on public.notifications from anon, authenticated;
+
+-- Queue one email, if this person has an account (characters and unclaimed
+-- profiles have no inbox) and wants this kind.
+create or replace function public.notify(
+  p_person text, p_kind text, p_book text, p_about text
+) returns void
+language plpgsql security definer set search_path = public
+as $$
+declare
+  wants boolean;
+begin
+  select case p_kind
+    when 'book_sent' then email_book_sent
+    when 'book_arrived' then email_book_arrived
+    when 'next_in_line' then email_next_in_line
+    when 'friend_request' then email_friend_request
+  end into wants
+  from public.friends
+  where id = p_person and user_id is not null and not is_character;
+
+  if coalesce(wants, false) then
+    insert into public.notifications (person_id, kind, book_id, about_person)
+    values (p_person, p_kind, p_book, p_about);
+  end if;
+end;
+$$;
+revoke all on function public.notify(text, text, text, text) from public, anon, authenticated;
+
+-- A book was sent: tell the person it's coming to.
+create or replace function public.on_handoff_sent() returns trigger
+language plpgsql security definer set search_path = public
+as $$
+begin
+  if new.from_friend is not null then
+    perform public.notify(new.to_friend, 'book_sent', new.book_id, new.from_friend);
+  end if;
+  return new;
+end;
+$$;
+drop trigger if exists notify_book_sent on public.handoffs;
+create trigger notify_book_sent after insert on public.handoffs
+  for each row execute function public.on_handoff_sent();
+
+-- It arrived ("Got it"): tell whoever sent it, and whoever is next in line
+-- that they're up after this.
+create or replace function public.on_handoff_received() returns trigger
+language plpgsql security definer set search_path = public
+as $$
+declare
+  next_person text;
+begin
+  if old.received_at is null and new.received_at is not null and new.from_friend is not null then
+    perform public.notify(new.from_friend, 'book_arrived', new.book_id, new.to_friend);
+
+    select friend_id into next_person from public.reading_queue
+    where book_id = new.book_id and status = 'waiting' and friend_id <> new.to_friend
+    order by position limit 1;
+    if next_person is not null then
+      perform public.notify(next_person, 'next_in_line', new.book_id, new.to_friend);
+    end if;
+  end if;
+  return new;
+end;
+$$;
+drop trigger if exists notify_book_received on public.handoffs;
+create trigger notify_book_received after update of received_at on public.handoffs
+  for each row execute function public.on_handoff_received();
+
+-- Someone asked to be friends: tell the person they asked.
+create or replace function public.on_friend_request() returns trigger
+language plpgsql security definer set search_path = public
+as $$
+begin
+  if new.status = 'pending' then
+    perform public.notify(
+      case when new.friend_a = new.requested_by then new.friend_b else new.friend_a end,
+      'friend_request', null, new.requested_by
+    );
+  end if;
+  return new;
+end;
+$$;
+drop trigger if exists notify_friend_request on public.friendships;
+create trigger notify_friend_request after insert on public.friendships
+  for each row execute function public.on_friend_request();
+
+-- ---------------------------------------------------------------
 -- Tell the API about any new tables or columns straight away, rather than
 -- waiting for it to notice ("not in the schema cache" errors otherwise).
 -- ---------------------------------------------------------------

@@ -37,6 +37,15 @@ export type Friend = {
   userId?: string;
   /** When they agreed to the Rules of the Books; unset until they do. */
   agreedRulesAt?: string;
+  /** Which emails they want. All on unless they turn one off. */
+  emails?: EmailPrefs;
+};
+
+export type EmailPrefs = {
+  bookSent: boolean;
+  bookArrived: boolean;
+  nextInLine: boolean;
+  friendRequest: boolean;
 };
 
 /**

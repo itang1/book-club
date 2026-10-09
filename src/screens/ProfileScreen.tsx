@@ -2,11 +2,12 @@ import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Book, Friend } from '../types';
+import { Book, EmailPrefs, Friend } from '../types';
 import { theme } from '../theme';
 import { MonthlyColumns } from '../components/MonthlyColumns';
 import { PassportStamps } from '../components/PassportStamps';
 import { EditProfileSheet } from '../components/EditProfileSheet';
+import { EmailSettings } from '../components/EmailSettings';
 import { finishesByMonth, placesForOwner } from '../lib/stats';
 import {
   friendNameIn,
@@ -28,6 +29,7 @@ type ProfileScreenProps = {
   email?: string | null;
   onSignOut?: () => void;
   onUpdateProfile: (changes: Pick<Friend, 'name' | 'city' | 'state'>) => void;
+  onUpdateEmailPrefs: (prefs: EmailPrefs) => void;
 };
 
 /**
@@ -41,6 +43,7 @@ export function ProfileScreen({
   email,
   onSignOut,
   onUpdateProfile,
+  onUpdateEmailPrefs,
 }: ProfileScreenProps) {
   const insets = useSafeAreaInsets();
 
@@ -165,6 +168,18 @@ export function ProfileScreen({
         <Text style={styles.cardTitle}>Where your books have been</Text>
         <PassportStamps places={placesForOwner(books, me?.id ?? null)} />
       </View>
+
+      {me && (
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Emails</Text>
+          <EmailSettings
+            prefs={
+              me.emails ?? { bookSent: true, bookArrived: true, nextInLine: true, friendRequest: true }
+            }
+            onChange={onUpdateEmailPrefs}
+          />
+        </View>
+      )}
 
       {email && onSignOut && (
         <Pressable style={styles.signOut} onPress={onSignOut}>

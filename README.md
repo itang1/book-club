@@ -61,6 +61,30 @@ Sign-in links need **Authentication → URL Configuration** to allow
 `https://itang1.github.io/book-club/**` (and `http://localhost:8081/**` for
 local development).
 
+## Emails
+
+People get an email when a book is sent to them, when one they sent
+arrives, when they're next in line, and when someone asks to be friends.
+Each can be turned off under **You → Emails**.
+
+How it works: the database queues an email in `notifications` whenever one
+of those happens (and the person wants it); the `notify` Edge Function
+(`supabase/functions/notify`) sends what's queued over SMTP from your own
+mail account, and is deployed by the workflow. Supabase can only send its
+own sign-in emails, so the mail goes out through an ordinary account such
+as Gmail.
+
+One-time setup:
+
+1. **Gmail app password.** Turn on 2-Step Verification for the Gmail account,
+   then create an app password (Google Account → Security → App passwords).
+2. **GitHub secrets:** `SMTP_USER` (the Gmail address), `SMTP_PASS` (the app
+   password), and `SUPABASE_ACCESS_TOKEN` (Supabase → Account → Access
+   Tokens). The next deploy sets up and deploys the function.
+3. **Database webhook** (Supabase → Database → Webhooks → Create): table
+   `notifications`, event Insert, type *Supabase Edge Functions*, function
+   `notify`. Emails then go out within seconds of being queued.
+
 ## Accounts and privacy
 
 - Everyone signs in with an emailed link. No passwords.

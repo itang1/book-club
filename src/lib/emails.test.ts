@@ -1,0 +1,33 @@
+import { describe, expect, it } from 'vitest';
+
+import { renderEmail } from '../../supabase/functions/notify/templates';
+
+const book = { title: 'Circe', author: 'Madeline Miller', coverColor: '#b4b8a9' };
+const appUrl = 'https://example.test/';
+
+describe('emails', () => {
+  it('book sent: names the sender, mentions a sealed letter', () => {
+    const email = renderEmail({
+      kind: 'book_sent', recipient: 'Tibby', other: 'Carmen Lowell', book, group: 'Our Book Club', hasLetter: true, appUrl,
+    });
+    expect(email.subject).toBe('Carmen sent you Circe');
+    expect(email.html).toContain('tucked a letter inside');
+    expect(email.text).toContain('tap Got it');
+  });
+
+  it('book arrived: says how many cities, not "4th place"', () => {
+    const email = renderEmail({
+      kind: 'book_arrived', recipient: 'Carmen', other: 'Tibby', book, city: 'Seattle', cities: 4, appUrl,
+    });
+    expect(email.subject).toBe('Circe made it to Tibby');
+    expect(email.text).toContain("It's in Seattle now. It has been read in 4 different cities so far.");
+  });
+
+  it('escapes names and titles in the HTML', () => {
+    const email = renderEmail({ kind: 'friend_request', recipient: 'A', other: '<b>Bad</b>', appUrl });
+    expect(email.html).not.toContain('<b>Bad</b>');
+    expect(email.html).toContain('&lt;b&gt;Bad&lt;/b&gt; asked to be friends');
+    expect(email.subject).toBe('<b>Bad</b> wants to be friends');
+    expect(email.text).toContain('<b>Bad</b> asked to be friends');
+  });
+});

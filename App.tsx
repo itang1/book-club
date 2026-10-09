@@ -173,6 +173,7 @@ function Tabs({ club }: { club: BookClub }) {
               email={club.usesAccounts ? club.email : null}
               onSignOut={club.signOut}
               onUpdateProfile={club.updateProfile}
+              onUpdateEmailPrefs={club.updateEmailPrefs}
             />
           )}
         </Tab.Screen>

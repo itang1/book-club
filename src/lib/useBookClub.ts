@@ -1,7 +1,7 @@
 import * as React from 'react';
 import type { Session } from '@supabase/supabase-js';
 
-import type { Book, Friend, Friendship, Group, Handoff, Letter } from '../types';
+import type { Book, EmailPrefs, Friend, Friendship, Group, Handoff, Letter } from '../types';
 import {
   acceptFriend,
   agreeToRules,
@@ -18,6 +18,7 @@ import {
   requestFriend,
   markReceived,
   recordHandoff,
+  updateEmailPrefs,
   updateProfile,
   SaveError,
 } from './bookClubService';
@@ -355,6 +356,18 @@ export function useBookClub() {
     track(`mark ${book.title} as arrived`, markReceived(bookId));
   };
 
+  /** Which emails you get. */
+  const handleUpdateEmailPrefs = (prefs: EmailPrefs) => {
+    if (!currentUserId) {
+      return;
+    }
+
+    setMembers((current) =>
+      current.map((person) => (person.id === currentUserId ? { ...person, emails: prefs } : person)),
+    );
+    track('save your email settings', updateEmailPrefs(currentUserId, prefs));
+  };
+
   /** Edit your own name or city. Past stops keep the city they were read in. */
   const handleUpdateProfile = (changes: Pick<Friend, 'name' | 'city' | 'state'>) => {
     const me = members.find((person) => person.id === currentUserId);
@@ -538,6 +551,7 @@ export function useBookClub() {
     joinLine: handleJoinLine,
     markReceived: handleMarkReceived,
     updateProfile: handleUpdateProfile,
+    updateEmailPrefs: handleUpdateEmailPrefs,
     leaveLine: handleLeaveLine,
     handOff: handleHandOff,
   };

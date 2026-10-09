@@ -96,6 +96,39 @@ jobs:
           done
           exit 1
 
+  # The email sender (supabase/functions/notify). Skipped until
+  # SUPABASE_ACCESS_TOKEN is set (Supabase → Account → Access Tokens). The
+  # mail account's details come from SMTP_USER / SMTP_PASS (e.g. a Gmail
+  # address and an app password) and are copied into the function's own
+  # secrets on each deploy.
+  email-function:
+    needs: schema
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Deploy the notify function
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+        run: |
+          if [ -z "$SUPABASE_ACCESS_TOKEN" ]; then
+            echo "::notice::SUPABASE_ACCESS_TOKEN isn't set, so the email function wasn't deployed."
+            exit 0
+          fi
+          # https://<project-ref>.supabase.co
+          REF=$(echo "$SUPABASE_URL" | sed -E 's#https?://([^.]+)\..*#\1#')
+          if [ -n "$SMTP_USER" ]; then
+            supabase secrets set --project-ref "$REF" \
+              SMTP_USER="$SMTP_USER" SMTP_PASS="$SMTP_PASS" \
+              APP_URL="https://itang1.github.io/book-club/"
+          fi
+          supabase functions deploy notify --project-ref "$REF"
+
   build:
     needs: schema
     runs-on: ubuntu-24.04
