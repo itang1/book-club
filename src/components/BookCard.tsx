@@ -6,7 +6,7 @@ import {
   friendNameIn,
   journey,
   lastActivityAt,
-  nextStopId,
+  nextInLineId,
   relativeTime,
 } from '../lib/bookState';
 
@@ -17,8 +17,8 @@ type BookCardProps = {
 
 export function BookCard({ book, onPress }: BookCardProps) {
   const ownerId = currentOwnerId(book);
-  const nextId = nextStopId(book);
-  const stops = journey(book).length;
+  const nextId = nextInLineId(book);
+  const readers = journey(book).length;
 
   return (
     <Pressable style={styles.card} onPress={() => onPress?.(book)}>
@@ -36,15 +36,15 @@ export function BookCard({ book, onPress }: BookCardProps) {
         </View>
 
         <View style={styles.metaRow}>
-          <Text style={styles.metaLabel}>Next stop</Text>
+          <Text style={styles.metaLabel}>Next in line</Text>
           <Text style={styles.metaValue}>
-            {nextId ? friendNameIn(book, nextId) : 'End of the line'}
+            {nextId ? friendNameIn(book, nextId) : 'Nobody yet'}
           </Text>
         </View>
 
         <View style={styles.metaRow}>
-          <Text style={styles.metaLabel}>Stops so far</Text>
-          <Text style={styles.metaValue}>{stops}</Text>
+          <Text style={styles.metaLabel}>Readers so far</Text>
+          <Text style={styles.metaValue}>{readers}</Text>
         </View>
 
         <View style={styles.footer}>

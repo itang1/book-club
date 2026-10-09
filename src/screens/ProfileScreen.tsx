@@ -6,7 +6,7 @@ import {
   currentOwnerId,
   journey,
   lastActivityAt,
-  nextStopId,
+  nextInLineId,
   relativeTime,
 } from '../lib/bookState';
 
@@ -28,7 +28,7 @@ export function ProfileScreen({
   // There is no auth yet, so "who am I" is a local choice. Every stat below is
   // scoped to that person rather than the whole group.
   const withMe = me ? books.filter((book) => currentOwnerId(book) === me.id) : [];
-  const comingToMe = me ? books.filter((book) => nextStopId(book) === me.id) : [];
+  const comingToMe = me ? books.filter((book) => nextInLineId(book) === me.id) : [];
   const finished = me
     ? books.filter((book) =>
         book.queue.some((entry) => entry.id === me.id && entry.status === 'done'),

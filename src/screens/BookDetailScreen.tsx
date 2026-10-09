@@ -12,7 +12,7 @@ import {
   heldForDays,
   journey,
   lastActivityAt,
-  nextStopId,
+  nextInLineId,
   readingQueue,
   relativeTime,
 } from '../lib/bookState';
@@ -37,7 +37,7 @@ export function BookDetailScreen({ route, books, onPassOn }: BookDetailScreenPro
   }
 
   const ownerId = currentOwnerId(book);
-  const nextId = nextStopId(book);
+  const nextId = nextInLineId(book);
   const legs = journey(book).reverse();
   const queue = readingQueue(book);
 
@@ -76,9 +76,9 @@ export function BookDetailScreen({ route, books, onPassOn }: BookDetailScreenPro
           <Text style={styles.value}>{friendNameIn(book, ownerId)}</Text>
         </View>
         <View style={styles.infoRow}>
-          <Text style={styles.label}>Next stop</Text>
+          <Text style={styles.label}>Next in line</Text>
           <Text style={styles.value}>
-            {nextId ? friendNameIn(book, nextId) : 'End of the line'}
+            {nextId ? friendNameIn(book, nextId) : 'Nobody yet'}
           </Text>
         </View>
         <View style={styles.infoRow}>

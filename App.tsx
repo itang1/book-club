@@ -13,7 +13,7 @@ import {
   fetchBookClubData,
   recordHandoff,
 } from './src/lib/bookClubService';
-import { currentOwnerId, nextStopId } from './src/lib/bookState';
+import { currentOwnerId, nextInLineId } from './src/lib/bookState';
 import { HomeScreen } from './src/screens/HomeScreen';
 import { FriendsScreen } from './src/screens/FriendsScreen';
 import { AddBookScreen } from './src/screens/AddBookScreen';
@@ -166,7 +166,7 @@ export default function App() {
     }
 
     const fromFriend = currentOwnerId(book);
-    const toFriend = nextStopId(book);
+    const toFriend = nextInLineId(book);
     if (!toFriend) {
       return;
     }

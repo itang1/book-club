@@ -27,8 +27,16 @@ export function readingQueue(book: Book): ReadingQueueEntry[] {
   return [...book.queue].sort((a, b) => a.position - b.position);
 }
 
-/** The next friend after the current holder, or null at the end of the line. */
-export function nextStopId(book: Book): string | null {
+/**
+ * Whoever is next in the reading queue after the current holder, or null when
+ * the queue runs out.
+ *
+ * Note this is derived from queue *position*, not from anyone asking for the
+ * book. It answers "who is next in the agreed order", not "who wants it next".
+ * A request model — people asking for a copy and the holder accepting — would
+ * replace this with the oldest accepted request.
+ */
+export function nextInLineId(book: Book): string | null {
   const queue = readingQueue(book);
   const ownerId = currentOwnerId(book);
 
