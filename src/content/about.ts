@@ -22,8 +22,8 @@ export const photoCredit = 'Photo creds: Dad';
 
 export const authorName = 'Irene';
 
-/** What the note is called wherever it's offered. "Maker", not "author": this is an app, not a book. */
-export const noteTitle = 'Message from the Maker';
+/** The heading above the photo and bio. */
+export const noteTitle = 'About';
 
 /**
  * A run of bio text: plain, or italic (a title), optionally a link.

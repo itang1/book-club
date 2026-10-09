@@ -49,33 +49,31 @@ export function HomeScreen({
         />
       }
     >
-      {/* The one standing way into the Rules and Irene's message: top of the
-          screen everyone lands on, labelled, small enough not to compete
-          with the books. */}
-      <View style={styles.topRow}>
-        <Pressable
-          style={styles.aboutButton}
-          onPress={() => setAboutOpen(true)}
-          accessibilityRole="button"
-        >
-          <Ionicons name="book-outline" size={14} color={theme.colors.accent} />
-          <Text style={styles.aboutButtonText}>Rules & about</Text>
-        </Pressable>
-      </View>
-
       <View style={styles.headerWrap}>
         <Text style={styles.title}>Sisterhood of the Traveling Books</Text>
         <Text style={styles.subtitle}>Like the Pants, but with pages.</Text>
         {/* Labelled rather than a bare +: an icon on its own didn't say what
-            it would add until you tapped it. */}
-        <Pressable
-          style={styles.addButton}
-          onPress={() => navigation.navigate('AddBook')}
-          accessibilityRole="button"
-        >
-          <Ionicons name="add" size={18} color={theme.colors.onAccent} />
-          <Text style={styles.addButtonText}>Lend a new book</Text>
-        </Pressable>
+            it would add until you tapped it. Rules & about sits beside it at
+            the same size: the one standing way into the Rules and Irene's
+            About, on the screen everyone lands on. */}
+        <View style={styles.actions}>
+          <Pressable
+            style={styles.addButton}
+            onPress={() => navigation.navigate('AddBook')}
+            accessibilityRole="button"
+          >
+            <Ionicons name="add" size={18} color={theme.colors.onAccent} />
+            <Text style={styles.addButtonText}>Lend a new book</Text>
+          </Pressable>
+          <Pressable
+            style={styles.aboutButton}
+            onPress={() => setAboutOpen(true)}
+            accessibilityRole="button"
+          >
+            <Ionicons name="book-outline" size={17} color={theme.colors.accent} />
+            <Text style={styles.aboutButtonText}>Rules & about</Text>
+          </Pressable>
+        </View>
       </View>
 
       {mine.length > 0 && (
@@ -138,26 +136,34 @@ const styles = StyleSheet.create({
     padding: 20,
     paddingBottom: 32,
   },
-  topRow: {
+  actions: {
     flexDirection: 'row',
-    justifyContent: 'flex-end',
-    marginBottom: 8,
+    flexWrap: 'wrap',
+    marginTop: 16,
+    // Space between the two buttons, and between rows if a narrow screen
+    // wraps them.
+    marginRight: -10,
   },
+  // Same size as Lend a new book, outlined rather than filled so lending
+  // stays the main action.
   aboutButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderWidth: 1.5,
+    borderColor: theme.colors.accent,
     backgroundColor: theme.colors.card,
     borderRadius: 999,
-    paddingVertical: 6,
-    paddingHorizontal: 12,
+    paddingVertical: 9,
+    paddingLeft: 14,
+    paddingRight: 18,
+    marginRight: 10,
+    marginBottom: 10,
   },
   aboutButtonText: {
     marginLeft: 6,
     color: theme.colors.accent,
     fontWeight: '700',
-    fontSize: 13,
+    fontSize: 15,
   },
   headerWrap: {
     marginBottom: 24,
@@ -184,7 +190,8 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingLeft: 14,
     paddingRight: 18,
-    marginTop: 16,
+    marginRight: 10,
+    marginBottom: 10,
   },
   addButtonText: {
     color: theme.colors.onAccent,
