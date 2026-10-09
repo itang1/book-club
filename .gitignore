@@ -29,3 +29,6 @@ assets/**/*-original.*
 
 # Written by `deno check`; the Supabase CLI resolves the function's imports itself.
 deno.lock
+
+# Files saved by Claude apps (decks, documents): local, never published.
+Claude outputs/
