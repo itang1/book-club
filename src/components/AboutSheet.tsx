@@ -2,7 +2,7 @@ import { Image, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'rea
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { theme } from '../theme';
-import { authorName, bio, homage, photo, photoCaption, rules } from '../content/about';
+import { authorName, bio, homage, photo, photoCaption, photoCredit, rules } from '../content/about';
 
 type AboutSheetProps = {
   visible: boolean;
@@ -45,6 +45,7 @@ export function AboutSheet({ visible, onClose }: AboutSheetProps) {
             </View>
           )}
           <Text style={styles.caption}>{photoCaption}</Text>
+          {photo && <Text style={styles.credit}>{photoCredit}</Text>}
         </View>
 
         {bio.map((paragraph) => (
@@ -167,6 +168,13 @@ const styles = StyleSheet.create({
     color: theme.colors.muted,
     textAlign: 'center',
     marginTop: 10,
+  },
+  credit: {
+    fontSize: 10,
+    color: theme.colors.muted,
+    textAlign: 'center',
+    marginTop: 4,
+    letterSpacing: 0.4,
   },
   bio: {
     fontSize: 16,

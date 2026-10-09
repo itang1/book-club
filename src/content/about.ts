@@ -6,22 +6,22 @@ import type { ImageSourcePropType } from 'react-native';
  */
 
 /**
- * Your middle-school photo. Drop the image at assets/about/me.jpg and swap
- * `null` for the require below. Until then the page shows a placeholder
- * bookplate instead of a broken image.
- *
- *   photo: require('../../assets/about/me.jpg'),
+ * Middle-school me, reading in a tree. Cropped to the polaroid's 200:230
+ * shape with metadata stripped; the full-size original is kept beside it as
+ * me-original.jpg and gitignored. Set to null to show the Ex Libris
+ * bookplate instead.
  */
-export const photo: ImageSourcePropType | null = null;
+export const photo: ImageSourcePropType | null = require('../../assets/about/me.jpg');
 
 export const photoCaption = 'Me, middle school, mid-chapter.';
 
+export const photoCredit = 'Photo: Dad';
+
 export const authorName = 'Irene';
 
-/** A draft. Rewrite it in your own voice. */
 export const bio = [
-  "I read The Sisterhood of the Traveling Pants in middle school and wanted, very badly, a pair of pants that fit all my friends.",
-  "I never found the pants. I did find friends who pass books around, so I built the next best thing: one copy, many readers, and a record of everywhere it's been.",
+  'I read The Sisterhood of the Traveling Pants series in middle school and wanted, very badly, to experience life and letters and summers like the girls in the book world.',
+  'I never found the pants, but I did find the friends who pass books around (a tradition spawned out of an annual social distancing secret santa tradition).',
 ];
 
 /**

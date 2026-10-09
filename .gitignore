@@ -23,3 +23,6 @@ yarn-error.log*
 *.orig.*
 .idea/
 .vscode/
+
+# Full-size originals of cropped images; only the crops are published.
+assets/**/*-original.*
