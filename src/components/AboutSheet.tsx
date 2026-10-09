@@ -18,67 +18,83 @@ type AboutSheetProps = {
   onClose: () => void;
 };
 
-/** The Rules of the Books, the maker's message, and the homage. Content lives in content/about. */
+/**
+ * Rules & about: the Rules of the Books, then who made this. Two sections
+ * built the same way (heading, then a card) so neither reads as an
+ * afterthought. Content lives in content/about.
+ */
 export function AboutSheet({ visible, onClose }: AboutSheetProps) {
   const insets = useSafeAreaInsets();
 
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
-      <ScrollView
-        style={styles.container}
-        contentContainerStyle={[styles.content, { paddingTop: insets.top + 16 }]}
-      >
-        <Pressable style={styles.close} onPress={onClose} accessibilityRole="button">
-          <Text style={styles.closeText}>Done</Text>
-        </Pressable>
-
-        <Text style={styles.title}>The Rules of the Books</Text>
-        <View style={styles.rules}>
-          {rules.map((rule, index) => (
-            <View key={rule} style={styles.rule}>
-              <Text style={styles.ruleNumber}>{index + 1}.</Text>
-              <Text style={styles.ruleText}>{rule}</Text>
-            </View>
-          ))}
+      <View style={styles.container}>
+        <View style={[styles.topBar, { paddingTop: insets.top + 10 }]}>
+          <Text style={styles.topBarTitle}>Rules & about</Text>
+          <Pressable
+            style={styles.done}
+            onPress={onClose}
+            accessibilityRole="button"
+            hitSlop={8}
+          >
+            <Text style={styles.doneText}>Done</Text>
+          </Pressable>
         </View>
 
-        <Text style={styles.heading}>{noteTitle}</Text>
-        <View style={styles.polaroid}>
-          {photo ? (
-            <Image source={photo} style={styles.photo} resizeMode="cover" />
-          ) : (
-            // A bookplate stands in until there's a photo.
-            <View style={[styles.photo, styles.photoPlaceholder]}>
-              <Text style={styles.exLibris}>Ex Libris</Text>
-              <Text style={styles.exLibrisName}>{authorName}</Text>
+        <ScrollView contentContainerStyle={styles.scroll}>
+          {/* Capped width so lines stay readable on a computer screen. */}
+          <View style={styles.column}>
+            <Text style={styles.heading}>The Rules of the Books</Text>
+            <View style={styles.card}>
+              {rules.map((rule, index) => (
+                <View key={rule} style={[styles.rule, index > 0 && styles.ruleDivider]}>
+                  <Text style={styles.ruleNumber}>{index + 1}</Text>
+                  <Text style={styles.ruleText}>{rule}</Text>
+                </View>
+              ))}
             </View>
-          )}
-          <Text style={styles.caption}>{photoCaption}</Text>
-          {photo && <Text style={styles.credit}>{photoCredit}</Text>}
-        </View>
 
-        {bio.map((paragraph, index) => (
-          <Text key={index} style={styles.bio}>
-            {paragraph.map((run, runIndex) =>
-              typeof run === 'string' ? (
-                run
-              ) : (
-                <Text
-                  key={runIndex}
-                  style={[run.italic && styles.italic, run.href && styles.link]}
-                  onPress={run.href ? () => Linking.openURL(run.href as string) : undefined}
-                  accessibilityRole={run.href ? 'link' : undefined}
-                >
-                  {run.text}
+            <Text style={styles.heading}>{noteTitle}</Text>
+            <View style={styles.card}>
+              <View style={styles.polaroid}>
+                {photo ? (
+                  <Image source={photo} style={styles.photo} resizeMode="cover" />
+                ) : (
+                  // A bookplate stands in when there's no photo.
+                  <View style={[styles.photo, styles.photoPlaceholder]}>
+                    <Text style={styles.exLibris}>Ex Libris</Text>
+                    <Text style={styles.exLibrisName}>{authorName}</Text>
+                  </View>
+                )}
+                <Text style={styles.caption}>{photoCaption}</Text>
+                {photo && <Text style={styles.credit}>{photoCredit}</Text>}
+              </View>
+
+              {bio.map((paragraph, index) => (
+                <Text key={index} style={styles.bio}>
+                  {paragraph.map((run, runIndex) =>
+                    typeof run === 'string' ? (
+                      run
+                    ) : (
+                      <Text
+                        key={runIndex}
+                        style={[run.italic && styles.italic, run.href && styles.link]}
+                        onPress={run.href ? () => Linking.openURL(run.href as string) : undefined}
+                        accessibilityRole={run.href ? 'link' : undefined}
+                      >
+                        {run.text}
+                      </Text>
+                    ),
+                  )}
                 </Text>
-              ),
-            )}
-          </Text>
-        ))}
-        <Text style={styles.signature}>— {authorName}</Text>
+              ))}
+              <Text style={styles.signature}>— {authorName}</Text>
+            </View>
 
-        <Text style={styles.homage}>{homage}</Text>
-      </ScrollView>
+            <Text style={styles.homage}>{homage}</Text>
+          </View>
+        </ScrollView>
+      </View>
     </Modal>
   );
 }
@@ -88,87 +104,102 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: theme.colors.background,
   },
-  content: {
-    padding: 24,
-    paddingBottom: 48,
+  topBar: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+    backgroundColor: theme.colors.background,
   },
-  close: {
-    alignSelf: 'flex-end',
-    paddingVertical: 6,
-    paddingHorizontal: 4,
-    marginBottom: 8,
+  topBarTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: theme.colors.text,
   },
-  closeText: {
+  done: {
+    position: 'absolute',
+    right: 20,
+    bottom: 12,
+  },
+  doneText: {
     color: theme.colors.accent,
     fontWeight: '700',
     fontSize: 15,
   },
-  title: {
+  scroll: {
+    paddingHorizontal: 20,
+    paddingBottom: 48,
+  },
+  column: {
+    width: '100%',
+    maxWidth: 560,
+    alignSelf: 'center',
+  },
+  // One heading style for both sections, so they read as equals.
+  heading: {
     fontFamily: theme.fonts.serif,
-    fontSize: 30,
-    lineHeight: 36,
+    fontSize: 26,
+    lineHeight: 32,
     fontWeight: '700',
     color: theme.colors.text,
-    marginBottom: 16,
+    marginTop: 28,
+    marginBottom: 12,
   },
-  rules: {
+  card: {
     backgroundColor: theme.colors.card,
     borderWidth: 1,
     borderColor: theme.colors.border,
     borderRadius: 16,
-    padding: 18,
+    paddingHorizontal: 20,
+    paddingVertical: 8,
   },
   rule: {
     flexDirection: 'row',
-    marginBottom: 10,
+    alignItems: 'baseline',
+    paddingVertical: 12,
+  },
+  ruleDivider: {
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.border,
   },
   ruleNumber: {
     fontFamily: theme.fonts.serif,
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '700',
-    color: theme.colors.stamp,
-    width: 26,
+    color: theme.colors.accent,
+    width: 28,
   },
   ruleText: {
     flex: 1,
-    fontFamily: theme.fonts.serif,
     fontSize: 16,
     lineHeight: 23,
     color: theme.colors.text,
   },
-  heading: {
-    fontFamily: theme.fonts.serif,
-    fontSize: 22,
-    fontWeight: '700',
-    color: theme.colors.text,
-    marginTop: 32,
-    marginBottom: 16,
-  },
   polaroid: {
     alignSelf: 'center',
     backgroundColor: theme.colors.card,
-    padding: 12,
-    paddingBottom: 16,
-    borderRadius: 4,
+    padding: 10,
+    paddingBottom: 12,
+    borderRadius: 3,
+    marginTop: 16,
     marginBottom: 20,
     // A slight tilt, like a photo taped into a notebook.
     transform: [{ rotate: '-2deg' }],
     shadowColor: theme.colors.text,
-    shadowOpacity: 0.12,
+    shadowOpacity: 0.14,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 4 },
     elevation: 3,
   },
   photo: {
-    width: 200,
-    height: 230,
+    width: 180,
+    height: 207,
   },
   photoPlaceholder: {
     backgroundColor: theme.colors.soft,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: theme.colors.border,
   },
   exLibris: {
     fontFamily: theme.fonts.serif,
@@ -189,20 +220,19 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: theme.colors.muted,
     textAlign: 'center',
-    marginTop: 10,
+    marginTop: 8,
   },
   credit: {
     fontSize: 10,
     color: theme.colors.muted,
     textAlign: 'center',
-    marginTop: 4,
-    letterSpacing: 0.4,
+    marginTop: 2,
   },
   bio: {
     fontSize: 16,
     lineHeight: 25,
     color: theme.colors.text,
-    marginBottom: 12,
+    marginBottom: 14,
   },
   italic: {
     fontStyle: 'italic',
@@ -214,14 +244,15 @@ const styles = StyleSheet.create({
   signature: {
     fontFamily: theme.fonts.serif,
     fontStyle: 'italic',
-    fontSize: 16,
+    fontSize: 17,
     color: theme.colors.muted,
+    marginBottom: 12,
   },
   homage: {
     fontSize: 11,
     lineHeight: 16,
     color: theme.colors.muted,
-    marginTop: 36,
+    marginTop: 28,
     textAlign: 'center',
   },
 });
