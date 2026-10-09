@@ -1,4 +1,4 @@
-import type { Book, Friend, Friendship } from '../types';
+import type { Book, Friend, Friendship, Group } from '../types';
 
 /**
  * Fictional demo group: the four girls from The Sisterhood of the Traveling
@@ -195,23 +195,43 @@ export const booksSeed: Book[] = [
 ];
 
 /**
- * Who's friends with whom, one pair each. Deliberately incomplete so the
- * demo has a suggestion to show: Lena and Bridget aren't friends yet but
- * share Carmen and Tibby.
+ * Who's friends with whom. Lena and Bridget aren't friends yet, though they
+ * share Carmen and Tibby, so Bridget has asked: the demo shows a request
+ * waiting for Lena, who is who the dev bar starts as.
  */
+const accepted = (a: string, b: string): Friendship => ({
+  a,
+  b,
+  status: 'accepted',
+  requestedBy: a,
+});
+
 export const friendshipsSeed: Friendship[] = [
-  ['friend-carmen', 'friend-lena'],
-  ['friend-lena', 'friend-tibby'],
-  ['friend-bridget', 'friend-carmen'],
-  ['friend-bridget', 'friend-tibby'],
+  accepted('friend-carmen', 'friend-lena'),
+  accepted('friend-lena', 'friend-tibby'),
+  accepted('friend-bridget', 'friend-carmen'),
+  accepted('friend-bridget', 'friend-tibby'),
+  { a: 'friend-bridget', b: 'friend-lena', status: 'pending', requestedBy: 'friend-bridget' },
+];
+
+/** The four of them are one group, and every demo book is lent within it. */
+export const groupsSeed: Group[] = [
+  {
+    id: 'group-pants',
+    name: 'The Traveling Pants',
+    inviteCode: 'pants-demo',
+    memberIds: ['friend-lena', 'friend-tibby', 'friend-carmen', 'friend-bridget'],
+  },
 ];
 
 /**
- * Every demo leg has arrived (Got it) when it was sent, except Lena's
- * A Room with a View to Bridget, sent five hours ago: it's still in the post,
- * so the demo shows that state too.
+ * Every demo book is lent within The Traveling Pants. Every demo leg has
+ * arrived (Got it) when it was sent, except Lena's A Room with a View to
+ * Bridget, sent five hours ago: it's still in the post, so the demo shows
+ * that state too.
  */
 for (const book of booksSeed) {
+  book.groupId = 'group-pants';
   for (const leg of book.handoffs) {
     if (leg.id !== 'handoff-2b') {
       leg.receivedAt = leg.happenedAt;

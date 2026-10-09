@@ -1,22 +1,63 @@
-import type { Book, Friend, Friendship } from '../types';
+import type { Book, Friend, Friendship, Group } from '../types';
 
 /**
- * Everyone in `friends` is a member of the club; friendships are the graph
- * between them. These helpers answer "who are my friends" and "who might I
- * know", and nothing else.
+ * Friends are social: who you know, and whose reading you follow. Groups
+ * decide who can borrow what. These helpers answer "who are my friends",
+ * "who's asked", and "who might I know", and nothing else.
  */
 
+const other = (friendship: Friendship, personId: string) =>
+  friendship.a === personId ? friendship.b : friendship.a;
+
+const involves = (friendship: Friendship, personId: string | null) =>
+  personId !== null && (friendship.a === personId || friendship.b === personId);
+
+/** Accepted friends only. A request isn't a friendship yet. */
 export function friendIdsOf(friendships: Friendship[], personId: string | null): Set<string> {
+  return new Set(
+    friendships
+      .filter((friendship) => friendship.status === 'accepted' && involves(friendship, personId))
+      .map((friendship) => other(friendship, personId as string)),
+  );
+}
+
+/** People who've asked you, waiting for your answer. */
+export function incomingRequests(friendships: Friendship[], personId: string | null): string[] {
+  return friendships
+    .filter(
+      (friendship) =>
+        friendship.status === 'pending' &&
+        involves(friendship, personId) &&
+        friendship.requestedBy !== personId,
+    )
+    .map((friendship) => friendship.requestedBy);
+}
+
+/** People you've asked, waiting for theirs. */
+export function outgoingRequests(friendships: Friendship[], personId: string | null): Set<string> {
+  return new Set(
+    friendships
+      .filter(
+        (friendship) =>
+          friendship.status === 'pending' &&
+          involves(friendship, personId) &&
+          friendship.requestedBy === personId,
+      )
+      .map((friendship) => other(friendship, personId as string)),
+  );
+}
+
+/** Everyone you share at least one group with. */
+export function groupmateIdsOf(groups: Group[], personId: string | null): Set<string> {
   const ids = new Set<string>();
-  if (!personId) {
-    return ids;
+  for (const group of groups) {
+    if (personId && group.memberIds.includes(personId)) {
+      group.memberIds.forEach((id) => ids.add(id));
+    }
   }
-
-  for (const [a, b] of friendships) {
-    if (a === personId) ids.add(b);
-    if (b === personId) ids.add(a);
+  if (personId) {
+    ids.delete(personId);
   }
-
   return ids;
 }
 
@@ -26,16 +67,18 @@ export type Suggestion = {
 };
 
 /**
- * Members you aren't friends with yet, best guesses first. Two signals, both
- * easy to explain in the row itself: friends you have in common, and books
- * you've both been in line for. Anyone with neither is still listed, last,
- * since the club is small and they're "new here" rather than strangers.
+ * Groupmates you aren't friends with yet and haven't asked (either way),
+ * best guesses first: friends in common, then books you've both been in
+ * line for. Only groupmates, never friends of friends: suggesting someone
+ * you share nothing with would reveal people they never shared anything
+ * with you.
  */
 export function suggestionsFor(
   meId: string | null,
   members: Friend[],
   friendships: Friendship[],
   books: Book[],
+  groups: Group[],
   limit = 5,
 ): Suggestion[] {
   if (!meId) {
@@ -43,10 +86,17 @@ export function suggestionsFor(
   }
 
   const mine = friendIdsOf(friendships, meId);
+  const asked = new Set([
+    ...outgoingRequests(friendships, meId),
+    ...incomingRequests(friendships, meId),
+  ]);
+  const groupmates = groupmateIdsOf(groups, meId);
   const myBooks = books.filter((book) => book.queue.some((entry) => entry.id === meId));
+  const sharedGroup = (personId: string) =>
+    groups.find((group) => group.memberIds.includes(meId) && group.memberIds.includes(personId));
 
   return members
-    .filter((person) => person.id !== meId && !mine.has(person.id))
+    .filter((person) => groupmates.has(person.id) && !mine.has(person.id) && !asked.has(person.id))
     .map((person) => {
       const theirs = friendIdsOf(friendships, person.id);
       const mutual = [...theirs].filter((id) => mine.has(id)).length;
@@ -54,7 +104,7 @@ export function suggestionsFor(
         book.queue.some((entry) => entry.id === person.id),
       );
 
-      let reason = 'New to the club';
+      let reason = `In ${sharedGroup(person.id)?.name ?? 'your group'}`;
       if (mutual > 0) {
         reason = `${mutual} mutual ${mutual === 1 ? 'friend' : 'friends'}`;
       } else if (shared.length > 0) {

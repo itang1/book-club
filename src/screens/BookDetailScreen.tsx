@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-import { Book, Letter } from '../types';
+import { Book, Group, Letter } from '../types';
 import { theme } from '../theme';
 import { JourneyRoute } from '../components/JourneyRoute';
 import {
@@ -30,6 +30,7 @@ import {
 type BookDetailScreenProps = {
   route: { params: { bookId: string; bookTitle: string } };
   books: Book[];
+  groups: Group[];
   currentUserId: string | null;
   onHandOff: (bookId: string, toFriend: string, letter: Letter) => void;
   onMarkReceived: (bookId: string) => void;
@@ -40,6 +41,7 @@ type BookDetailScreenProps = {
 export function BookDetailScreen({
   route,
   books,
+  groups,
   currentUserId,
   onHandOff,
   onMarkReceived,
@@ -74,6 +76,7 @@ export function BookDetailScreen({
   const sender = senderId(book);
   const inPost = isInTransit(book);
   const legs = journey(book).reverse();
+  const groupName = groups.find((group) => group.id === book.groupId)?.name;
 
   const comingToMe = inPost && currentUserId !== null && holder === currentUserId;
   const iSentIt = inPost && currentUserId !== null && sender === currentUserId;
@@ -203,7 +206,11 @@ export function BookDetailScreen({
             </View>
           ) : null}
         </View>
-        <Text style={styles.ownership}>{first(owner)}'s copy</Text>
+        {/* Whose it is, and the one circle it travels in. */}
+        <Text style={styles.ownership}>
+          {first(owner)}'s copy
+          {groupName ? ` · only ${groupName} can see it` : ''}
+        </Text>
 
         {/* Where it is and what you can do about it, together, before
             anything else. This is what people open the page for. */}

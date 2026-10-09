@@ -1,5 +1,13 @@
-import { booksSeed, friends as mockFriends, friendshipsSeed } from '../data/mockData';
-import type { Book, Friend, FriendStatus, Friendship, Handoff, ReadingQueueEntry } from '../types';
+import { booksSeed, friends as mockFriends, friendshipsSeed, groupsSeed } from '../data/mockData';
+import type {
+  Book,
+  Friend,
+  FriendStatus,
+  Friendship,
+  Group,
+  Handoff,
+  ReadingQueueEntry,
+} from '../types';
 import { supabase } from './supabase';
 
 /**
@@ -23,6 +31,7 @@ type BookRow = {
   author: string;
   cover_color: string;
   gifted_by: string | null;
+  group_id: string | null;
 };
 
 export type QueueRow = {
@@ -48,12 +57,26 @@ type HandoffRow = {
 type FriendshipRow = {
   friend_a: string;
   friend_b: string;
+  requested_by: string | null;
+  status: Friendship['status'];
+};
+
+type GroupRow = {
+  id: string;
+  name: string;
+  invite_code: string;
+};
+
+type MemberRow = {
+  group_id: string;
+  person_id: string;
 };
 
 export type BookClubData = {
   books: Book[];
   friends: Friend[];
   friendships: Friendship[];
+  groups: Group[];
   /** Why loading failed, if it did. */
   error?: string;
 };
@@ -62,6 +85,7 @@ export const demoData: BookClubData = {
   books: booksSeed,
   friends: mockFriends,
   friendships: friendshipsSeed,
+  groups: groupsSeed,
 };
 
 /**
@@ -73,6 +97,7 @@ const empty = (error: string): BookClubData => ({
   books: [],
   friends: [],
   friendships: [],
+  groups: [],
   error,
 });
 
@@ -144,6 +169,7 @@ function assembleBooks(
       author: row.author,
       coverColor: row.cover_color,
       giftedBy: row.gifted_by ?? undefined,
+      groupId: row.group_id ?? undefined,
       queue,
       handoffs: handoffRows
         .filter((entry) => entry.book_id === row.id)
@@ -158,15 +184,20 @@ export async function fetchBookClubData(): Promise<BookClubData> {
   }
 
   try {
-    const [booksRes, friendsRes, queueRes, handoffsRes, friendshipsRes] = await Promise.all([
+    const [booksRes, friendsRes, queueRes, handoffsRes, friendshipsRes, groupsRes, membersRes] =
+      await Promise.all([
       supabase.from('books').select('*').order('created_at', { ascending: false }),
       supabase.from('friends').select('*').order('name', { ascending: true }),
       supabase.from('reading_queue').select('*'),
       supabase.from('handoffs').select('*').order('happened_at', { ascending: true }),
-      supabase.from('friendships').select('friend_a, friend_b'),
+      supabase.from('friendships').select('friend_a, friend_b, requested_by, status'),
+      supabase.from('groups').select('id, name, invite_code').order('name'),
+      supabase.from('group_members').select('group_id, person_id'),
     ]);
 
-    const failure = [booksRes, friendsRes, queueRes, handoffsRes].find((res) => res.error);
+    const failure = [booksRes, friendsRes, queueRes, handoffsRes, groupsRes, membersRes].find(
+      (res) => res.error,
+    );
     if (failure?.error) {
       console.warn('Supabase fetch failed:', failure.error.message);
       return empty(failure.error.message);
@@ -191,7 +222,22 @@ export async function fetchBookClubData(): Promise<BookClubData> {
         (handoffsRes.data ?? []) as HandoffRow[],
       ),
       friends: friendRows.map(toFriend),
-      friendships: friendshipRows.map((row): Friendship => [row.friend_a, row.friend_b]),
+      friendships: friendshipRows.map(
+        (row): Friendship => ({
+          a: row.friend_a,
+          b: row.friend_b,
+          status: row.status,
+          requestedBy: row.requested_by ?? row.friend_a,
+        }),
+      ),
+      groups: ((groupsRes.data ?? []) as GroupRow[]).map((row) => ({
+        id: row.id,
+        name: row.name,
+        inviteCode: row.invite_code,
+        memberIds: ((membersRes.data ?? []) as MemberRow[])
+          .filter((member) => member.group_id === row.id)
+          .map((member) => member.person_id),
+      })),
     };
   } catch (error) {
     console.warn('Book club fetch error:', error);
@@ -234,6 +280,7 @@ export async function createBook(book: Book): Promise<SaveError> {
       p_cover_color: book.coverColor,
       p_handoff_id: firstLeg.id,
       p_gifted_by: book.giftedBy ?? null,
+      p_group_id: book.groupId ?? null,
     });
     if (error) {
       console.warn('Supabase lend_book failed:', error.message);
@@ -266,52 +313,85 @@ export async function createFriend(friend: Friend): Promise<SaveError> {
   }
 }
 
-/** Befriend two people, both ways. Stored smaller id first; see schema.sql. */
-/** Record that you agreed to the Rules of the Books, and when. */
-export async function agreeToRules(personId: string): Promise<SaveError> {
+/** Run one write and turn its outcome into a SaveError. */
+async function save(
+  label: string,
+  run: (client: NonNullable<typeof supabase>) => PromiseLike<{ error: { message: string } | null }>,
+): Promise<SaveError> {
   if (!supabase) {
     return null;
   }
 
   try {
-    const { error } = await supabase
-      .from('friends')
-      .update({ agreed_rules_at: new Date().toISOString() })
-      .eq('id', personId);
+    const { error } = await run(supabase);
     if (error) {
-      console.warn('Supabase agreeToRules failed:', error.message);
+      console.warn(`Supabase ${label} failed:`, error.message);
       return error.message;
     }
-
     return null;
   } catch (error) {
-    console.warn('Agree to rules error:', error);
+    console.warn(`${label} error:`, error);
     return describe(error);
   }
 }
 
-export async function createFriendship([a, b]: Friendship): Promise<SaveError> {
+/** Record that you agreed to the Rules of the Books, and when. */
+export const agreeToRules = (personId: string) =>
+  save('agreeToRules', (db) =>
+    db.from('friends').update({ agreed_rules_at: new Date().toISOString() }).eq('id', personId),
+  );
+
+/** Rows store each pair once, smaller id first (see schema.sql). */
+const pairOf = (x: string, y: string) =>
+  x < y ? { friend_a: x, friend_b: y } : { friend_a: y, friend_b: x };
+
+/** Ask to be friends. It waits as "pending" until they accept. */
+export const requestFriend = (me: string, them: string) =>
+  save('requestFriend', (db) =>
+    db.from('friendships').insert([{ ...pairOf(me, them), requested_by: me, status: 'pending' }]),
+  );
+
+export const acceptFriend = (me: string, them: string) =>
+  save('acceptFriend', (db) =>
+    db.from('friendships').update({ status: 'accepted' }).match(pairOf(me, them)),
+  );
+
+/** Decline, cancel or unfriend: the row just goes. Nobody is told. */
+export const removeFriendship = (me: string, them: string) =>
+  save('removeFriendship', (db) => db.from('friendships').delete().match(pairOf(me, them)));
+
+export const createGroup = (id: string, name: string) =>
+  save('createGroup', (db) => db.rpc('create_group', { p_group_id: id, p_name: name }));
+
+export const joinGroup = (inviteCode: string) =>
+  save('joinGroup', (db) => db.rpc('join_group', { p_invite_code: inviteCode }));
+
+export const leaveGroup = (groupId: string) =>
+  save('leaveGroup', (db) => db.rpc('leave_group', { p_group_id: groupId }));
+
+/** The group behind an invite code, for "You're invited to …". */
+export async function groupPreview(
+  inviteCode: string,
+): Promise<{ id: string; name: string; members: number } | null> {
   if (!supabase) {
-    return null;
+    const group = groupsSeed.find((candidate) => candidate.inviteCode === inviteCode);
+    return group ? { id: group.id, name: group.name, members: group.memberIds.length } : null;
   }
 
-  try {
-    const row: FriendshipRow = a < b ? { friend_a: a, friend_b: b } : { friend_a: b, friend_b: a };
-    const { error } = await supabase
-      .from('friendships')
-      // DO NOTHING on conflict: needs only the insert grant, and befriending
-      // someone twice is harmless.
-      .upsert([row], { ignoreDuplicates: true });
-    if (error) {
-      console.warn('Supabase createFriendship failed:', error.message);
-      return error.message;
-    }
+  const { data } = await supabase.rpc('group_preview', { p_invite_code: inviteCode });
+  return (data as { id: string; name: string; members: number }[] | null)?.[0] ?? null;
+}
 
-    return null;
-  } catch (error) {
-    console.warn('Create friendship error:', error);
-    return describe(error);
+/** People in the invited group who haven't signed in yet: "That's me". */
+export async function unclaimedInGroup(
+  inviteCode: string,
+): Promise<{ id: string; name: string; city: string }[]> {
+  if (!supabase) {
+    return [];
   }
+
+  const { data } = await supabase.rpc('unclaimed_in_group', { p_invite_code: inviteCode });
+  return (data as { id: string; name: string; city: string }[] | null) ?? [];
 }
 
 /**

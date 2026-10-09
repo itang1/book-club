@@ -1,16 +1,21 @@
 import * as React from 'react';
 import type { Session } from '@supabase/supabase-js';
 
-import type { Book, Friend, Friendship, Handoff, Letter } from '../types';
+import type { Book, Friend, Friendship, Group, Handoff, Letter } from '../types';
 import {
+  acceptFriend,
   agreeToRules,
   createBook,
   createFriend,
-  createFriendship,
+  createGroup,
   demoData,
   fetchBookClubData,
+  joinGroup,
   joinLine,
+  leaveGroup,
   leaveLine,
+  removeFriendship,
+  requestFriend,
   markReceived,
   recordHandoff,
   updateProfile,
@@ -59,6 +64,9 @@ export function useBookClub() {
   const [friendships, setFriendships] = React.useState<Friendship[]>(
     isSupabaseConfigured ? [] : demoData.friendships,
   );
+  const [groups, setGroups] = React.useState<Group[]>(
+    isSupabaseConfigured ? [] : demoData.groups,
+  );
   const [currentUserId, setCurrentUserId] = React.useState<string | null>(null);
   const [loaded, setLoaded] = React.useState(false);
   const [refreshing, setRefreshing] = React.useState(false);
@@ -85,6 +93,7 @@ export function useBookClub() {
     setBooks(data.books);
     setMembers(data.friends);
     setFriendships(data.friendships);
+    setGroups(data.groups);
     if (data.error) {
       setSaveProblem({ action: 'load the club', reason: explain(data.error) });
     }
@@ -128,7 +137,7 @@ export function useBookClub() {
       setSession(next);
 
       if (!next) {
-        applyData({ books: [], friends: [], friendships: [] });
+        applyData({ books: [], friends: [], friendships: [], groups: [] });
         setCurrentUserId(null);
         setLoaded(true);
         return;
@@ -168,24 +177,20 @@ export function useBookClub() {
    * accounts the database links it to this account (refused if someone else
    * got there first); on demo data it's a local choice.
    */
-  const claimExisting = async (personId: string) => {
+  const claimExisting = async (personId: string, inviteCode: string | null) => {
     if (!usesAccounts) {
       chooseReader(personId);
       return;
     }
 
-    const name = members.find((person) => person.id === personId)?.name ?? 'that profile';
-    const claim = await claimProfile(personId);
+    const claim = await claimProfile(personId, inviteCode ?? undefined);
     if (claim.error || !claim.personId) {
-      setSaveProblem({ action: `claim ${name}`, reason: claim.error ?? 'Unknown error' });
+      setSaveProblem({ action: 'claim that profile', reason: claim.error ?? 'Unknown error' });
       return;
     }
 
-    setMembers((current) =>
-      current.map((person) =>
-        person.id === claim.personId ? { ...person, userId: session?.user.id } : person,
-      ),
-    );
+    // They can see their club now; load it.
+    applyData(await fetchBookClubData());
     setCurrentUserId(claim.personId);
   };
 
@@ -369,23 +374,112 @@ export function useBookClub() {
     track('save your profile', updateProfile(updated));
   };
 
-  const addFriend = (otherId: string) => {
+  const nameOf = (personId: string) =>
+    members.find((person) => person.id === personId)?.name.split(' ')[0] ?? 'them';
+  const samePair = (friendship: Friendship, x: string, y: string) =>
+    (friendship.a === x && friendship.b === y) || (friendship.a === y && friendship.b === x);
+
+  /** Ask to be friends; it's pending until they accept. */
+  const handleRequestFriend = (otherId: string) => {
     if (!currentUserId || otherId === currentUserId) {
       return;
     }
 
-    const pair: Friendship = [currentUserId, otherId];
-    const name = members.find((person) => person.id === otherId)?.name ?? 'them';
-    setFriendships((current) => [...current, pair]);
-    track(`add ${name} as a friend`, createFriendship(pair));
+    const [a, b] = currentUserId < otherId ? [currentUserId, otherId] : [otherId, currentUserId];
+    setFriendships((current) => [
+      ...current,
+      { a, b, status: 'pending', requestedBy: currentUserId },
+    ]);
+    track(`ask ${nameOf(otherId)} to be friends`, requestFriend(currentUserId, otherId));
+  };
+
+  const handleAcceptFriend = (otherId: string) => {
+    if (!currentUserId) {
+      return;
+    }
+
+    setFriendships((current) =>
+      current.map((friendship) =>
+        samePair(friendship, currentUserId, otherId) ? { ...friendship, status: 'accepted' } : friendship,
+      ),
+    );
+    track(`accept ${nameOf(otherId)}`, acceptFriend(currentUserId, otherId));
+  };
+
+  /** Decline a request, cancel yours, or unfriend: all the same, all silent. */
+  const handleRemoveFriend = (otherId: string) => {
+    if (!currentUserId) {
+      return;
+    }
+
+    setFriendships((current) =>
+      current.filter((friendship) => !samePair(friendship, currentUserId, otherId)),
+    );
+    track(`update things with ${nameOf(otherId)}`, removeFriendship(currentUserId, otherId));
+  };
+
+  /** Start a group with you in it. */
+  const handleCreateGroup = (name: string): string | null => {
+    if (!currentUserId || !name.trim()) {
+      return null;
+    }
+
+    const id = `group-${Date.now()}`;
+    setGroups((current) => [
+      ...current,
+      // The real invite code is made by the database; it arrives on refresh.
+      { id, name: name.trim(), inviteCode: '', memberIds: [currentUserId] },
+    ]);
+    track(
+      `start ${name.trim()}`,
+      createGroup(id, name.trim()).then((reason) => {
+        if (!reason) {
+          fetchBookClubData().then(applyData);
+        }
+        return reason;
+      }),
+    );
+    return id;
+  };
+
+  /** Join from an invite link, then load what the group can now see. */
+  const handleJoinGroup = (inviteCode: string) => {
+    if (!usesAccounts) {
+      return;
+    }
+
+    track(
+      'join the group',
+      joinGroup(inviteCode).then((reason) => {
+        if (!reason) {
+          fetchBookClubData().then(applyData);
+        }
+        return reason;
+      }),
+    );
+  };
+
+  const handleLeaveGroup = (groupId: string) => {
+    if (!currentUserId) {
+      return;
+    }
+
+    const name = groups.find((group) => group.id === groupId)?.name ?? 'the group';
+    setGroups((current) => current.filter((group) => group.id !== groupId));
+    track(
+      `leave ${name}`,
+      leaveGroup(groupId).then((reason) => {
+        fetchBookClubData().then(applyData);
+        return reason;
+      }),
+    );
   };
 
   /**
-   * Someone new joins the club: their own profile, made by them and tied to
-   * their account. If they came from an invite, they start out friends with
-   * whoever sent it.
+   * Someone new joins: their own profile, made by them and tied to their
+   * account. If they came from an invite link, they join that group too.
    */
-  const createProfile = (profile: NewProfile, invitedBy: string | null) => {
+  const createProfile = (profile: NewProfile, inviteCode: string | null) => {
     const person: Friend = {
       id: `friend-${Date.now()}`,
       name: profile.name.trim(),
@@ -401,14 +495,16 @@ export function useBookClub() {
       chooseReader(person.id);
     }
 
-    const write = createFriend(person).then((reason) => {
-      if (reason || !invitedBy || !members.some((member) => member.id === invitedBy)) {
+    const write = createFriend(person).then(async (reason) => {
+      if (reason || !inviteCode || !usesAccounts) {
         return reason;
       }
 
-      const pair: Friendship = [person.id, invitedBy];
-      setFriendships((current) => [...current, pair]);
-      return createFriendship(pair);
+      const joined = await joinGroup(inviteCode);
+      if (!joined) {
+        applyData(await fetchBookClubData());
+      }
+      return joined;
     });
     track('create your profile', write);
   };
@@ -422,6 +518,7 @@ export function useBookClub() {
     books,
     members,
     friendships,
+    groups,
     currentUserId,
     saveProblem,
     dismissSaveProblem: () => setSaveProblem(null),
@@ -431,7 +528,12 @@ export function useBookClub() {
     agreeToRules: handleAgreeToRules,
     signOut,
     createProfile,
-    addFriend,
+    requestFriend: handleRequestFriend,
+    acceptFriend: handleAcceptFriend,
+    removeFriend: handleRemoveFriend,
+    createGroup: handleCreateGroup,
+    joinGroup: handleJoinGroup,
+    leaveGroup: handleLeaveGroup,
     addBook: handleAddBook,
     joinLine: handleJoinLine,
     markReceived: handleMarkReceived,

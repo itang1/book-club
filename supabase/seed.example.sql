@@ -76,3 +76,22 @@ where received_at is null and book_id in ('book-1', 'book-2', 'book-3', 'book-4'
 
 -- Tibby's Little Women was a gift from her grandmother.
 update public.books set gifted_by = 'Grandma' where id = 'book-3' and gifted_by is null;
+
+-- The four of them are one group, The Traveling Pants, and every book above
+-- is lent within it.
+insert into public.groups (id, name, invite_code) values
+  ('group-pants', 'The Traveling Pants', 'pants-demo')
+on conflict (id) do nothing;
+insert into public.group_members (group_id, person_id) values
+  ('group-pants', 'friend-lena'),
+  ('group-pants', 'friend-tibby'),
+  ('group-pants', 'friend-carmen'),
+  ('group-pants', 'friend-bridget')
+on conflict do nothing;
+update public.books set group_id = 'group-pants'
+where id in ('book-1', 'book-2', 'book-3', 'book-4') and group_id is null;
+
+-- Bridget has asked Lena to be friends; Lena hasn't answered yet.
+insert into public.friendships (friend_a, friend_b, requested_by, status) values
+  ('friend-bridget', 'friend-lena', 'friend-bridget', 'pending')
+on conflict do nothing;

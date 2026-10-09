@@ -41,7 +41,29 @@ jobs:
   # connection, which is IPv6 only. Unlike the anon key, this is a real
   # secret: it can do anything to the database, so it lives only here and
   # never in an EXPO_PUBLIC_ variable.
+  # The access rules, checked as real signed-in users against a throwaway
+  # Postgres, before anything touches the real database.
+  db-tests:
+    runs-on: ubuntu-24.04
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - run: supabase/tests/run.sh
+        env:
+          PGHOST: localhost
+          PGPORT: '5432'
+          PGUSER: postgres
+          PGPASSWORD: postgres
+
   schema:
+    needs: db-tests
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4

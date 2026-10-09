@@ -172,6 +172,53 @@ create table if not exists public.friendships (
   check (friend_a < friend_b)
 );
 
+-- Friend requests: a friendship starts as "pending" from whoever asked and
+-- becomes "accepted" when the other person says yes. Either can delete the
+-- row: decline, cancel or unfriend, all silent. Rows from before requests
+-- existed were mutual already, so they're accepted.
+alter table public.friendships
+  add column if not exists requested_by text references public.friends (id) on delete cascade;
+alter table public.friendships
+  add column if not exists status text not null default 'accepted'
+  check (status in ('pending', 'accepted'));
+
+-- ---------------------------------------------------------------
+-- Groups: the circles books are lent within. Every book belongs to one,
+-- and only its members (plus whoever is reading or waiting for it) can see
+-- it. You join by invite link; the code is in the link.
+-- ---------------------------------------------------------------
+create table if not exists public.groups (
+  id text primary key,
+  name text not null,
+  created_by text references public.friends (id) on delete set null,
+  invite_code text not null unique
+    default substr(md5(random()::text || clock_timestamp()::text), 1, 10),
+  created_at timestamptz not null default now()
+);
+
+create table if not exists public.group_members (
+  group_id text not null references public.groups (id) on delete cascade,
+  person_id text not null references public.friends (id) on delete cascade,
+  joined_at timestamptz not null default now(),
+  primary key (group_id, person_id)
+);
+
+alter table public.books
+  add column if not exists group_id text references public.groups (id) on delete set null;
+
+-- Once, when groups first arrive: everyone already here becomes one group,
+-- "Our Book Club", and every existing book belongs to it. Skipped on an
+-- empty database, where the seeds make their own.
+do $$
+begin
+  if not exists (select 1 from public.groups) and exists (select 1 from public.friends) then
+    insert into public.groups (id, name) values ('group-club', 'Our Book Club');
+    insert into public.group_members (group_id, person_id)
+    select 'group-club', id from public.friends;
+    update public.books set group_id = 'group-club' where group_id is null;
+  end if;
+end $$;
+
 create index if not exists reading_queue_book_idx on public.reading_queue (book_id, position);
 create index if not exists handoffs_book_idx on public.handoffs (book_id, happened_at);
 
@@ -197,7 +244,7 @@ order by h.book_id, h.happened_at desc;
 -- wait a moment instead of deadlocking against a half-finished rewrite.
 -- ---------------------------------------------------------------
 lock table public.friends, public.books, public.reading_queue, public.handoffs,
-  public.friendships in access exclusive mode;
+  public.friendships, public.groups, public.group_members in access exclusive mode;
 
 -- ---------------------------------------------------------------
 -- Who am I? The club member linked to the signed-in account, or null.
@@ -211,6 +258,58 @@ as $$
 $$;
 
 -- ---------------------------------------------------------------
+-- Who can see what. security definer so the policies below can ask without
+-- tripping over each other's row security; each answers only about you.
+-- ---------------------------------------------------------------
+create or replace function public.is_member(p_group_id text) returns boolean
+language sql stable security definer set search_path = public
+as $$
+  select exists (
+    select 1 from public.group_members
+    where group_id = p_group_id and person_id = public.me()
+  )
+$$;
+
+-- A book: its group's members, plus anyone in its line (which includes its
+-- owner and whoever has had it), plus whoever it's on its way to.
+create or replace function public.can_see_book(p_book_id text) returns boolean
+language sql stable security definer set search_path = public
+as $$
+  select exists (
+    select 1 from public.books b
+    where b.id = p_book_id and public.is_member(b.group_id)
+  ) or exists (
+    select 1 from public.reading_queue
+    where book_id = p_book_id and friend_id = public.me()
+  ) or exists (
+    select 1 from public.handoffs
+    where book_id = p_book_id and to_friend = public.me()
+  )
+$$;
+
+-- A person: yourself, anyone you share a group with, anyone you're friends
+-- with or have a request with, and anyone on a book you can see.
+create or replace function public.can_see_person(p_person_id text) returns boolean
+language sql stable security definer set search_path = public
+as $$
+  select p_person_id = public.me()
+  or exists (
+    select 1 from public.group_members mine
+    join public.group_members theirs on theirs.group_id = mine.group_id
+    where mine.person_id = public.me() and theirs.person_id = p_person_id
+  ) or exists (
+    select 1 from public.friendships
+    where public.me() in (friend_a, friend_b) and p_person_id in (friend_a, friend_b)
+  ) or exists (
+    select 1 from public.reading_queue
+    where friend_id = p_person_id and public.can_see_book(book_id)
+  ) or exists (
+    select 1 from public.handoffs
+    where p_person_id in (to_friend, from_friend) and public.can_see_book(book_id)
+  )
+$$;
+
+-- ---------------------------------------------------------------
 -- Data API privileges
 --
 -- Table grants and RLS are two separate layers: a grant opens the door, RLS
@@ -221,7 +320,7 @@ $$;
 -- gets nothing at all.
 -- ---------------------------------------------------------------
 revoke all on public.friends, public.books, public.reading_queue, public.handoffs,
-  public.friendships, public.book_current_location
+  public.friendships, public.groups, public.group_members, public.book_current_location
   from anon, authenticated;
 
 grant usage on schema public to authenticated;
@@ -233,7 +332,9 @@ grant select, insert, update, delete on public.reading_queue to authenticated;
 -- No insert, update or delete on handoffs at all: the journey log is written
 -- only by pass_on() and lend_book(), and history can't be rewritten.
 grant select on public.handoffs to authenticated;
-grant select, insert on public.friendships to authenticated;
+grant select, insert, update, delete on public.friendships to authenticated;
+-- Groups are created, joined and left through functions only.
+grant select on public.groups, public.group_members to authenticated;
 grant select on public.book_current_location to authenticated;
 
 -- ---------------------------------------------------------------
@@ -244,6 +345,8 @@ alter table public.books enable row level security;
 alter table public.reading_queue enable row level security;
 alter table public.handoffs enable row level security;
 alter table public.friendships enable row level security;
+alter table public.groups enable row level security;
+alter table public.group_members enable row level security;
 
 -- Retire every earlier policy: the demo-open ones and the ones from the old
 -- policies-authenticated.sql.
@@ -275,23 +378,35 @@ drop policy if exists "anyone can record a handoff" on public.handoffs;
 drop policy if exists "signed-in users can read handoffs" on public.handoffs;
 drop policy if exists "signed-in users can record a handoff" on public.handoffs;
 
--- Reading: anyone signed in sees the whole club, for now. Groups will
--- narrow this (docs/groups-and-privacy.md).
+-- Reading: what you can see is decided by groups (see can_see_book and
+-- can_see_person above). Strangers see nothing of each other.
 drop policy if exists "members read people" on public.friends;
-create policy "members read people"
-  on public.friends for select to authenticated using (true);
+drop policy if exists "see people you share something with" on public.friends;
+create policy "see people you share something with"
+  on public.friends for select to authenticated using (public.can_see_person(id));
 drop policy if exists "members read books" on public.books;
-create policy "members read books"
-  on public.books for select to authenticated using (true);
+drop policy if exists "see books in your groups" on public.books;
+create policy "see books in your groups"
+  on public.books for select to authenticated using (public.can_see_book(id));
 drop policy if exists "members read lines" on public.reading_queue;
-create policy "members read lines"
-  on public.reading_queue for select to authenticated using (true);
+drop policy if exists "see lines for books you can see" on public.reading_queue;
+create policy "see lines for books you can see"
+  on public.reading_queue for select to authenticated using (public.can_see_book(book_id));
 drop policy if exists "members read journeys" on public.handoffs;
-create policy "members read journeys"
-  on public.handoffs for select to authenticated using (true);
+drop policy if exists "see journeys for books you can see" on public.handoffs;
+create policy "see journeys for books you can see"
+  on public.handoffs for select to authenticated using (public.can_see_book(book_id));
 drop policy if exists "members read friendships" on public.friendships;
-create policy "members read friendships"
-  on public.friendships for select to authenticated using (true);
+drop policy if exists "see friendships among people you can see" on public.friendships;
+create policy "see friendships among people you can see"
+  on public.friendships for select to authenticated
+  using (public.can_see_person(friend_a) and public.can_see_person(friend_b));
+drop policy if exists "see your groups" on public.groups;
+create policy "see your groups"
+  on public.groups for select to authenticated using (public.is_member(id));
+drop policy if exists "see who is in your groups" on public.group_members;
+create policy "see who is in your groups"
+  on public.group_members for select to authenticated using (public.is_member(group_id));
 
 -- Your profile: one per account, made and edited only by you.
 drop policy if exists "make your own profile" on public.friends;
@@ -307,7 +422,7 @@ create policy "edit your own profile"
 drop policy if exists "join a line yourself" on public.reading_queue;
 create policy "join a line yourself"
   on public.reading_queue for insert to authenticated
-  with check (friend_id = public.me() and status = 'waiting');
+  with check (friend_id = public.me() and status = 'waiting' and public.can_see_book(book_id));
 drop policy if exists "manage your own place in line" on public.reading_queue;
 create policy "manage your own place in line"
   on public.reading_queue for update to authenticated
@@ -318,11 +433,28 @@ create policy "leave a line while waiting"
   on public.reading_queue for delete to authenticated
   using (friend_id = public.me() and status = 'waiting');
 
--- Friendships you're part of.
+-- Friend requests. You can ask someone you can already see (a groupmate,
+-- or someone on a shared book); they accept; either of you can delete the
+-- row (decline, cancel, unfriend), and nobody is told.
 drop policy if exists "befriend as yourself" on public.friendships;
-create policy "befriend as yourself"
+drop policy if exists "ask to be friends" on public.friendships;
+create policy "ask to be friends"
   on public.friendships for insert to authenticated
-  with check (public.me() in (friend_a, friend_b));
+  with check (
+    requested_by = public.me()
+    and status = 'pending'
+    and public.me() in (friend_a, friend_b)
+    and public.can_see_person(case when friend_a = public.me() then friend_b else friend_a end)
+  );
+drop policy if exists "accept a request" on public.friendships;
+create policy "accept a request"
+  on public.friendships for update to authenticated
+  using (public.me() in (friend_a, friend_b) and requested_by <> public.me() and status = 'pending')
+  with check (status = 'accepted');
+drop policy if exists "decline, cancel or unfriend" on public.friendships;
+create policy "decline, cancel or unfriend"
+  on public.friendships for delete to authenticated
+  using (public.me() in (friend_a, friend_b));
 
 -- ---------------------------------------------------------------
 -- Writes that touch several tables, as functions: each checks who you are,
@@ -330,12 +462,16 @@ create policy "befriend as yourself"
 -- ---------------------------------------------------------------
 
 -- Link the signed-in account to its profile.
---   claim_profile()           → your profile's id, or null if you have none
---   claim_profile('friend-x') → claim that profile as yours ("That's me")
--- A profile can only be claimed while no account has it, and an account can
--- only ever hold one profile, so once someone has claimed theirs it's locked.
+--   claim_profile()                    → your profile's id, or null if none
+--   claim_profile('friend-x', 'code')  → claim that profile ("That's me")
+-- You can only claim a profile in a group you were invited to (the code
+-- from the invite link), only while no account has it, and an account only
+-- ever holds one profile.
 drop function if exists public.claim_profile();
-create or replace function public.claim_profile(p_person_id text default null) returns text
+drop function if exists public.claim_profile(text);
+create or replace function public.claim_profile(
+  p_person_id text default null, p_invite_code text default null
+) returns text
 language plpgsql security definer set search_path = public
 as $$
 declare
@@ -350,23 +486,103 @@ begin
     return person;
   end if;
 
-  update public.friends set user_id = auth.uid()
-  where id = p_person_id and user_id is null
-  returning id into person;
+  update public.friends f set user_id = auth.uid()
+  where f.id = p_person_id and f.user_id is null
+    and exists (
+      select 1 from public.group_members m join public.groups g on g.id = m.group_id
+      where m.person_id = f.id and g.invite_code = p_invite_code
+    )
+  returning f.id into person;
 
   if person is null then
-    raise exception 'That profile has already been claimed';
+    raise exception 'That profile has already been claimed, or isn''t in this group';
   end if;
 
   return person;
 end;
 $$;
 
--- Put one of your own copies into circulation, starting with you.
+-- Who's in the group you were invited to but hasn't signed in yet: the
+-- "Already in the club? That's me" list. Only with the invite code.
+create or replace function public.unclaimed_in_group(p_invite_code text)
+returns table (id text, name text, city text)
+language sql stable security definer set search_path = public
+as $$
+  select f.id, f.name, f.city
+  from public.friends f
+  join public.group_members m on m.person_id = f.id
+  join public.groups g on g.id = m.group_id
+  where g.invite_code = p_invite_code and f.user_id is null
+  order by f.name
+$$;
+
+-- The name behind an invite code, for "You're invited to Our Book Club".
+create or replace function public.group_preview(p_invite_code text)
+returns table (id text, name text, members integer)
+language sql stable security definer set search_path = public
+as $$
+  select g.id, g.name, (select count(*)::int from public.group_members m where m.group_id = g.id)
+  from public.groups g where g.invite_code = p_invite_code
+$$;
+
+-- Start a group, with you in it.
+create or replace function public.create_group(p_group_id text, p_name text) returns text
+language plpgsql security definer set search_path = public
+as $$
+declare
+  me_id text := public.me();
+begin
+  if me_id is null then
+    raise exception 'Make your profile before starting a group';
+  end if;
+  if nullif(trim(p_name), '') is null then
+    raise exception 'A group needs a name';
+  end if;
+
+  insert into public.groups (id, name, created_by) values (p_group_id, trim(p_name), me_id);
+  insert into public.group_members (group_id, person_id) values (p_group_id, me_id);
+  return p_group_id;
+end;
+$$;
+
+-- Join from an invite link. Following the link is the yes.
+create or replace function public.join_group(p_invite_code text) returns text
+language plpgsql security definer set search_path = public
+as $$
+declare
+  me_id text := public.me();
+  target text;
+begin
+  select id into target from public.groups where invite_code = p_invite_code;
+  if me_id is null or target is null then
+    raise exception 'That invite link doesn''t work';
+  end if;
+
+  insert into public.group_members (group_id, person_id) values (target, me_id)
+  on conflict do nothing;
+  return target;
+end;
+$$;
+
+-- Leave a group. Books you're already reading or waiting for stay visible
+-- to you through the line; you just stop seeing the rest.
+create or replace function public.leave_group(p_group_id text) returns void
+language sql security definer set search_path = public
+as $$
+  delete from public.reading_queue q
+  using public.books b
+  where q.book_id = b.id and b.group_id = p_group_id
+    and q.friend_id = public.me() and q.status = 'waiting';
+  delete from public.group_members where group_id = p_group_id and person_id = public.me();
+$$;
+
+-- Put one of your own copies into circulation, starting with you, in one
+-- of your groups.
 drop function if exists public.lend_book(text, text, text, text, text);
+drop function if exists public.lend_book(text, text, text, text, text, text);
 create or replace function public.lend_book(
   p_book_id text, p_title text, p_author text, p_cover_color text, p_handoff_id text,
-  p_gifted_by text default null
+  p_gifted_by text default null, p_group_id text default null
 ) returns void
 language plpgsql security definer set search_path = public
 as $$
@@ -377,9 +593,12 @@ begin
   if owner.id is null then
     raise exception 'Make your profile before lending a book';
   end if;
+  if p_group_id is null or not public.is_member(p_group_id) then
+    raise exception 'Pick one of your groups to lend it to';
+  end if;
 
-  insert into public.books (id, title, author, cover_color, gifted_by)
-  values (p_book_id, p_title, p_author, p_cover_color, nullif(trim(p_gifted_by), ''));
+  insert into public.books (id, title, author, cover_color, gifted_by, group_id)
+  values (p_book_id, p_title, p_author, p_cover_color, nullif(trim(p_gifted_by), ''), p_group_id);
   insert into public.reading_queue (book_id, friend_id, position, status)
   values (p_book_id, owner.id, 0, 'reading');
   insert into public.handoffs
@@ -459,13 +678,19 @@ begin
 end;
 $$;
 
-revoke all on function public.me(), public.claim_profile(text),
-  public.lend_book(text, text, text, text, text, text),
+revoke all on function public.me(), public.is_member(text), public.can_see_book(text),
+  public.can_see_person(text), public.claim_profile(text, text),
+  public.unclaimed_in_group(text), public.group_preview(text),
+  public.create_group(text, text), public.join_group(text), public.leave_group(text),
+  public.lend_book(text, text, text, text, text, text, text),
   public.pass_on(text, text, text, text, smallint),
   public.mark_received(text)
   from public, anon;
-grant execute on function public.me(), public.claim_profile(text),
-  public.lend_book(text, text, text, text, text, text),
+grant execute on function public.me(), public.is_member(text), public.can_see_book(text),
+  public.can_see_person(text), public.claim_profile(text, text),
+  public.unclaimed_in_group(text), public.group_preview(text),
+  public.create_group(text, text), public.join_group(text), public.leave_group(text),
+  public.lend_book(text, text, text, text, text, text, text),
   public.pass_on(text, text, text, text, smallint),
   public.mark_received(text)
   to authenticated;

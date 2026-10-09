@@ -45,11 +45,13 @@ export function onSessionChange(listener: (session: Session | null) => void): ()
 
 /**
  * This account's club profile. With no argument, just looks it up (null
- * means none yet). With a person id, claims that unclaimed profile as yours:
- * the "That's me" on the welcome screen.
+ * means none yet). With a person id and the invite code you came in with,
+ * claims that unclaimed profile as yours: the "That's me" on the welcome
+ * screen.
  */
 export async function claimProfile(
   personId?: string,
+  inviteCode?: string,
 ): Promise<{ personId: string | null; error: string | null }> {
   if (!supabase) {
     return { personId: null, error: null };
@@ -57,7 +59,7 @@ export async function claimProfile(
 
   const { data, error } = await supabase.rpc(
     'claim_profile',
-    personId ? { p_person_id: personId } : {},
+    personId ? { p_person_id: personId, p_invite_code: inviteCode ?? null } : {},
   );
   if (error) {
     console.warn('Supabase claim_profile failed:', error.message);

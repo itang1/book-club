@@ -1,23 +1,24 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Friend } from '../types';
 import { theme } from '../theme';
 import { tagline } from '../content/about';
-import { invitedByFromUrl } from '../lib/invite';
+import { inviteCodeFromUrl } from '../lib/invite';
+import { groupPreview, unclaimedInGroup } from '../lib/bookClubService';
 import type { NewProfile } from '../lib/useBookClub';
 
+type ClaimableProfile = Pick<Friend, 'id' | 'name' | 'city'>;
+
 type WelcomeScreenProps = {
-  /** Everyone in the club, to say who invited you. */
-  members: Friend[];
   /**
-   * Profiles waiting for their person: with real accounts, the ones no
-   * account has claimed yet; on demo data, everyone.
+   * Demo data only: everyone, to become. With real accounts the list comes
+   * from the invite link instead (who in that group hasn't signed in yet).
    */
-  claimable: Friend[];
-  onClaim: (personId: string) => void;
-  onCreate: (profile: NewProfile, invitedBy: string | null) => void;
+  demoMembers?: Friend[];
+  onClaim: (personId: string, inviteCode: string | null) => void;
+  onCreate: (profile: NewProfile, inviteCode: string | null) => void;
   /** The signed-in email, with real accounts. */
   email?: string | null;
   onSignOut?: () => void;
@@ -29,8 +30,7 @@ type WelcomeScreenProps = {
  * who's already there finds themselves before reaching the form.
  */
 export function WelcomeScreen({
-  members,
-  claimable,
+  demoMembers,
   onClaim,
   onCreate,
   email,
@@ -41,8 +41,20 @@ export function WelcomeScreen({
   const [city, setCity] = useState('');
   const [region, setRegion] = useState('');
 
-  const invitedBy = invitedByFromUrl();
-  const inviter = members.find((person) => person.id === invitedBy);
+  const inviteCode = inviteCodeFromUrl();
+  const [groupName, setGroupName] = useState<string | null>(null);
+  const [invited, setInvited] = useState<ClaimableProfile[]>([]);
+
+  // An invite link names its group and lists who in it hasn't signed in yet.
+  useEffect(() => {
+    if (!inviteCode) {
+      return;
+    }
+    groupPreview(inviteCode).then((group) => setGroupName(group?.name ?? null));
+    unclaimedInGroup(inviteCode).then(setInvited);
+  }, [inviteCode]);
+
+  const claimable: ClaimableProfile[] = demoMembers ?? invited;
   const ready = Boolean(name.trim() && city.trim());
 
   return (
@@ -53,14 +65,12 @@ export function WelcomeScreen({
     >
       <Text style={styles.title}>Sisterhood of the Traveling Books</Text>
       <Text style={styles.subtitle}>
-        {inviter
-          ? `${inviter.name.split(' ')[0]} invited you. ${tagline}`
-          : tagline}
+        {groupName ? `You're invited to ${groupName}. ${tagline}` : tagline}
       </Text>
 
       {claimable.length > 0 && (
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>Already in the club?</Text>
+          <Text style={styles.cardTitle}>Already in {groupName ?? 'the club'}?</Text>
           <Text style={styles.note}>Find yourself and pick up where your friends left off.</Text>
           {claimable.map((person) => (
             <View key={person.id} style={styles.personRow}>
@@ -68,7 +78,10 @@ export function WelcomeScreen({
                 <Text style={styles.personName}>{person.name}</Text>
                 <Text style={styles.personCity}>{person.city}</Text>
               </View>
-              <Pressable style={styles.claimButton} onPress={() => onClaim(person.id)}>
+              <Pressable
+                style={styles.claimButton}
+                onPress={() => onClaim(person.id, inviteCode)}
+              >
                 <Text style={styles.claimButtonText}>That's me</Text>
               </Pressable>
             </View>
@@ -109,7 +122,7 @@ export function WelcomeScreen({
         <Pressable
           style={[styles.primaryButton, !ready && styles.disabled]}
           disabled={!ready}
-          onPress={() => onCreate({ name, city, region }, invitedBy)}
+          onPress={() => onCreate({ name, city, region }, inviteCode)}
         >
           <Text style={styles.primaryButtonText}>Join</Text>
         </Pressable>

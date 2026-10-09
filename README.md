@@ -26,6 +26,7 @@ npm start      # your Supabase project (.env); sign in by emailed link
 npm run demo   # the fictional demo group, with a DEV MODE bar to switch people
 npm test       # the rules: who has it, who's next, what's sealed
 npm run typecheck
+supabase/tests/run.sh   # who can see and do what, against a local Postgres
 ```
 
 `.env` needs `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_ANON_KEY`
@@ -59,13 +60,17 @@ local development).
 ## Accounts and privacy
 
 - Everyone signs in with an emailed link. No passwords.
-- First time in, you either tap **That's me** on your existing profile or make
-  a new one. A profile can be claimed once, and an account holds one profile.
-- Signed out, the app's public key can read and write nothing.
-- Signed in, you can read the club and act only as yourself. Lending and
-  passing on are database functions that check you own or hold the book.
-- Next: Groups, so each book is visible only to its circle. See
-  `docs/groups-and-privacy.md`.
+- **Groups** are the circles books are lent within. Every book belongs to one,
+  and only its members (plus whoever's reading or waiting for it) can see it.
+  You join by the group's invite link.
+- **Friends** are social: requests need accepting, and either side can
+  unfriend, silently. Being friends doesn't open anyone's books.
+- Opening an invite link, people who were added before accounts existed tap
+  **That's me** to claim their profile; anyone else makes a new one.
+- Signed out, the app's public key can read and write nothing; a stranger
+  who signs up sees nobody until they're invited somewhere.
+- The database enforces all of it (`supabase/schema.sql`), and
+  `supabase/tests/` checks it as real users on every deploy.
 
 The repo is public, so real names live only in Supabase and in gitignored
 `*.local.sql` files. `src/data/mockData.ts` is always fictional.

@@ -1,5 +1,25 @@
-/** A mutual friendship between two people in the club, by id. */
-export type Friendship = [string, string];
+/**
+ * A friendship between two people, stored once per pair (a < b). It starts
+ * "pending" from whoever asked and becomes "accepted" when the other says
+ * yes. Declining, cancelling and unfriending all just remove it.
+ */
+export type Friendship = {
+  a: string;
+  b: string;
+  status: 'pending' | 'accepted';
+  requestedBy: string;
+};
+
+/**
+ * A circle books are lent within. Every book belongs to one, and only its
+ * members can see it. You join by invite link (the code is in the link).
+ */
+export type Group = {
+  id: string;
+  name: string;
+  inviteCode: string;
+  memberIds: string[];
+};
 
 export type FriendStatus = 'waiting' | 'reading' | 'done';
 
@@ -64,6 +84,8 @@ export type Book = {
   coverColor: string;
   /** Who gave the owner this copy, if it was a gift. Any name, member or not. */
   giftedBy?: string;
+  /** The group it's lent within. */
+  groupId?: string;
   queue: ReadingQueueEntry[];
   handoffs: Handoff[];
 };

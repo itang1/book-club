@@ -16,6 +16,7 @@ import { isDevMode } from './src/lib/devMode';
 import { theme } from './src/theme';
 import { DevBar } from './src/components/DevBar';
 import { TabBar } from './src/components/TabBar';
+import { JoinGroupPrompt } from './src/components/JoinGroupPrompt';
 import { HomeScreen } from './src/screens/HomeScreen';
 import { FriendsScreen } from './src/screens/FriendsScreen';
 import { AddBookScreen } from './src/screens/AddBookScreen';
@@ -70,6 +71,9 @@ const tabStyles = StyleSheet.create({
 
 function HomeStack({ club }: { club: BookClub }) {
   const me = club.members.find((person) => person.id === club.currentUserId) ?? null;
+  const myGroups = club.groups.filter(
+    (group) => club.currentUserId && group.memberIds.includes(club.currentUserId),
+  );
 
   return (
     <Stack.Navigator
@@ -101,6 +105,7 @@ function HomeStack({ club }: { club: BookClub }) {
           <BookDetailScreen
             {...props}
             books={club.books}
+            groups={club.groups}
             currentUserId={club.currentUserId}
             onHandOff={club.handOff}
             onMarkReceived={club.markReceived}
@@ -112,12 +117,16 @@ function HomeStack({ club }: { club: BookClub }) {
       {/* Adding a book is occasional, so it lives behind the + on Home rather
           than taking a permanent tab. */}
       <Stack.Screen name="AddBook" options={{ title: 'Lend a new book' }}>
-        {(props) => <AddBookScreen
+        {(props) => (
+          <AddBookScreen
             {...props}
             owner={me}
             members={club.members}
+            groups={myGroups}
             onAddBook={club.addBook}
-          />}
+            onCreateGroup={club.createGroup}
+          />
+        )}
       </Stack.Screen>
     </Stack.Navigator>
   );
@@ -141,9 +150,14 @@ function Tabs({ club }: { club: BookClub }) {
             <FriendsScreen
               members={club.members}
               friendships={club.friendships}
+              groups={club.groups}
               books={club.books}
               currentUserId={club.currentUserId}
-              onAddFriend={club.addFriend}
+              onRequestFriend={club.requestFriend}
+              onAcceptFriend={club.acceptFriend}
+              onRemoveFriend={club.removeFriend}
+              onCreateGroup={club.createGroup}
+              onLeaveGroup={club.leaveGroup}
             />
           )}
         </Tab.Screen>
@@ -181,10 +195,7 @@ function Root() {
   } else if (!club.currentUserId) {
     body = (
       <WelcomeScreen
-        members={club.members}
-        claimable={
-          club.usesAccounts ? club.members.filter((person) => !person.userId) : club.members
-        }
+        demoMembers={club.usesAccounts ? undefined : club.members}
         onClaim={club.claimExisting}
         onCreate={club.createProfile}
         email={club.usesAccounts ? club.email : null}
@@ -197,7 +208,17 @@ function Root() {
       <RulesAgreementScreen firstName={me.name.split(' ')[0]} onAgree={club.agreeToRules} />
     );
   } else {
-    body = <Tabs club={club} />;
+    body = (
+      <>
+        <Tabs club={club} />
+        {/* Someone signed in who opened an invite link: join, or not now. */}
+        <JoinGroupPrompt
+          groups={club.groups}
+          currentUserId={club.currentUserId}
+          onJoin={club.joinGroup}
+        />
+      </>
+    );
   }
 
   return (

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
-import { Book, Friend, RootStackParamList } from '../types';
+import { Book, Friend, Group, RootStackParamList } from '../types';
 import { theme } from '../theme';
 import { coverColorFor } from '../lib/covers';
 import { Ionicons } from '@expo/vector-icons';
@@ -13,12 +13,27 @@ type AddBookScreenProps = {
   owner: Friend | null;
   /** Everyone in the club, to suggest who a gift was from. */
   members: Friend[];
+  /** Your groups: every book is lent within one. */
+  groups: Group[];
   onAddBook: (book: Book) => void;
+  /** Start a group from here, if you're not in one yet. Returns its id. */
+  onCreateGroup: (name: string) => string | null;
 };
 
-export function AddBookScreen({ navigation, owner, members, onAddBook }: AddBookScreenProps) {
+export function AddBookScreen({
+  navigation,
+  owner,
+  members,
+  groups,
+  onAddBook,
+  onCreateGroup,
+}: AddBookScreenProps) {
   const [title, setTitle] = useState('');
   const [author, setAuthor] = useState('');
+  // Your only group is picked for you; with several, you choose.
+  const [groupId, setGroupId] = useState<string | null>(groups.length === 1 ? groups[0].id : null);
+  const [newGroupName, setNewGroupName] = useState('');
+  const group = groups.find((candidate) => candidate.id === groupId);
   const [isGift, setIsGift] = useState(false);
   const [giftedBy, setGiftedBy] = useState('');
   // Quick picks for who it was from; anyone else can be typed in.
@@ -26,11 +41,15 @@ export function AddBookScreen({ navigation, owner, members, onAddBook }: AddBook
     .filter((person) => person.id !== owner?.id)
     .map((person) => person.name.split(' ')[0]);
 
-  const missing = [!title.trim() && 'a title', !author.trim() && 'an author'].filter(Boolean);
+  const missing = [
+    !title.trim() && 'a title',
+    !author.trim() && 'an author',
+    !group && 'a group',
+  ].filter(Boolean);
   const ready = missing.length === 0 && Boolean(owner);
 
   const handleSubmit = () => {
-    if (!ready || !owner) {
+    if (!ready || !owner || !group) {
       return;
     }
 
@@ -41,6 +60,7 @@ export function AddBookScreen({ navigation, owner, members, onAddBook }: AddBook
       author: author.trim(),
       coverColor: coverColorFor(title.trim(), author.trim()),
       giftedBy: isGift && giftedBy.trim() ? giftedBy.trim() : undefined,
+      groupId: group.id,
       // Only the owner starts in the queue. Everyone else signs up from the
       // book's page if they want it; nobody is put in line for them.
       queue: [{ ...owner, position: 0, status: 'reading' }],
@@ -96,6 +116,53 @@ export function AddBookScreen({ navigation, owner, members, onAddBook }: AddBook
           placeholderTextColor={theme.colors.faint}
           style={styles.input}
         />
+
+        {/* Who can borrow it is the group, said in so many words. */}
+        <Text style={styles.fieldLabel}>Who can borrow it?</Text>
+        {groups.length === 0 ? (
+          <View>
+            <Text style={styles.hint}>
+              Books are lent within a group. Start one for the friends you'll pass this to.
+            </Text>
+            <TextInput
+              value={newGroupName}
+              onChangeText={setNewGroupName}
+              placeholder="Group name, e.g. Sunday Book Club"
+              placeholderTextColor={theme.colors.faint}
+              style={styles.input}
+            />
+            <Pressable
+              style={[styles.groupChip, styles.groupChipOn, !newGroupName.trim() && styles.primaryButtonDisabled]}
+              disabled={!newGroupName.trim()}
+              onPress={() => {
+                const id = onCreateGroup(newGroupName);
+                if (id) {
+                  setGroupId(id);
+                  setNewGroupName('');
+                }
+              }}
+            >
+              <Text style={[styles.groupChipText, styles.groupChipTextOn]}>Start this group</Text>
+            </Pressable>
+          </View>
+        ) : (
+          <View style={styles.giverRow}>
+            {groups.map((candidate) => (
+              <Pressable
+                key={candidate.id}
+                style={[styles.groupChip, groupId === candidate.id && styles.groupChipOn]}
+                onPress={() => setGroupId(candidate.id)}
+              >
+                <Text style={[styles.groupChipText, groupId === candidate.id && styles.groupChipTextOn]}>
+                  {candidate.name}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+        )}
+        {group && (
+          <Text style={styles.hint}>Only {group.name} can see it and join the line.</Text>
+        )}
 
         {/* A gift stays yours to lend; the book page credits the giver. */}
         <Pressable
@@ -197,6 +264,27 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
     marginBottom: 6,
+  },
+  groupChip: {
+    borderWidth: 1.5,
+    borderColor: theme.colors.accent,
+    borderRadius: 999,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    marginRight: 8,
+    marginBottom: 8,
+    alignSelf: 'flex-start',
+  },
+  groupChipOn: {
+    backgroundColor: theme.colors.accent,
+  },
+  groupChipText: {
+    color: theme.colors.accent,
+    fontWeight: '700',
+    fontSize: 13,
+  },
+  groupChipTextOn: {
+    color: theme.colors.onAccent,
   },
   giftToggle: {
     flexDirection: 'row',
