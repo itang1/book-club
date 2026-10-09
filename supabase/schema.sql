@@ -24,8 +24,9 @@
 -- book and passing one on go through the functions at the bottom of this
 -- file, which check that you own the book or are holding it.
 --
--- Each person is linked to an account by friends.user_id. Existing people
--- are linked on their first sign-in through profile_claims (see there).
+-- Each person is linked to an account by friends.user_id. Someone already
+-- in the club claims their profile on first sign-in ("That's me"); someone
+-- new makes one. See claim_profile().
 -- ===================================================================
 
 -- ---------------------------------------------------------------
@@ -111,14 +112,9 @@ alter table public.handoffs add column if not exists rating smallint
 alter table public.friends add column if not exists user_id uuid unique
   references auth.users (id) on delete set null;
 
--- Which email claims which existing profile on first sign-in. Filled in by
--- hand (seed.local.sql) for people who were in the club before accounts
--- existed. Nobody can read or write it through the API: no grants, RLS on,
--- no policies. Only claim_profile() below looks at it.
-create table if not exists public.profile_claims (
-  person_id text primary key references public.friends (id) on delete cascade,
-  email text not null unique
-);
+-- Retired: an email-to-profile table that had to be filled in by hand before
+-- anyone could sign in. Claiming is now done in the app.
+drop table if exists public.profile_claims;
 
 -- ---------------------------------------------------------------
 -- Friendships: who is friends with whom. `friends` is everyone in the club;
@@ -175,7 +171,7 @@ $$;
 -- gets nothing at all.
 -- ---------------------------------------------------------------
 revoke all on public.friends, public.books, public.reading_queue, public.handoffs,
-  public.friendships, public.profile_claims, public.book_current_location
+  public.friendships, public.book_current_location
   from anon, authenticated;
 
 grant usage on schema public to authenticated;
@@ -198,7 +194,6 @@ alter table public.books enable row level security;
 alter table public.reading_queue enable row level security;
 alter table public.handoffs enable row level security;
 alter table public.friendships enable row level security;
-alter table public.profile_claims enable row level security;
 
 -- Retire every earlier policy: the demo-open ones and the ones from the old
 -- policies-authenticated.sql.
@@ -284,9 +279,13 @@ create policy "befriend as yourself"
 -- and all their steps succeed or fail together.
 -- ---------------------------------------------------------------
 
--- Link the signed-in account to its profile. Returns the person id, or null
--- if this account has no profile yet (the app then offers to make one).
-create or replace function public.claim_profile() returns text
+-- Link the signed-in account to its profile.
+--   claim_profile()           → your profile's id, or null if you have none
+--   claim_profile('friend-x') → claim that profile as yours ("That's me")
+-- A profile can only be claimed while no account has it, and an account can
+-- only ever hold one profile, so once someone has claimed theirs it's locked.
+drop function if exists public.claim_profile();
+create or replace function public.claim_profile(p_person_id text default null) returns text
 language plpgsql security definer set search_path = public
 as $$
 declare
@@ -297,17 +296,16 @@ begin
   end if;
 
   select id into person from public.friends where user_id = auth.uid();
-  if person is not null then
+  if person is not null or p_person_id is null then
     return person;
   end if;
 
-  select c.person_id into person
-  from public.profile_claims c
-  join public.friends f on f.id = c.person_id
-  where lower(c.email) = lower(auth.jwt() ->> 'email') and f.user_id is null;
+  update public.friends set user_id = auth.uid()
+  where id = p_person_id and user_id is null
+  returning id into person;
 
-  if person is not null then
-    update public.friends set user_id = auth.uid() where id = person;
+  if person is null then
+    raise exception 'That profile has already been claimed';
   end if;
 
   return person;
@@ -375,11 +373,11 @@ begin
 end;
 $$;
 
-revoke all on function public.me(), public.claim_profile(),
+revoke all on function public.me(), public.claim_profile(text),
   public.lend_book(text, text, text, text, text),
   public.pass_on(text, text, text, text, smallint)
   from public, anon;
-grant execute on function public.me(), public.claim_profile(),
+grant execute on function public.me(), public.claim_profile(text),
   public.lend_book(text, text, text, text, text),
   public.pass_on(text, text, text, text, smallint)
   to authenticated;

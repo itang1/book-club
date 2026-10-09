@@ -170,18 +170,16 @@ function Root() {
   } else if (club.usesAccounts && !club.signedIn) {
     body = <SignInScreen />;
   } else if (!club.currentUserId) {
-    body = club.usesAccounts ? (
+    body = (
       <WelcomeScreen
         members={club.members}
+        claimable={
+          club.usesAccounts ? club.members.filter((person) => !person.userId) : club.members
+        }
+        onClaim={club.claimExisting}
         onCreate={club.createProfile}
-        email={club.email}
-        onSignOut={club.signOut}
-      />
-    ) : (
-      <WelcomeScreen
-        members={club.members}
-        onCreate={club.createProfile}
-        onPick={club.chooseReader}
+        email={club.usesAccounts ? club.email : null}
+        onSignOut={club.usesAccounts ? club.signOut : undefined}
       />
     );
   } else {

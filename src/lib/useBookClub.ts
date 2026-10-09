@@ -128,13 +128,13 @@ export function useBookClub() {
         return;
       }
 
-      const [personId, data] = await Promise.all([claimProfile(), fetchBookClubData()]);
+      const [claim, data] = await Promise.all([claimProfile(), fetchBookClubData()]);
       if (!active) {
         return;
       }
 
       applyData(data);
-      setCurrentUserId(personId);
+      setCurrentUserId(claim.personId);
       setLoaded(true);
     });
 
@@ -155,6 +155,32 @@ export function useBookClub() {
   const chooseReader = (personId: string) => {
     setCurrentUserId(personId);
     saveReaderId(personId);
+  };
+
+  /**
+   * "That's me": someone already in the club takes their profile. With real
+   * accounts the database links it to this account (refused if someone else
+   * got there first); on demo data it's a local choice.
+   */
+  const claimExisting = async (personId: string) => {
+    if (!usesAccounts) {
+      chooseReader(personId);
+      return;
+    }
+
+    const name = members.find((person) => person.id === personId)?.name ?? 'that profile';
+    const claim = await claimProfile(personId);
+    if (claim.error || !claim.personId) {
+      setSaveProblem({ action: `claim ${name}`, reason: claim.error ?? 'Unknown error' });
+      return;
+    }
+
+    setMembers((current) =>
+      current.map((person) =>
+        person.id === claim.personId ? { ...person, userId: session?.user.id } : person,
+      ),
+    );
+    setCurrentUserId(claim.personId);
   };
 
   /** Signs out of the account, or in demo mode forgets the local choice. */
@@ -330,6 +356,7 @@ export function useBookClub() {
     dismissSaveProblem: () => setSaveProblem(null),
     refresh,
     chooseReader,
+    claimExisting,
     signOut,
     createProfile,
     addFriend,

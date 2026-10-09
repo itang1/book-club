@@ -9,51 +9,42 @@ import { invitedByFromUrl } from '../lib/invite';
 import type { NewProfile } from '../lib/useBookClub';
 
 type WelcomeScreenProps = {
+  /** Everyone in the club, to say who invited you. */
   members: Friend[];
-  onCreate: (profile: NewProfile, invitedBy: string | null) => void;
   /**
-   * Demo data only: become an existing member. With real accounts there's
-   * no picking someone else; existing members are linked by email instead.
+   * Profiles waiting for their person: with real accounts, the ones no
+   * account has claimed yet; on demo data, everyone.
    */
-  onPick?: (personId: string) => void;
+  claimable: Friend[];
+  onClaim: (personId: string) => void;
+  onCreate: (profile: NewProfile, invitedBy: string | null) => void;
   /** The signed-in email, with real accounts. */
   email?: string | null;
   onSignOut?: () => void;
 };
 
 /**
- * First launch on a device: make your own profile. Nobody else adds you;
- * you join, ideally from a friend's invite link.
- *
- * Until there's real sign-in, an existing member on a new device picks
- * themselves from the list below the form. That's honest about what it is:
- * a stand-in, not security.
+ * First time in: either you're already in the club (tap "That's me") or
+ * you're new (make your profile). The first choice comes first, so a friend
+ * who's already there finds themselves before reaching the form.
  */
-export function WelcomeScreen({ members, onCreate, onPick, email, onSignOut }: WelcomeScreenProps) {
+export function WelcomeScreen({
+  members,
+  claimable,
+  onClaim,
+  onCreate,
+  email,
+  onSignOut,
+}: WelcomeScreenProps) {
   const insets = useSafeAreaInsets();
   const [name, setName] = useState('');
   const [city, setCity] = useState('');
   const [region, setRegion] = useState('');
-  const [showMembers, setShowMembers] = useState(false);
   const [aboutOpen, setAboutOpen] = useState(false);
 
   const invitedBy = invitedByFromUrl();
   const inviter = members.find((person) => person.id === invitedBy);
-  const [differentPerson, setDifferentPerson] = useState(false);
-
-  /**
-   * With real accounts: an existing member with the same first name whose
-   * profile isn't linked to any account yet. Probably this person, signed in
-   * before their email was linked; making a new profile would split them in
-   * two. They have to say they're someone else before Join works.
-   */
-  const firstName = (full: string) => full.trim().split(/\s+/)[0]?.toLowerCase() ?? '';
-  const lookalike =
-    email && name.trim()
-      ? members.find((person) => !person.userId && firstName(person.name) === firstName(name))
-      : undefined;
-  const blocked = Boolean(lookalike) && !differentPerson;
-  const ready = Boolean(name.trim() && city.trim()) && !blocked;
+  const ready = Boolean(name.trim() && city.trim());
 
   return (
     <ScrollView
@@ -68,8 +59,28 @@ export function WelcomeScreen({ members, onCreate, onPick, email, onSignOut }: W
           : "One copy, passed between friends, and every place it's been."}
       </Text>
 
+      {claimable.length > 0 && (
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Already in the club?</Text>
+          <Text style={styles.note}>Find yourself and pick up where your friends left off.</Text>
+          {claimable.map((person) => (
+            <View key={person.id} style={styles.personRow}>
+              <View style={styles.personInfo}>
+                <Text style={styles.personName}>{person.name}</Text>
+                <Text style={styles.personCity}>{person.city}</Text>
+              </View>
+              <Pressable style={styles.claimButton} onPress={() => onClaim(person.id)}>
+                <Text style={styles.claimButtonText}>That's me</Text>
+              </Pressable>
+            </View>
+          ))}
+        </View>
+      )}
+
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>Join the Sisterhood</Text>
+        <Text style={styles.cardTitle}>
+          {claimable.length > 0 ? 'New here? Join the Sisterhood' : 'Join the Sisterhood'}
+        </Text>
         <TextInput
           value={name}
           onChangeText={setName}
@@ -96,20 +107,6 @@ export function WelcomeScreen({ members, onCreate, onPick, email, onSignOut }: W
           Friends see your city so they know where their book has been.
         </Text>
 
-        {lookalike && blocked && (
-          <View style={styles.lookalike}>
-            <Text style={styles.lookalikeTitle}>Is that you?</Text>
-            <Text style={styles.lookalikeText}>
-              There's already a {lookalike.name} in the club ({lookalike.city}) who hasn't
-              signed in yet. If that's you, don't make a new profile: ask whoever runs
-              the club to link {email} to it, then sign in again.
-            </Text>
-            <Pressable onPress={() => setDifferentPerson(true)}>
-              <Text style={styles.link}>No, I'm a different {lookalike.name.split(' ')[0]}</Text>
-            </Pressable>
-          </View>
-        )}
-
         <Pressable
           style={[styles.primaryButton, !ready && styles.disabled]}
           disabled={!ready}
@@ -119,39 +116,15 @@ export function WelcomeScreen({ members, onCreate, onPick, email, onSignOut }: W
         </Pressable>
       </View>
 
-      {email && (
-        <View style={styles.existing}>
-          <Text style={styles.note}>
-            Signed in as {email}. Already in the club under another profile? Ask
-            whoever runs it to link this email to you, then sign in again.
+      {email && onSignOut && (
+        <Pressable style={styles.footerLink} onPress={onSignOut}>
+          <Text style={styles.muted}>
+            Signed in as {email}. <Text style={styles.link}>Not you? Sign out</Text>
           </Text>
-          {onSignOut && (
-            <Pressable onPress={onSignOut}>
-              <Text style={styles.link}>Not you? Sign out</Text>
-            </Pressable>
-          )}
-        </View>
+        </Pressable>
       )}
 
-      {onPick && members.length > 0 && (
-        <View style={styles.existing}>
-          <Pressable onPress={() => setShowMembers((open) => !open)}>
-            <Text style={styles.link}>
-              {showMembers ? 'Hide' : 'Already in the club? Find yourself'}
-            </Text>
-          </Pressable>
-          {showMembers && (
-            <View style={styles.chipRow}>
-              {members.map((person) => (
-                <Pressable key={person.id} style={styles.chip} onPress={() => onPick(person.id)}>
-                  <Text style={styles.chipText}>{person.name}</Text>
-                </Pressable>
-              ))}
-            </View>
-          )}
-        </View>
-      )}
-      <Pressable style={styles.existing} onPress={() => setAboutOpen(true)}>
+      <Pressable style={styles.footerLink} onPress={() => setAboutOpen(true)}>
         <Text style={styles.link}>What is this? Read the Rules of the Books</Text>
       </Pressable>
       <AboutSheet visible={aboutOpen} onClose={() => setAboutOpen(false)} />
@@ -188,13 +161,51 @@ const styles = StyleSheet.create({
     borderColor: theme.colors.border,
     borderRadius: 16,
     padding: 18,
+    marginBottom: 16,
   },
   cardTitle: {
     fontFamily: theme.fonts.serif,
     fontSize: 20,
     fontWeight: '700',
     color: theme.colors.text,
-    marginBottom: 12,
+    marginBottom: 8,
+  },
+  note: {
+    fontSize: 12,
+    lineHeight: 17,
+    color: theme.colors.muted,
+    marginBottom: 8,
+  },
+  personRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.border,
+  },
+  personInfo: {
+    flex: 1,
+  },
+  personName: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: theme.colors.text,
+  },
+  personCity: {
+    fontSize: 12,
+    color: theme.colors.muted,
+    marginTop: 1,
+  },
+  claimButton: {
+    backgroundColor: theme.colors.accent,
+    borderRadius: 999,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+  },
+  claimButtonText: {
+    color: theme.colors.onAccent,
+    fontWeight: '700',
+    fontSize: 13,
   },
   input: {
     backgroundColor: theme.colors.soft,
@@ -205,32 +216,8 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginBottom: 8,
   },
-  note: {
-    fontSize: 12,
-    color: theme.colors.muted,
-    marginTop: 2,
-    marginBottom: 6,
-  },
-  lookalike: {
-    backgroundColor: theme.colors.soft,
-    borderRadius: 12,
-    padding: 12,
-    marginTop: 8,
-  },
-  lookalikeTitle: {
-    fontWeight: '700',
-    fontSize: 14,
-    color: theme.colors.text,
-    marginBottom: 4,
-  },
-  lookalikeText: {
-    fontSize: 13,
-    lineHeight: 18,
-    color: theme.colors.text,
-    marginBottom: 8,
-  },
   primaryButton: {
-    marginTop: 10,
+    marginTop: 6,
     backgroundColor: theme.colors.accent,
     borderRadius: 12,
     paddingVertical: 13,
@@ -244,31 +231,19 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     fontSize: 15,
   },
-  existing: {
-    marginTop: 24,
+  footerLink: {
+    marginTop: 12,
     alignItems: 'center',
+    paddingVertical: 6,
+  },
+  muted: {
+    fontSize: 13,
+    color: theme.colors.muted,
+    textAlign: 'center',
   },
   link: {
     color: theme.colors.accent,
     fontWeight: '700',
     fontSize: 14,
-  },
-  chipRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-    marginTop: 12,
-  },
-  chip: {
-    backgroundColor: theme.colors.soft,
-    borderRadius: 999,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    margin: 4,
-  },
-  chipText: {
-    color: theme.colors.text,
-    fontWeight: '700',
-    fontSize: 12,
   },
 });

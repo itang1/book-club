@@ -44,21 +44,27 @@ export function onSessionChange(listener: (session: Session | null) => void): ()
 }
 
 /**
- * Link this account to its club profile: one already linked, or one waiting
- * to be claimed by this email (profile_claims). Null means no profile yet.
+ * This account's club profile. With no argument, just looks it up (null
+ * means none yet). With a person id, claims that unclaimed profile as yours:
+ * the "That's me" on the welcome screen.
  */
-export async function claimProfile(): Promise<string | null> {
+export async function claimProfile(
+  personId?: string,
+): Promise<{ personId: string | null; error: string | null }> {
   if (!supabase) {
-    return null;
+    return { personId: null, error: null };
   }
 
-  const { data, error } = await supabase.rpc('claim_profile');
+  const { data, error } = await supabase.rpc(
+    'claim_profile',
+    personId ? { p_person_id: personId } : {},
+  );
   if (error) {
     console.warn('Supabase claim_profile failed:', error.message);
-    return null;
+    return { personId: null, error: error.message };
   }
 
-  return (data as string | null) ?? null;
+  return { personId: (data as string | null) ?? null, error: null };
 }
 
 export async function signOutEverywhere(): Promise<void> {
