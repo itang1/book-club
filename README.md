@@ -1,4 +1,4 @@
-# Sisterhood of the Traveling Book
+# Sisterhood of the Traveling Books
 
 **Track the books your friends pass around.**
 

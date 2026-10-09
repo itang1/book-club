@@ -31,7 +31,7 @@ export function HomeScreen({ navigation, books, currentUserId }: HomeScreenProps
     >
       <View style={styles.headerWrap}>
         <View style={styles.headerText}>
-          <Text style={styles.title}>Sisterhood of the Traveling Book</Text>
+          <Text style={styles.title}>Sisterhood of the Traveling Books</Text>
           <Text style={styles.subtitle}>Track the books your friends pass around.</Text>
         </View>
         <Pressable
