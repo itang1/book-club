@@ -23,10 +23,10 @@ insert into public.friends (id, name, city, state, email) values
 on conflict (id) do nothing;
 
 insert into public.books (id, title, author, cover_color) values
-  ('book-1', 'The Secret Life of Bees', 'Sue Monk Kidd', '#d9a77d'),
-  ('book-2', 'Circe', 'Madeline Miller', '#b4b8a9'),
-  ('book-3', 'Tomorrow, and Tomorrow, and Tomorrow', 'Gabrielle Zevin', '#c7a6b5'),
-  ('book-4', 'Piranesi', 'Susanna Clarke', '#93a7a5')
+  ('book-1', 'The Sisterhood of the Traveling Pants', 'Ann Brashares', '#93a7a5'),
+  ('book-2', 'A Room with a View', 'E. M. Forster', '#c7a6b5'),
+  ('book-3', 'Little Women', 'Louisa May Alcott', '#a8927d'),
+  ('book-4', 'Anne of Green Gables', 'L. M. Montgomery', '#8f9bb0')
 on conflict (id) do nothing;
 
 insert into public.reading_queue (book_id, friend_id, position, status) values
@@ -47,15 +47,15 @@ on conflict (book_id, friend_id) do nothing;
 
 insert into public.handoffs (id, book_id, from_friend, to_friend, happened_at, rating, note) values
   ('handoff-1a', 'book-1', null,              'friend-carmen',  now() - interval '41 days', null, null),
-  ('handoff-1b', 'book-1', 'friend-carmen',   'friend-lena',    now() - interval '12 days', 5, 'Read the honey chapters on the porch if you can. Don''t skip the epigraphs.'),
+  ('handoff-1b', 'book-1', 'friend-carmen',   'friend-lena',    now() - interval '12 days', 5, 'Read it somewhere sunny. You''ll work out which of us is which by chapter three.'),
   ('handoff-2a', 'book-2', null,              'friend-lena',    now() - interval '63 days', null, null),
-  ('handoff-2b', 'book-2', 'friend-lena',     'friend-bridget', now() - interval '5 hours', 3, 'Gorgeous sentences, a little slow in the middle. Push through to Aeaea.'),
+  ('handoff-2b', 'book-2', 'friend-lena',     'friend-bridget', now() - interval '5 hours', 3, 'Slow to start, then it''s all sunlight. Lucy is so frustrating and so right.'),
   ('handoff-3a', 'book-3', null,              'friend-tibby',   now() - interval '94 days', null, null),
-  ('handoff-3b', 'book-3', 'friend-tibby',    'friend-carmen',  now() - interval '38 days', 4, 'The ending wrecked me. Call me when you get there.'),
+  ('handoff-3b', 'book-3', 'friend-tibby',    'friend-carmen',  now() - interval '38 days', 4, 'Bring tissues. I mean it. Call me when you get to the end.'),
   ('handoff-3c', 'book-3', 'friend-carmen',   'friend-bridget', now() - interval '7 days', 5, 'I underlined way too much, sorry not sorry.'),
   ('handoff-4a', 'book-4', null,              'friend-bridget', now() - interval '121 days', null, null),
-  ('handoff-4b', 'book-4', 'friend-bridget',  'friend-tibby',   now() - interval '88 days', 4, 'Trust it for the first fifty pages.'),
-  ('handoff-4c', 'book-4', 'friend-tibby',    'friend-carmen',  now() - interval '59 days', 5, 'The statues. That''s all I''ll say.'),
+  ('handoff-4b', 'book-4', 'friend-bridget',  'friend-tibby',   now() - interval '88 days', 4, 'Anne talks a lot for the first fifty pages. You''ll love her anyway.'),
+  ('handoff-4c', 'book-4', 'friend-tibby',    'friend-carmen',  now() - interval '59 days', 5, 'Kindred spirits. That''s all I''ll say.'),
   ('handoff-4d', 'book-4', 'friend-carmen',   'friend-bridget', now() - interval '20 days', 4, 'Thank you for lending me your copy. It''s a little sandier now.')
 on conflict (id) do nothing;
 

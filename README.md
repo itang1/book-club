@@ -24,16 +24,17 @@ object that can only be in one place at a time — which is the entire point. Th
 waiting is a feature. Your turn means something because someone has to hand it
 to you.
 
-Instead of asking the group chat "who has that copy of *The Secret Life of
-Bees*?", you open the app.
+Instead of asking the group chat "who has that copy of *Little Women*?", you
+open the app.
 
 ## Example: a book's journey
 
-Carmen adds her copy, and friends sign up for it. Here's what the app shows
+Carmen adds her copy of the book that started it all, and friends sign up
+for it. Here's what the app shows
 Lena, who has it now:
 
 ```
-The Secret Life of Bees — Sue Monk Kidd
+The Sisterhood of the Traveling Pants — Ann Brashares
   2 readers so far · 2 places visited · 41 days travelling
 
   With            Lena Kaligaris
@@ -62,8 +63,9 @@ appends a leg to the history. It never overwrites the last one, which is why
 "places visited" is answerable at all. Once nobody is waiting, the holder can
 **Return** it to its owner.
 
-The demo data is the four girls from the novel, in the places they spend that
-first summer: Lena with her grandparents on Santorini, Bridget at soccer camp in
+The demo data is the four girls from the novel, each lending a book that suits
+her (*The Sisterhood of the Traveling Pants*, *A Room with a View*, *Little
+Women*, *Anne of Green Gables*), in the places they spend that first summer: Lena with her grandparents on Santorini, Bridget at soccer camp in
 Baja, Carmen visiting her dad in Charleston, Tibby holding down the summer at
 home in Bethesda.
 

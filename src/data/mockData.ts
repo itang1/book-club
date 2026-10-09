@@ -52,9 +52,9 @@ const byId = (id: string): Friend => {
 export const booksSeed: Book[] = [
   {
     id: 'book-1',
-    title: 'The Secret Life of Bees',
-    author: 'Sue Monk Kidd',
-    coverColor: '#d9a77d',
+    title: 'The Sisterhood of the Traveling Pants',
+    author: 'Ann Brashares',
+    coverColor: '#93a7a5',
     queue: [
       { ...byId('friend-carmen'), position: 0, status: 'done' },
       { ...byId('friend-lena'), position: 1, status: 'reading' },
@@ -76,15 +76,15 @@ export const booksSeed: Book[] = [
         toFriend: 'friend-lena',
         happenedAt: daysAgo(12),
         rating: 5,
-        note: "Read the honey chapters on the porch if you can. Don't skip the epigraphs.",
+        note: "Read it somewhere sunny. You'll work out which of us is which by chapter three.",
       },
     ],
   },
   {
     id: 'book-2',
-    title: 'Circe',
-    author: 'Madeline Miller',
-    coverColor: '#b4b8a9',
+    title: 'A Room with a View',
+    author: 'E. M. Forster',
+    coverColor: '#c7a6b5',
     queue: [
       { ...byId('friend-lena'), position: 0, status: 'done' },
       { ...byId('friend-bridget'), position: 1, status: 'reading' },
@@ -105,15 +105,15 @@ export const booksSeed: Book[] = [
         toFriend: 'friend-bridget',
         happenedAt: daysAgo(0.2),
         rating: 3,
-        note: 'Gorgeous sentences, a little slow in the middle. Push through to Aeaea.',
+        note: "Slow to start, then it's all sunlight. Lucy is so frustrating and so right.",
       },
     ],
   },
   {
     id: 'book-3',
-    title: 'Tomorrow, and Tomorrow, and Tomorrow',
-    author: 'Gabrielle Zevin',
-    coverColor: '#c7a6b5',
+    title: 'Little Women',
+    author: 'Louisa May Alcott',
+    coverColor: '#a8927d',
     queue: [
       { ...byId('friend-tibby'), position: 0, status: 'done' },
       { ...byId('friend-carmen'), position: 1, status: 'done' },
@@ -134,7 +134,7 @@ export const booksSeed: Book[] = [
         toFriend: 'friend-carmen',
         happenedAt: daysAgo(38),
         rating: 4,
-        note: 'The ending wrecked me. Call me when you get there.',
+        note: 'Bring tissues. I mean it. Call me when you get to the end.',
       },
       {
         id: 'handoff-3c',
@@ -149,9 +149,9 @@ export const booksSeed: Book[] = [
   },
   {
     id: 'book-4',
-    title: 'Piranesi',
-    author: 'Susanna Clarke',
-    coverColor: '#93a7a5',
+    title: 'Anne of Green Gables',
+    author: 'L. M. Montgomery',
+    coverColor: '#8f9bb0',
     queue: [
       { ...byId('friend-bridget'), position: 0, status: 'done' },
       { ...byId('friend-carmen'), position: 2, status: 'done' },
@@ -173,7 +173,7 @@ export const booksSeed: Book[] = [
         toFriend: 'friend-tibby',
         happenedAt: daysAgo(88),
         rating: 4,
-        note: 'Trust it for the first fifty pages.',
+        note: "Anne talks a lot for the first fifty pages. You'll love her anyway.",
       },
       {
         id: 'handoff-4c',
@@ -182,7 +182,7 @@ export const booksSeed: Book[] = [
         toFriend: 'friend-carmen',
         happenedAt: daysAgo(59),
         rating: 5,
-        note: "The statues. That's all I'll say.",
+        note: "Kindred spirits. That's all I'll say.",
       },
       {
         id: 'handoff-4d',
