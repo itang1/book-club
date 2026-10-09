@@ -44,10 +44,12 @@ export function BookDetailScreen({ route, books, onPassOn }: BookDetailScreenPro
   return (
     <>
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-        {/* No cover art in the data model yet, so this is a colour swatch
-            derived from the title. Title and author live in the nav header. */}
+        {/* Stands in for cover art: a colour swatch derived from the title,
+            carrying title and author the way a real jacket would. */}
         <View style={[styles.cover, { backgroundColor: book.coverColor }]}>
           <View style={styles.coverSpine} />
+          <Text style={styles.coverTitle}>{book.title}</Text>
+          <Text style={styles.coverAuthor}>{book.author}</Text>
         </View>
 
         <View style={styles.statRow}>
@@ -198,18 +200,34 @@ const styles = StyleSheet.create({
   },
   cover: {
     width: '100%',
-    height: 150,
+    minHeight: 190,
     borderRadius: 24,
     overflow: 'hidden',
+    justifyContent: 'flex-end',
+    paddingVertical: 22,
+    paddingRight: 22,
+    paddingLeft: 32,
     marginBottom: 20,
   },
   coverSpine: {
     position: 'absolute',
-    left: 18,
+    left: 0,
     top: 0,
     bottom: 0,
-    width: 6,
-    backgroundColor: 'rgba(255, 255, 255, 0.28)',
+    width: 9,
+    backgroundColor: 'rgba(255, 255, 255, 0.26)',
+  },
+  coverTitle: {
+    color: '#fff',
+    fontSize: 24,
+    lineHeight: 30,
+    fontWeight: '800',
+  },
+  coverAuthor: {
+    color: 'rgba(255, 255, 255, 0.88)',
+    fontSize: 14,
+    fontWeight: '600',
+    marginTop: 6,
   },
   title: {
     fontSize: 28,
