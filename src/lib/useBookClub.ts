@@ -1,4 +1,5 @@
 import * as React from 'react';
+import type { Session } from '@supabase/supabase-js';
 
 import type { Book, Friend, Friendship, Handoff, Letter } from '../types';
 import {
@@ -12,6 +13,8 @@ import {
   recordHandoff,
   SaveError,
 } from './bookClubService';
+import type { BookClubData } from './bookClubService';
+import { claimProfile, onSessionChange, signOutEverywhere } from './auth';
 import { hasFinished, holderId } from './bookState';
 import { isDevMode } from './devMode';
 import { clearReaderId, loadReaderId, saveReaderId } from './identity';
@@ -41,6 +44,9 @@ function explain(reason: string): string {
  * `members` is everyone in the club (the `friends` table); `friendships` is
  * who is friends with whom.
  */
+/** Real accounts whenever there's a backend; local make-believe otherwise. */
+const usesAccounts = isSupabaseConfigured;
+
 export function useBookClub() {
   // With a backend, start empty rather than flashing the demo group first.
   const [books, setBooks] = React.useState<Book[]>(isSupabaseConfigured ? [] : demoData.books);
@@ -53,55 +59,8 @@ export function useBookClub() {
   const [currentUserId, setCurrentUserId] = React.useState<string | null>(null);
   const [loaded, setLoaded] = React.useState(false);
   const [refreshing, setRefreshing] = React.useState(false);
-
-  const applyData = (data: Awaited<ReturnType<typeof fetchBookClubData>>) => {
-    setBooks(data.books);
-    setMembers(data.friends);
-    setFriendships(data.friendships);
-  };
-
-  React.useEffect(() => {
-    let active = true;
-
-    Promise.all([loadReaderId(), fetchBookClubData()]).then(([saved, data]) => {
-      if (!active) {
-        return;
-      }
-
-      applyData(data);
-      // A remembered reader who's still in the club picks up where they left
-      // off. Otherwise: dev mode drops you in as the first member; everyone
-      // else gets the welcome screen.
-      if (saved && data.friends.some((person) => person.id === saved)) {
-        setCurrentUserId(saved);
-      } else if (isDevMode) {
-        setCurrentUserId(data.friends[0]?.id ?? null);
-      }
-      setLoaded(true);
-    });
-
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  /** Pull to refresh: other people's handoffs only arrive on a fetch. */
-  const refresh = async () => {
-    setRefreshing(true);
-    applyData(await fetchBookClubData());
-    setRefreshing(false);
-  };
-
-  const chooseReader = (personId: string) => {
-    setCurrentUserId(personId);
-    saveReaderId(personId);
-  };
-
-  /** Dev mode only: forget who's reading, to test the welcome screen. */
-  const signOut = () => {
-    setCurrentUserId(null);
-    clearReaderId();
-  };
+  /** The signed-in account, when the club runs on Supabase. */
+  const [session, setSession] = React.useState<Session | null>(null);
 
   /**
    * Writes are optimistic. If one doesn't reach the database, say which one
@@ -114,6 +73,99 @@ export function useBookClub() {
         setSaveProblem({ action, reason: explain(reason) });
       }
     });
+  };
+
+  const applyData = (data: BookClubData) => {
+    setBooks(data.books);
+    setMembers(data.friends);
+    setFriendships(data.friendships);
+    if (data.error) {
+      setSaveProblem({ action: 'load the club', reason: explain(data.error) });
+    }
+  };
+
+  React.useEffect(() => {
+    let active = true;
+
+    // Demo data (no Supabase): who you are is a local choice, remembered on
+    // this device. Dev mode drops you in as the first member.
+    if (!usesAccounts) {
+      Promise.all([loadReaderId(), fetchBookClubData()]).then(([saved, data]) => {
+        if (!active) {
+          return;
+        }
+
+        applyData(data);
+        if (saved && data.friends.some((person) => person.id === saved)) {
+          setCurrentUserId(saved);
+        } else if (isDevMode) {
+          setCurrentUserId(data.friends[0]?.id ?? null);
+        }
+        setLoaded(true);
+      });
+
+      return () => {
+        active = false;
+      };
+    }
+
+    // Supabase: who you are is whoever is signed in. The listener fires once
+    // straight away with the stored session, then on every sign-in/out.
+    // Token refreshes keep the same user, so they don't trigger a reload.
+    let lastUserId: string | null | undefined;
+    const stop = onSessionChange(async (next) => {
+      const userId = next?.user.id ?? null;
+      if (!active || userId === lastUserId) {
+        return;
+      }
+      lastUserId = userId;
+      setSession(next);
+
+      if (!next) {
+        applyData({ books: [], friends: [], friendships: [] });
+        setCurrentUserId(null);
+        setLoaded(true);
+        return;
+      }
+
+      const [personId, data] = await Promise.all([claimProfile(), fetchBookClubData()]);
+      if (!active) {
+        return;
+      }
+
+      applyData(data);
+      setCurrentUserId(personId);
+      setLoaded(true);
+    });
+
+    return () => {
+      active = false;
+      stop();
+    };
+  }, []);
+
+  /** Pull to refresh: other people's handoffs only arrive on a fetch. */
+  const refresh = async () => {
+    setRefreshing(true);
+    applyData(await fetchBookClubData());
+    setRefreshing(false);
+  };
+
+  /** Demo mode only: become someone else (the dev bar). */
+  const chooseReader = (personId: string) => {
+    setCurrentUserId(personId);
+    saveReaderId(personId);
+  };
+
+  /** Signs out of the account, or in demo mode forgets the local choice. */
+  const signOut = () => {
+    if (usesAccounts) {
+      signOutEverywhere();
+      return;
+    }
+
+    setCurrentUserId(null);
+    clearReaderId();
   };
 
   const updateBook = (bookId: string, change: (book: Book) => Book) => {
@@ -232,9 +284,9 @@ export function useBookClub() {
   };
 
   /**
-   * Someone new joins the club: their own profile, made by them. Stands in
-   * for account creation until sign-in exists. If they came from an invite,
-   * they start out friends with whoever sent it.
+   * Someone new joins the club: their own profile, made by them and tied to
+   * their account. If they came from an invite, they start out friends with
+   * whoever sent it.
    */
   const createProfile = (profile: NewProfile, invitedBy: string | null) => {
     const person: Friend = {
@@ -242,10 +294,15 @@ export function useBookClub() {
       name: profile.name.trim(),
       city: profile.city.trim(),
       state: profile.region.trim() || '—',
+      userId: session?.user.id,
     };
 
     setMembers((current) => [...current, person]);
-    chooseReader(person.id);
+    if (usesAccounts) {
+      setCurrentUserId(person.id);
+    } else {
+      chooseReader(person.id);
+    }
 
     const write = createFriend(person).then((reason) => {
       if (reason || !invitedBy || !members.some((member) => member.id === invitedBy)) {
@@ -260,6 +317,9 @@ export function useBookClub() {
   };
 
   return {
+    usesAccounts,
+    signedIn: session !== null,
+    email: session?.user.email ?? null,
     loaded,
     refreshing,
     books,

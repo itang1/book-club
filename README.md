@@ -82,11 +82,24 @@ home in Bethesda.
 - **Welcome** — first launch on a device: make your own profile. Opened from an
   invite link, you start out friends with whoever sent it.
 
-### Dev mode
+### Signing in, and dev mode
 
-Under `expo start`, a **DEV MODE** bar sits across the top of the app. Tap it to
-view as anyone in the club, or sign out to see the welcome screen. It's hidden
-in exported builds unless `EXPO_PUBLIC_DEV_MODE=true`.
+There are two ways to run the app, and they never mix:
+
+| | `npm start` | `npm run demo` |
+| --- | --- | --- |
+| Data | Your Supabase project (`.env`) | The fictional demo group |
+| Who you are | Whoever signs in, by emailed link | Anyone: a **DEV MODE** bar at the top switches people |
+| Writes | Checked by the database: only as yourself | Kept in memory |
+
+Against a real database there's no switching people: the database only lets
+you act as the account you signed in with. Existing members are linked to their
+accounts by email on first sign-in (`profile_claims`, filled in from
+`seed.local.sql`). Someone new makes their own profile after signing in.
+
+The deployed site is always the `npm start` kind. Both scripts clear Metro's
+cache on start, because it otherwise keeps the previous mode's settings baked
+into compiled files.
 
 ### Reading it again
 
@@ -172,13 +185,15 @@ All of it lives in `src/theme.ts`.
 ```bash
 npm install
 
-npm start          # Expo dev server
+npm start          # Expo dev server, against your Supabase (sign in to use it)
+npm run demo       # Expo dev server on the demo group, with the dev bar
 npm run ios        # iOS simulator
 npm run android    # Android emulator
 npm run web        # browser
 ```
 
-Out of the box it runs on fictional seed data — no backend required.
+With no `.env`, or under `npm run demo`, it runs on fictional seed data — no
+backend required.
 
 **Which people you see depends on `.env`.** With no Supabase credentials, the
 app shows the fictional demo group (Lena, Tibby, Carmen, Bridget) from
@@ -205,8 +220,20 @@ Every push to `main` builds the web app and publishes it to GitHub Pages
    only in GitHub, never in an `EXPO_PUBLIC_` variable.
 4. Push, or run the workflow from the Actions tab.
 
-Seed files (`seed.example.sql`, `seed.local.sql`) and
-`policies-authenticated.sql` are never run automatically.
+Seed files (`seed.example.sql`, `seed.local.sql`) are never run automatically.
+
+### Sign-in settings in Supabase
+
+Sign-in links only work if Supabase knows where to send people back to.
+**Authentication → URL Configuration:**
+
+- **Site URL:** `https://itang1.github.io/book-club/`
+- **Redirect URLs:** add `https://itang1.github.io/book-club/**` and, for
+  local development, `http://localhost:8081/**`
+
+Supabase's built-in email sender allows only a few sign-in emails per hour.
+That's fine for a friend group; before opening up, connect your own email
+provider under **Authentication → Emails → SMTP Settings**.
 
 The site lands at https://itang1.github.io/book-club. The workflow sets
 `EXPO_BASE_URL=/book-club` so asset paths resolve under the repo subpath
@@ -229,6 +256,7 @@ src/
 │   ├── BookDetailScreen.tsx   # The line, history, letters, handoff
 │   ├── FriendsScreen.tsx      # The group, add a friend
 │   ├── AddBookScreen.tsx      # Add a copy
+│   ├── SignInScreen.tsx       # Email me a sign-in link
 │   ├── WelcomeScreen.tsx      # Make your profile
 │   └── ProfileScreen.tsx      # Your own view
 ├── data/
@@ -239,6 +267,7 @@ src/
 │   ├── useBookClub.ts         # All club state and every change to it
 │   ├── friendGraph.ts         # Friends and "people you may know"
 │   ├── invite.ts              # Invite links
+│   ├── auth.ts                # Sign-in by emailed link
 │   ├── devMode.ts             # When the dev bar shows
 │   ├── stats.ts               # Numbers behind the visualisations
 │   ├── identity.ts            # Who's reading, remembered on this device
@@ -314,19 +343,17 @@ Supabase, never in a committed file. Two rules enforce it:
 
 ### Security status
 
-The policies in `schema.sql` are **demo-open**: anyone may read and write every
-row. The anon key is prefixed `EXPO_PUBLIC_`, so it's compiled into the client
-bundle — an open policy plus a published key means the data is effectively
-public.
+Everything requires signing in. The anon key compiled into the app can read
+and write nothing on its own. Signed in, you can read the whole club and write
+only as yourself; lending and passing on go through database functions
+(`lend_book`, `pass_on`) that check you own or hold the book.
 
-Until Supabase Auth is wired up, treat the database as semi-public: fine for book
-titles and first names, not for addresses or emails. Once auth exists, apply
-`supabase/policies-authenticated.sql` to require a signed-in user.
+Still to come: every signed-in member can read every book and person. Groups
+narrow that (`docs/groups-and-privacy.md`).
 
 ## Roadmap
 
-- Accounts and friend requests, so a group is built by invitation rather than by
-  hand-editing SQL
+- Friend requests and Groups (`docs/groups-and-privacy.md`)
 - Per-book audience, so a friend-of-a-friend can spot a copy and ask for a spot
   in its queue
 - Push notification when a book is handed to you

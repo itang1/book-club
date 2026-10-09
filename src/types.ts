@@ -10,6 +10,8 @@ export type Friend = {
   state: string;
   address?: string;
   email?: string;
+  /** The Supabase Auth account this person signs in with, once linked. */
+  userId?: string;
 };
 
 /**

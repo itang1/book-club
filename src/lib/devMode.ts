@@ -1,8 +1,15 @@
+import { isSupabaseConfigured } from './supabase';
+
 /**
- * Dev mode: a bar at the top of the app for switching between people, so you
- * can test a handoff from both ends without signing in and out.
+ * Dev mode: a bar at the top of the app for becoming anyone in the club, so
+ * you can test a handoff from both ends.
  *
- * On automatically in development builds (`expo start`). Off in exported
- * builds unless EXPO_PUBLIC_DEV_MODE=true, which is handy for a shared demo.
+ * It only exists on the demo data (`npm run demo`, no Supabase). Against a
+ * real database you are whoever is signed in, full stop: switching people
+ * there would mean acting as them, which the database rightly refuses.
+ *
+ * On by default under the dev server; EXPO_PUBLIC_DEV_MODE=true turns it on
+ * in an exported demo build.
  */
-export const isDevMode = __DEV__ || process.env.EXPO_PUBLIC_DEV_MODE === 'true';
+export const isDevMode =
+  !isSupabaseConfigured && (__DEV__ || process.env.EXPO_PUBLIC_DEV_MODE === 'true');

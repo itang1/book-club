@@ -22,6 +22,7 @@ import { AddBookScreen } from './src/screens/AddBookScreen';
 import { ProfileScreen } from './src/screens/ProfileScreen';
 import { BookDetailScreen } from './src/screens/BookDetailScreen';
 import { WelcomeScreen } from './src/screens/WelcomeScreen';
+import { SignInScreen } from './src/screens/SignInScreen';
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -216,6 +217,8 @@ function Tabs({ club }: { club: BookClub }) {
               books={club.books}
               me={me}
               friendCount={friendIdsOf(club.friendships, club.currentUserId).size}
+              email={club.usesAccounts ? club.email : null}
+              onSignOut={club.signOut}
             />
           )}
         </Tab.Screen>
@@ -235,8 +238,17 @@ function Root() {
         <ActivityIndicator color={theme.colors.accent} />
       </View>
     );
+  } else if (club.usesAccounts && !club.signedIn) {
+    body = <SignInScreen />;
   } else if (!club.currentUserId) {
-    body = (
+    body = club.usesAccounts ? (
+      <WelcomeScreen
+        members={club.members}
+        onCreate={club.createProfile}
+        email={club.email}
+        onSignOut={club.signOut}
+      />
+    ) : (
       <WelcomeScreen
         members={club.members}
         onCreate={club.createProfile}

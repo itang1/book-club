@@ -11,7 +11,14 @@ import type { NewProfile } from '../lib/useBookClub';
 type WelcomeScreenProps = {
   members: Friend[];
   onCreate: (profile: NewProfile, invitedBy: string | null) => void;
-  onPick: (personId: string) => void;
+  /**
+   * Demo data only: become an existing member. With real accounts there's
+   * no picking someone else; existing members are linked by email instead.
+   */
+  onPick?: (personId: string) => void;
+  /** The signed-in email, with real accounts. */
+  email?: string | null;
+  onSignOut?: () => void;
 };
 
 /**
@@ -22,7 +29,7 @@ type WelcomeScreenProps = {
  * themselves from the list below the form. That's honest about what it is:
  * a stand-in, not security.
  */
-export function WelcomeScreen({ members, onCreate, onPick }: WelcomeScreenProps) {
+export function WelcomeScreen({ members, onCreate, onPick, email, onSignOut }: WelcomeScreenProps) {
   const insets = useSafeAreaInsets();
   const [name, setName] = useState('');
   const [city, setCity] = useState('');
@@ -84,7 +91,21 @@ export function WelcomeScreen({ members, onCreate, onPick }: WelcomeScreenProps)
         </Pressable>
       </View>
 
-      {members.length > 0 && (
+      {email && (
+        <View style={styles.existing}>
+          <Text style={styles.note}>
+            Signed in as {email}. Already in the club under another profile? Ask
+            whoever runs it to link this email to you, then sign in again.
+          </Text>
+          {onSignOut && (
+            <Pressable onPress={onSignOut}>
+              <Text style={styles.link}>Not you? Sign out</Text>
+            </Pressable>
+          )}
+        </View>
+      )}
+
+      {onPick && members.length > 0 && (
         <View style={styles.existing}>
           <Pressable onPress={() => setShowMembers((open) => !open)}>
             <Text style={styles.link}>

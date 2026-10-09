@@ -21,13 +21,16 @@ type ProfileScreenProps = {
   books: Book[];
   me: Friend | null;
   friendCount: number;
+  /** With real accounts: who's signed in, and the way out. */
+  email?: string | null;
+  onSignOut?: () => void;
 };
 
 /**
  * Just you: who you are, and the books in your life right now. Switching
  * between people is a development tool and lives in the dev bar, not here.
  */
-export function ProfileScreen({ books, me, friendCount }: ProfileScreenProps) {
+export function ProfileScreen({ books, me, friendCount, email, onSignOut }: ProfileScreenProps) {
   const insets = useSafeAreaInsets();
   const [aboutOpen, setAboutOpen] = useState(false);
 
@@ -133,12 +136,25 @@ export function ProfileScreen({ books, me, friendCount }: ProfileScreenProps) {
       <Pressable style={styles.aboutLink} onPress={() => setAboutOpen(true)}>
         <Text style={styles.aboutLinkText}>The Rules of the Books · About</Text>
       </Pressable>
+      {email && onSignOut && (
+        <Pressable style={styles.signOut} onPress={onSignOut}>
+          <Text style={styles.signOutText}>Signed in as {email} · Sign out</Text>
+        </Pressable>
+      )}
       <AboutSheet visible={aboutOpen} onClose={() => setAboutOpen(false)} />
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
+  signOut: {
+    alignItems: 'center',
+    paddingBottom: 12,
+  },
+  signOutText: {
+    color: theme.colors.muted,
+    fontSize: 12,
+  },
   aboutLink: {
     alignItems: 'center',
     paddingVertical: 14,

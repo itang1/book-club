@@ -15,6 +15,7 @@ type FriendRow = {
   state: string;
   address: string | null;
   email: string | null;
+  user_id: string | null;
 };
 
 type BookRow = {
@@ -50,6 +51,8 @@ export type BookClubData = {
   books: Book[];
   friends: Friend[];
   friendships: Friendship[];
+  /** Why loading failed, if it did. */
+  error?: string;
 };
 
 export const demoData: BookClubData = {
@@ -58,7 +61,17 @@ export const demoData: BookClubData = {
   friendships: friendshipsSeed,
 };
 
-const fallback = demoData;
+/**
+ * With a backend, a failed load is reported, never papered over with the
+ * demo group: showing fictional people to a signed-in member would be worse
+ * than showing nothing.
+ */
+const empty = (error: string): BookClubData => ({
+  books: [],
+  friends: [],
+  friendships: [],
+  error,
+});
 
 function toFriend(row: FriendRow): Friend {
   return {
@@ -68,6 +81,7 @@ function toFriend(row: FriendRow): Friend {
     state: row.state,
     address: row.address ?? undefined,
     email: row.email ?? undefined,
+    userId: row.user_id ?? undefined,
   };
 }
 
@@ -79,6 +93,7 @@ function fromFriend(friend: Friend): FriendRow {
     state: friend.state,
     address: friend.address ?? null,
     email: friend.email ?? null,
+    user_id: friend.userId ?? null,
   };
 }
 
@@ -92,36 +107,6 @@ function toHandoff(row: HandoffRow): Handoff {
     note: row.note ?? undefined,
     rating: row.rating ?? undefined,
   };
-}
-
-function fromHandoff(handoff: Handoff): HandoffRow {
-  return {
-    id: handoff.id,
-    book_id: handoff.bookId,
-    from_friend: handoff.fromFriend,
-    to_friend: handoff.toFriend,
-    happened_at: handoff.happenedAt,
-    note: handoff.note ?? null,
-    rating: handoff.rating ?? null,
-  };
-}
-
-function fromBook(book: Book): BookRow {
-  return {
-    id: book.id,
-    title: book.title,
-    author: book.author,
-    cover_color: book.coverColor,
-  };
-}
-
-function queueRowsFor(book: Book): QueueRow[] {
-  return book.queue.map((entry) => ({
-    book_id: book.id,
-    friend_id: entry.id,
-    position: entry.position,
-    status: entry.status,
-  }));
 }
 
 /**
@@ -164,7 +149,7 @@ function assembleBooks(
 
 export async function fetchBookClubData(): Promise<BookClubData> {
   if (!supabase) {
-    return fallback;
+    return demoData;
   }
 
   try {
@@ -178,8 +163,8 @@ export async function fetchBookClubData(): Promise<BookClubData> {
 
     const failure = [booksRes, friendsRes, queueRes, handoffsRes].find((res) => res.error);
     if (failure?.error) {
-      console.warn('Supabase fetch failed, using mock data:', failure.error.message);
-      return fallback;
+      console.warn('Supabase fetch failed:', failure.error.message);
+      return empty(failure.error.message);
     }
 
     const friendRows = (friendsRes.data ?? []) as FriendRow[];
@@ -204,8 +189,8 @@ export async function fetchBookClubData(): Promise<BookClubData> {
       friendships: friendshipRows.map((row): Friendship => [row.friend_a, row.friend_b]),
     };
   } catch (error) {
-    console.warn('Book club fetch error, using mock data:', error);
-    return fallback;
+    console.warn('Book club fetch error:', error);
+    return empty(describe(error));
   }
 }
 
@@ -221,40 +206,37 @@ function describe(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
+/**
+ * Put a new copy into circulation with its owner (you) holding it. One
+ * database call, lend_book(), which writes the book, the owner's place in
+ * line and the first leg together, and checks you're signed in as the owner.
+ */
 export async function createBook(book: Book): Promise<SaveError> {
   if (!supabase) {
     return null;
   }
 
+  const firstLeg = book.handoffs[0];
+  if (!firstLeg) {
+    return 'A new book needs its first leg.';
+  }
+
   try {
-    const { error } = await supabase.from('books').insert([fromBook(book)]);
+    const { error } = await supabase.rpc('lend_book', {
+      p_book_id: book.id,
+      p_title: book.title,
+      p_author: book.author,
+      p_cover_color: book.coverColor,
+      p_handoff_id: firstLeg.id,
+    });
     if (error) {
-      console.warn('Supabase createBook failed:', error.message);
+      console.warn('Supabase lend_book failed:', error.message);
       return error.message;
-    }
-
-    const queue = queueRowsFor(book);
-    if (queue.length > 0) {
-      const { error: queueError } = await supabase.from('reading_queue').insert(queue);
-      if (queueError) {
-        console.warn('Supabase queue insert failed:', queueError.message);
-        return queueError.message;
-      }
-    }
-
-    if (book.handoffs.length > 0) {
-      const { error: handoffError } = await supabase
-        .from('handoffs')
-        .insert(book.handoffs.map(fromHandoff));
-      if (handoffError) {
-        console.warn('Supabase handoff insert failed:', handoffError.message);
-        return handoffError.message;
-      }
     }
 
     return null;
   } catch (error) {
-    console.warn('Create book error:', error);
+    console.warn('Lend book error:', error);
     return describe(error);
   }
 }
@@ -365,12 +347,9 @@ export async function leaveLine(
 }
 
 /**
- * Append one leg to a book's journey and move the queue statuses along with it.
- * The handoff row is the source of truth for location; the queue statuses are
- * a convenience for the UI.
- *
- * Only a *waiting* recipient becomes "reading": a copy going home to an owner
- * who already read it leaves their "done" alone.
+ * Append one leg to a book's journey: pass_on() in the database checks that
+ * you're the one holding it and that the recipient is in line (or is the
+ * owner), then writes the leg and moves both queue statuses together.
  */
 export async function recordHandoff(handoff: Handoff): Promise<SaveError> {
   if (!supabase) {
@@ -378,38 +357,21 @@ export async function recordHandoff(handoff: Handoff): Promise<SaveError> {
   }
 
   try {
-    const { error } = await supabase.from('handoffs').insert([fromHandoff(handoff)]);
+    const { error } = await supabase.rpc('pass_on', {
+      p_handoff_id: handoff.id,
+      p_book_id: handoff.bookId,
+      p_to: handoff.toFriend,
+      p_note: handoff.note ?? null,
+      p_rating: handoff.rating ?? null,
+    });
     if (error) {
-      console.warn('Supabase recordHandoff failed:', error.message);
+      console.warn('Supabase pass_on failed:', error.message);
       return error.message;
-    }
-
-    if (handoff.fromFriend) {
-      const { error: fromError } = await supabase
-        .from('reading_queue')
-        .update({ status: 'done' })
-        .eq('book_id', handoff.bookId)
-        .eq('friend_id', handoff.fromFriend);
-      if (fromError) {
-        console.warn('Supabase queue update failed:', fromError.message);
-        return fromError.message;
-      }
-    }
-
-    const { error: toError } = await supabase
-      .from('reading_queue')
-      .update({ status: 'reading' })
-      .eq('book_id', handoff.bookId)
-      .eq('friend_id', handoff.toFriend)
-      .eq('status', 'waiting');
-    if (toError) {
-      console.warn('Supabase queue update failed:', toError.message);
-      return toError.message;
     }
 
     return null;
   } catch (error) {
-    console.warn('Record handoff error:', error);
+    console.warn('Pass on error:', error);
     return describe(error);
   }
 }

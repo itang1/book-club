@@ -1,3 +1,5 @@
+import { Platform } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createClient } from '@supabase/supabase-js';
 
 /**
@@ -28,7 +30,11 @@ export const supabase = isSupabaseConfigured
       auth: {
         persistSession: true,
         autoRefreshToken: true,
-        detectSessionInUrl: false,
+        // Sign-in links land back on the web app with the session in the
+        // URL; this picks it up. Native would need a deep link instead.
+        detectSessionInUrl: Platform.OS === 'web',
+        // The browser's localStorage on web; AsyncStorage on a phone.
+        storage: Platform.OS === 'web' ? undefined : AsyncStorage,
       },
     })
   : null;

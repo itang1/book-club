@@ -13,18 +13,19 @@
 -- overwriting the past every time a book moves.
 --
 -- ===================================================================
--- READ THIS BEFORE PUTTING REAL DATA IN
+-- WHO CAN DO WHAT
 --
--- The policies at the bottom of this file are DEMO-OPEN: they let anyone
--- read and write every row. That is not merely a database setting — the
--- anon key is prefixed EXPO_PUBLIC_, so it is compiled into the client
--- bundle and visible to anyone who loads the app. Open policies plus a
--- published key means the data is effectively public.
+-- Everything requires signing in (Supabase Auth). Anonymous visitors, who
+-- hold the anon key compiled into the public app, can read and write
+-- nothing.
 --
--- Until Supabase Auth is wired up, treat this database as semi-public:
--- fine for titles and first names, not for addresses or emails.
--- Once auth exists, apply supabase/policies-authenticated.sql to require
--- a signed-in user.
+-- Signed in, you can read the club and write only as yourself: your own
+-- profile, your own place in a line, friendships you're part of. Lending a
+-- book and passing one on go through the functions at the bottom of this
+-- file, which check that you own the book or are holding it.
+--
+-- Each person is linked to an account by friends.user_id. Existing people
+-- are linked on their first sign-in through profile_claims (see there).
 -- ===================================================================
 
 -- ---------------------------------------------------------------
@@ -104,6 +105,22 @@ alter table public.handoffs add column if not exists rating smallint
   check (rating between 1 and 5);
 
 -- ---------------------------------------------------------------
+-- Accounts. Each person in the club is one Supabase Auth user. A row
+-- without a user_id is a profile nobody has claimed yet.
+-- ---------------------------------------------------------------
+alter table public.friends add column if not exists user_id uuid unique
+  references auth.users (id) on delete set null;
+
+-- Which email claims which existing profile on first sign-in. Filled in by
+-- hand (seed.local.sql) for people who were in the club before accounts
+-- existed. Nobody can read or write it through the API: no grants, RLS on,
+-- no policies. Only claim_profile() below looks at it.
+create table if not exists public.profile_claims (
+  person_id text primary key references public.friends (id) on delete cascade,
+  email text not null unique
+);
+
+-- ---------------------------------------------------------------
 -- Friendships: who is friends with whom. `friends` is everyone in the club;
 -- this is the graph between them. One row per pair, stored with the smaller
 -- id first so (a, b) and (b, a) can't both exist. Mutual by design: adding a
@@ -137,97 +154,235 @@ from public.handoffs h
 order by h.book_id, h.happened_at desc;
 
 -- ---------------------------------------------------------------
+-- Who am I? The club member linked to the signed-in account, or null.
+-- security definer so policies can call it without tripping over the RLS on
+-- friends; it only ever returns the caller's own id.
+-- ---------------------------------------------------------------
+create or replace function public.me() returns text
+language sql stable security definer set search_path = public
+as $$
+  select id from public.friends where user_id = auth.uid()
+$$;
+
+-- ---------------------------------------------------------------
 -- Data API privileges
 --
 -- Table grants and RLS are two separate layers: a grant opens the door, RLS
 -- decides which rows come back. Both must allow an operation.
 --
--- These are written explicitly so the schema works whether or not the project
--- has "Automatically expose new tables" enabled. With that setting off, new
--- tables get no grants by default and the API returns "permission denied for
--- table" even when the RLS policies are correct. Any new table added later
--- needs its own grant here.
+-- Everything is revoked first and granted back precisely, because Supabase
+-- grants new tables to anon and authenticated by default. The anon role
+-- gets nothing at all.
 -- ---------------------------------------------------------------
-grant usage on schema public to anon, authenticated;
+revoke all on public.friends, public.books, public.reading_queue, public.handoffs,
+  public.friendships, public.profile_claims, public.book_current_location
+  from anon, authenticated;
 
-grant select, insert, update on public.friends to anon, authenticated;
-grant select, insert, update on public.books to anon, authenticated;
-grant select, insert, update on public.reading_queue to anon, authenticated;
--- Delete exists only so a waiting reader can leave the line; the policy below
--- refuses it for anyone who has already had the book.
-grant delete on public.reading_queue to anon, authenticated;
+grant usage on schema public to authenticated;
 
--- No update or delete on handoffs, deliberately. The journey log is
--- append-only at the privilege layer as well as the policy layer, so history
--- cannot be rewritten even if a policy is added by mistake later.
-grant select, insert on public.handoffs to anon, authenticated;
-
-grant select, insert on public.friendships to anon, authenticated;
-
-grant select on public.book_current_location to anon, authenticated;
+grant select, insert, update on public.friends to authenticated;
+grant select on public.books to authenticated;
+-- Delete exists only so a waiting reader can leave the line.
+grant select, insert, update, delete on public.reading_queue to authenticated;
+-- No insert, update or delete on handoffs at all: the journey log is written
+-- only by pass_on() and lend_book(), and history can't be rewritten.
+grant select on public.handoffs to authenticated;
+grant select, insert on public.friendships to authenticated;
+grant select on public.book_current_location to authenticated;
 
 -- ---------------------------------------------------------------
--- Row level security — DEMO MODE. See the warning at the top of this file.
+-- Row level security
 -- ---------------------------------------------------------------
 alter table public.friends enable row level security;
 alter table public.books enable row level security;
 alter table public.reading_queue enable row level security;
 alter table public.handoffs enable row level security;
 alter table public.friendships enable row level security;
+alter table public.profile_claims enable row level security;
 
+-- Retire every earlier policy: the demo-open ones and the ones from the old
+-- policies-authenticated.sql.
 drop policy if exists "friends are viewable by everyone" on public.friends;
-create policy "friends are viewable by everyone"
-  on public.friends for select using (true);
-
 drop policy if exists "anyone can add a friend" on public.friends;
-create policy "anyone can add a friend"
-  on public.friends for insert with check (true);
-
+drop policy if exists "signed-in users can read friends" on public.friends;
+drop policy if exists "signed-in users can add friends" on public.friends;
+drop policy if exists "signed-in users can update friends" on public.friends;
 drop policy if exists "books are viewable by everyone" on public.books;
-create policy "books are viewable by everyone"
-  on public.books for select using (true);
-
 drop policy if exists "anyone can add a book" on public.books;
-create policy "anyone can add a book"
-  on public.books for insert with check (true);
-
 drop policy if exists "anyone can update a book" on public.books;
-create policy "anyone can update a book"
-  on public.books for update using (true) with check (true);
-
+drop policy if exists "signed-in users can read books" on public.books;
+drop policy if exists "signed-in users can add books" on public.books;
+drop policy if exists "signed-in users can update books" on public.books;
 drop policy if exists "queue is viewable by everyone" on public.reading_queue;
-create policy "queue is viewable by everyone"
-  on public.reading_queue for select using (true);
-
 drop policy if exists "anyone can add to the queue" on public.reading_queue;
-create policy "anyone can add to the queue"
-  on public.reading_queue for insert with check (true);
-
 drop policy if exists "anyone can update the queue" on public.reading_queue;
-create policy "anyone can update the queue"
-  on public.reading_queue for update using (true) with check (true);
-
 drop policy if exists "waiting readers can leave the queue" on public.reading_queue;
-create policy "waiting readers can leave the queue"
-  on public.reading_queue for delete using (status = 'waiting');
-
+drop policy if exists "signed-in users can read the queue" on public.reading_queue;
+drop policy if exists "signed-in users can add to the queue" on public.reading_queue;
+drop policy if exists "signed-in users can update the queue" on public.reading_queue;
+drop policy if exists "signed-in users can leave the queue while waiting" on public.reading_queue;
 drop policy if exists "friendships are viewable by everyone" on public.friendships;
-create policy "friendships are viewable by everyone"
-  on public.friendships for select using (true);
-
 drop policy if exists "anyone can add a friendship" on public.friendships;
-create policy "anyone can add a friendship"
-  on public.friendships for insert with check (true);
-
+drop policy if exists "signed-in users can read friendships" on public.friendships;
+drop policy if exists "signed-in users can add friendships" on public.friendships;
 drop policy if exists "handoffs are viewable by everyone" on public.handoffs;
-create policy "handoffs are viewable by everyone"
-  on public.handoffs for select using (true);
-
--- Insert only: the journey log is append-only by design. No update or delete
--- policy is granted, so history cannot be rewritten from the client.
 drop policy if exists "anyone can record a handoff" on public.handoffs;
-create policy "anyone can record a handoff"
-  on public.handoffs for insert with check (true);
+drop policy if exists "signed-in users can read handoffs" on public.handoffs;
+drop policy if exists "signed-in users can record a handoff" on public.handoffs;
+
+-- Reading: anyone signed in sees the whole club, for now. Groups will
+-- narrow this (docs/groups-and-privacy.md).
+drop policy if exists "members read people" on public.friends;
+create policy "members read people"
+  on public.friends for select to authenticated using (true);
+drop policy if exists "members read books" on public.books;
+create policy "members read books"
+  on public.books for select to authenticated using (true);
+drop policy if exists "members read lines" on public.reading_queue;
+create policy "members read lines"
+  on public.reading_queue for select to authenticated using (true);
+drop policy if exists "members read journeys" on public.handoffs;
+create policy "members read journeys"
+  on public.handoffs for select to authenticated using (true);
+drop policy if exists "members read friendships" on public.friendships;
+create policy "members read friendships"
+  on public.friendships for select to authenticated using (true);
+
+-- Your profile: one per account, made and edited only by you.
+drop policy if exists "make your own profile" on public.friends;
+create policy "make your own profile"
+  on public.friends for insert to authenticated with check (user_id = auth.uid());
+drop policy if exists "edit your own profile" on public.friends;
+create policy "edit your own profile"
+  on public.friends for update to authenticated
+  using (user_id = auth.uid()) with check (user_id = auth.uid());
+
+-- Your place in a line: only yours, and only as "waiting" or "done".
+-- "reading" is set by pass_on() when the book actually reaches you.
+drop policy if exists "join a line yourself" on public.reading_queue;
+create policy "join a line yourself"
+  on public.reading_queue for insert to authenticated
+  with check (friend_id = public.me() and status = 'waiting');
+drop policy if exists "manage your own place in line" on public.reading_queue;
+create policy "manage your own place in line"
+  on public.reading_queue for update to authenticated
+  using (friend_id = public.me())
+  with check (friend_id = public.me() and status in ('waiting', 'done'));
+drop policy if exists "leave a line while waiting" on public.reading_queue;
+create policy "leave a line while waiting"
+  on public.reading_queue for delete to authenticated
+  using (friend_id = public.me() and status = 'waiting');
+
+-- Friendships you're part of.
+drop policy if exists "befriend as yourself" on public.friendships;
+create policy "befriend as yourself"
+  on public.friendships for insert to authenticated
+  with check (public.me() in (friend_a, friend_b));
+
+-- ---------------------------------------------------------------
+-- Writes that touch several tables, as functions: each checks who you are,
+-- and all their steps succeed or fail together.
+-- ---------------------------------------------------------------
+
+-- Link the signed-in account to its profile. Returns the person id, or null
+-- if this account has no profile yet (the app then offers to make one).
+create or replace function public.claim_profile() returns text
+language plpgsql security definer set search_path = public
+as $$
+declare
+  person text;
+begin
+  if auth.uid() is null then
+    return null;
+  end if;
+
+  select id into person from public.friends where user_id = auth.uid();
+  if person is not null then
+    return person;
+  end if;
+
+  select c.person_id into person
+  from public.profile_claims c
+  join public.friends f on f.id = c.person_id
+  where lower(c.email) = lower(auth.jwt() ->> 'email') and f.user_id is null;
+
+  if person is not null then
+    update public.friends set user_id = auth.uid() where id = person;
+  end if;
+
+  return person;
+end;
+$$;
+
+-- Put one of your own copies into circulation, starting with you.
+create or replace function public.lend_book(
+  p_book_id text, p_title text, p_author text, p_cover_color text, p_handoff_id text
+) returns void
+language plpgsql security definer set search_path = public
+as $$
+declare
+  owner text := public.me();
+begin
+  if owner is null then
+    raise exception 'Make your profile before lending a book';
+  end if;
+
+  insert into public.books (id, title, author, cover_color)
+  values (p_book_id, p_title, p_author, p_cover_color);
+  insert into public.reading_queue (book_id, friend_id, position, status)
+  values (p_book_id, owner, 0, 'reading');
+  insert into public.handoffs (id, book_id, from_friend, to_friend)
+  values (p_handoff_id, p_book_id, null, owner);
+end;
+$$;
+
+-- Hand the book you're holding to the next reader in line, or home to its
+-- owner, with an optional letter.
+create or replace function public.pass_on(
+  p_handoff_id text, p_book_id text, p_to text, p_note text, p_rating smallint
+) returns void
+language plpgsql security definer set search_path = public
+as $$
+declare
+  me_id text := public.me();
+  holder text;
+  owner text;
+begin
+  select to_friend into holder from public.handoffs
+  where book_id = p_book_id order by happened_at desc limit 1;
+  select to_friend into owner from public.handoffs
+  where book_id = p_book_id order by happened_at asc limit 1;
+
+  if me_id is null or holder is distinct from me_id then
+    raise exception 'Only the person holding a book can pass it on';
+  end if;
+  if p_to = me_id then
+    raise exception 'You already have it';
+  end if;
+  if p_to is distinct from owner and not exists (
+    select 1 from public.reading_queue
+    where book_id = p_book_id and friend_id = p_to and status = 'waiting'
+  ) then
+    raise exception 'They are not in line for this book';
+  end if;
+
+  insert into public.handoffs (id, book_id, from_friend, to_friend, note, rating)
+  values (p_handoff_id, p_book_id, me_id, p_to, nullif(trim(p_note), ''), p_rating);
+  update public.reading_queue set status = 'done'
+  where book_id = p_book_id and friend_id = me_id;
+  update public.reading_queue set status = 'reading'
+  where book_id = p_book_id and friend_id = p_to and status = 'waiting';
+end;
+$$;
+
+revoke all on function public.me(), public.claim_profile(),
+  public.lend_book(text, text, text, text, text),
+  public.pass_on(text, text, text, text, smallint)
+  from public, anon;
+grant execute on function public.me(), public.claim_profile(),
+  public.lend_book(text, text, text, text, text),
+  public.pass_on(text, text, text, text, smallint)
+  to authenticated;
 
 -- ---------------------------------------------------------------
 -- Tell the API about any new tables or columns straight away, rather than
