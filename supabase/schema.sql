@@ -150,6 +150,14 @@ from public.handoffs h
 order by h.book_id, h.happened_at desc;
 
 -- ---------------------------------------------------------------
+-- Everything below rewrites access rules, which briefly locks each table.
+-- Taking all the locks at once, up front, means the app's own reads simply
+-- wait a moment instead of deadlocking against a half-finished rewrite.
+-- ---------------------------------------------------------------
+lock table public.friends, public.books, public.reading_queue, public.handoffs,
+  public.friendships in access exclusive mode;
+
+-- ---------------------------------------------------------------
 -- Who am I? The club member linked to the signed-in account, or null.
 -- security definer so policies can call it without tripping over the RLS on
 -- friends; it only ever returns the caller's own id.
