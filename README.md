@@ -12,8 +12,8 @@ A reading club for people who share **physical** copies. One book goes around th
 group, one person at a time, and the app keeps track of where it is and
 everywhere it's been.
 
-> **Live demo:** _placeholder_ — https://itang1.github.io/book-club
-> (not deployed yet; see [Deploying the web build](#deploying-the-web-build))
+> **Live:** https://itang1.github.io/book-club, once Pages is switched on
+> (see [Deploying the web build](#deploying-the-web-build))
 
 ---
 
@@ -174,13 +174,24 @@ and never mixes in the demo group. A public demo should be built without your
 
 ### Deploying the web build
 
-```bash
-npx expo export --platform web --output-dir dist
-```
+Every push to `main` builds the web app and publishes it to GitHub Pages
+(`.github/workflows/deploy-web.yml`). One-time setup on GitHub:
 
-That produces a static site in `dist/`, deployable to GitHub Pages, Netlify, or
-Vercel. For GitHub Pages under a repo subpath, add `--base-url /book-club` so
-asset paths resolve.
+1. **Settings → Pages → Source:** GitHub Actions.
+2. **Settings → Secrets and variables → Actions:** add
+   `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_ANON_KEY`. Leave them
+   out to publish the fictional demo group instead.
+3. Push, or run the workflow from the Actions tab.
+
+The site lands at https://itang1.github.io/book-club. The workflow sets
+`EXPO_BASE_URL=/book-club` so asset paths resolve under the repo subpath
+(`app.config.js`); locally it's unset and the dev server stays at `/`.
+
+To build by hand:
+
+```bash
+EXPO_BASE_URL=/book-club npx expo export --platform web --output-dir dist
+```
 
 ## Project Structure
 
