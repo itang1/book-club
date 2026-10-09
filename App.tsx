@@ -23,7 +23,7 @@ import {
   leaveLine,
   recordHandoff,
 } from './src/lib/bookClubService';
-import { holderId } from './src/lib/bookState';
+import { hasFinished, holderId } from './src/lib/bookState';
 import { loadReaderId, saveReaderId } from './src/lib/identity';
 import { theme } from './src/theme';
 import { HomeScreen } from './src/screens/HomeScreen';
@@ -252,34 +252,51 @@ export default function App() {
     track(createFriend(friend));
   };
 
-  /** Sign the current reader up for a book, at the back of the line. */
+  /**
+   * Sign the current reader up for a book, at the back of the line. Someone
+   * who has read it before can sign up again: their queue entry is reused,
+   * back to "waiting" with a fresh position.
+   */
   const handleJoinLine = (bookId: string) => {
     const book = books.find((candidate) => candidate.id === bookId);
     const me = friends.find((friend) => friend.id === currentUserId);
-    if (!book || !me || book.queue.some((entry) => entry.id === me.id)) {
+    if (!book || !me || holderId(book) === me.id) {
+      return;
+    }
+
+    const existing = book.queue.find((entry) => entry.id === me.id);
+    if (existing && existing.status !== 'done') {
       return;
     }
 
     const position = Math.max(-1, ...book.queue.map((entry) => entry.position)) + 1;
     updateBook(bookId, (candidate) => ({
       ...candidate,
-      queue: [...candidate.queue, { ...me, position, status: 'waiting' }],
+      queue: [
+        ...candidate.queue.filter((entry) => entry.id !== me.id),
+        { ...me, position, status: 'waiting' },
+      ],
     }));
     track(joinLine({ book_id: bookId, friend_id: me.id, position, status: 'waiting' }));
   };
 
   const handleLeaveLine = (bookId: string) => {
-    if (!currentUserId) {
+    const book = books.find((candidate) => candidate.id === bookId);
+    if (!book || !currentUserId) {
       return;
     }
 
+    const readBefore = hasFinished(book, currentUserId);
     updateBook(bookId, (candidate) => ({
       ...candidate,
-      queue: candidate.queue.filter(
-        (entry) => !(entry.id === currentUserId && entry.status === 'waiting'),
-      ),
+      queue: candidate.queue.flatMap((entry) => {
+        if (entry.id !== currentUserId || entry.status !== 'waiting') {
+          return [entry];
+        }
+        return readBefore ? [{ ...entry, status: 'done' as const }] : [];
+      }),
     }));
-    track(leaveLine(bookId, currentUserId));
+    track(leaveLine(bookId, currentUserId, readBefore));
   };
 
   /**

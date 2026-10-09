@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Book, Friend } from '../types';
 import { theme } from '../theme';
 import {
+  hasFinished,
   holderId,
   journey,
   lastActivityAt,
@@ -31,11 +32,8 @@ export function ProfileScreen({
   // scoped to that person rather than the whole group.
   const withMe = me ? books.filter((book) => holderId(book) === me.id) : [];
   const comingToMe = me ? books.filter((book) => nextInLineId(book) === me.id) : [];
-  const finished = me
-    ? books.filter((book) =>
-        book.queue.some((entry) => entry.id === me.id && entry.status === 'done'),
-      )
-    : [];
+  // From the log, so a reread in progress doesn't un-finish the first read.
+  const finished = me ? books.filter((book) => hasFinished(book, me.id)) : [];
   const handoffsMade = me
     ? books.reduce(
         (sum, book) =>

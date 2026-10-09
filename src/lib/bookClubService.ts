@@ -253,14 +253,20 @@ export async function createFriend(friend: Friend): Promise<boolean> {
   }
 }
 
-/** Sign someone up for a book, at the back of the line. */
+/**
+ * Sign someone up for a book, at the back of the line. An upsert, because a
+ * past reader signing up again reuses their row: it goes back to "waiting"
+ * with a new position. Their earlier read is still in the handoff log.
+ */
 export async function joinLine(entry: QueueRow): Promise<boolean> {
   if (!supabase) {
     return true;
   }
 
   try {
-    const { error } = await supabase.from('reading_queue').insert([entry]);
+    const { error } = await supabase
+      .from('reading_queue')
+      .upsert([entry], { onConflict: 'book_id,friend_id' });
     if (error) {
       console.warn('Supabase joinLine failed:', error.message);
       return false;
@@ -273,16 +279,26 @@ export async function joinLine(entry: QueueRow): Promise<boolean> {
   }
 }
 
-/** Take back a sign-up. Only allowed while still waiting; see schema.sql. */
-export async function leaveLine(bookId: string, friendId: string): Promise<boolean> {
+/**
+ * Take back a sign-up. Someone who never had the book is removed outright;
+ * someone who signed up for a second read goes back to "done", keeping their
+ * row so their name stays attached to the history.
+ */
+export async function leaveLine(
+  bookId: string,
+  friendId: string,
+  readBefore: boolean,
+): Promise<boolean> {
   if (!supabase) {
     return true;
   }
 
   try {
-    const { error } = await supabase
-      .from('reading_queue')
-      .delete()
+    const query = supabase.from('reading_queue');
+    const { error } = await (readBefore
+      ? query.update({ status: 'done' })
+      : query.delete()
+    )
       .eq('book_id', bookId)
       .eq('friend_id', friendId)
       .eq('status', 'waiting');

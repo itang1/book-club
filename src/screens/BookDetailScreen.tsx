@@ -11,6 +11,7 @@ import {
   daysInCirculation,
   formatDate,
   friendNameIn,
+  hasFinished,
   hasLetter,
   heldForDays,
   holderId,
@@ -23,6 +24,7 @@ import {
   readersSoFar,
   readingQueue,
   relativeTime,
+  timesRead,
 } from '../lib/bookState';
 
 type BookDetailScreenProps = {
@@ -70,7 +72,6 @@ export function BookDetailScreen({
   const queue = readingQueue(book);
 
   const iHoldIt = currentUserId !== null && currentUserId === holder;
-  const myEntry = book.queue.find((entry) => entry.id === currentUserId);
   const myPlace = placeInLine(book, currentUserId);
   const goingHome = confirmingTo !== null && confirmingTo === owner && confirmingTo !== nextId;
 
@@ -124,8 +125,18 @@ export function BookDetailScreen({
       );
     }
 
-    if (myEntry) {
-      return <Text style={styles.actionNote}>You've had your turn with this copy.</Text>;
+    const reads = timesRead(book, currentUserId);
+    if (reads > 0) {
+      return (
+        <View>
+          <Text style={styles.actionNote}>
+            You've read this copy{reads > 1 ? ` ${reads} times` : ''}. Want it again?
+          </Text>
+          <Pressable style={styles.secondaryButton} onPress={() => onJoinLine(book.id)}>
+            <Text style={styles.secondaryButtonText}>Join the line to reread</Text>
+          </Pressable>
+        </View>
+      );
     }
 
     return (
@@ -205,7 +216,11 @@ export function BookDetailScreen({
                     {person.city}, {person.state}
                   </Text>
                 </View>
-                <Text style={styles.pill}>{person.status}</Text>
+                <Text style={styles.pill}>
+                  {person.status === 'waiting' && hasFinished(book, person.id)
+                    ? 'rereading'
+                    : person.status}
+                </Text>
               </View>
             );
           })}

@@ -154,8 +154,9 @@ export const booksSeed: Book[] = [
     coverColor: '#93a7a5',
     queue: [
       { ...byId('friend-bridget'), position: 0, status: 'done' },
-      { ...byId('friend-tibby'), position: 1, status: 'done' },
       { ...byId('friend-carmen'), position: 2, status: 'done' },
+      // Tibby read it already and signed up again for a second read.
+      { ...byId('friend-tibby'), position: 3, status: 'waiting' },
     ],
     handoffs: [
       {

@@ -41,7 +41,7 @@ insert into public.reading_queue (book_id, friend_id, position, status) values
   ('book-3', 'friend-carmen',  1, 'done'),
   ('book-3', 'friend-bridget', 2, 'reading'),
   ('book-4', 'friend-bridget', 0, 'done'),
-  ('book-4', 'friend-tibby',   1, 'done'),
+  ('book-4', 'friend-tibby',   3, 'waiting'),  -- signed up to reread
   ('book-4', 'friend-carmen',  2, 'done')
 on conflict (book_id, friend_id) do nothing;
 

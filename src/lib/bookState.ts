@@ -92,18 +92,34 @@ export function readersSoFar(book: Book): number {
 }
 
 /**
+ * How many times this person has finished the copy, counted from the log: each
+ * time they passed it on is a read completed. Derived rather than read off the
+ * queue, because the queue row is reused when someone signs up to read it
+ * again and its status goes back to "waiting".
+ */
+export function timesRead(book: Book, friendId: string | null): number {
+  if (!friendId) {
+    return 0;
+  }
+
+  return book.handoffs.filter((leg) => leg.fromFriend === friendId).length;
+}
+
+export function hasFinished(book: Book, friendId: string | null): boolean {
+  return timesRead(book, friendId) > 0;
+}
+
+/**
  * Letters stay sealed until you've finished this copy yourself, so nobody's
- * opinion colours your read. You can always see a letter you wrote.
+ * opinion colours your read. You can always see a letter you wrote, and a
+ * second read doesn't re-seal what you've already opened.
  */
 export function canReadLetter(book: Book, leg: Handoff, viewerId: string | null): boolean {
   if (!viewerId) {
     return false;
   }
-  if (leg.fromFriend === viewerId) {
-    return true;
-  }
 
-  return book.queue.some((entry) => entry.id === viewerId && entry.status === 'done');
+  return leg.fromFriend === viewerId || hasFinished(book, viewerId);
 }
 
 export function hasLetter(leg: Handoff): boolean {
