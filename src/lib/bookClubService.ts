@@ -22,6 +22,7 @@ type BookRow = {
   title: string;
   author: string;
   cover_color: string;
+  gifted_by: string | null;
 };
 
 export type QueueRow = {
@@ -39,6 +40,9 @@ type HandoffRow = {
   happened_at: string;
   note: string | null;
   rating: number | null;
+  place_city: string | null;
+  place_region: string | null;
+  received_at: string | null;
 };
 
 type FriendshipRow = {
@@ -103,6 +107,9 @@ function toHandoff(row: HandoffRow): Handoff {
     happenedAt: row.happened_at,
     note: row.note ?? undefined,
     rating: row.rating ?? undefined,
+    placeCity: row.place_city ?? undefined,
+    placeRegion: row.place_region ?? undefined,
+    receivedAt: row.received_at ?? undefined,
   };
 }
 
@@ -136,6 +143,7 @@ function assembleBooks(
       title: row.title,
       author: row.author,
       coverColor: row.cover_color,
+      giftedBy: row.gifted_by ?? undefined,
       queue,
       handoffs: handoffRows
         .filter((entry) => entry.book_id === row.id)
@@ -225,6 +233,7 @@ export async function createBook(book: Book): Promise<SaveError> {
       p_author: book.author,
       p_cover_color: book.coverColor,
       p_handoff_id: firstLeg.id,
+      p_gifted_by: book.giftedBy ?? null,
     });
     if (error) {
       console.warn('Supabase lend_book failed:', error.message);
@@ -362,6 +371,49 @@ export async function leaveLine(
     return null;
   } catch (error) {
     console.warn('Leave line error:', error);
+    return describe(error);
+  }
+}
+
+/** "Got it": the book posted to you has arrived. */
+export async function markReceived(bookId: string): Promise<SaveError> {
+  if (!supabase) {
+    return null;
+  }
+
+  try {
+    const { error } = await supabase.rpc('mark_received', { p_book_id: bookId });
+    if (error) {
+      console.warn('Supabase mark_received failed:', error.message);
+      return error.message;
+    }
+
+    return null;
+  } catch (error) {
+    console.warn('Mark received error:', error);
+    return describe(error);
+  }
+}
+
+/** Change your own name or city. Past stops keep the city they had. */
+export async function updateProfile(person: Friend): Promise<SaveError> {
+  if (!supabase) {
+    return null;
+  }
+
+  try {
+    const { error } = await supabase
+      .from('friends')
+      .update({ name: person.name, city: person.city, state: person.state })
+      .eq('id', person.id);
+    if (error) {
+      console.warn('Supabase updateProfile failed:', error.message);
+      return error.message;
+    }
+
+    return null;
+  } catch (error) {
+    console.warn('Update profile error:', error);
     return describe(error);
   }
 }

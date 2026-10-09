@@ -74,13 +74,30 @@ export function canReturnHome(book: Book): boolean {
 }
 
 /**
+ * Sent but not yet "Got it": it's in the post. The holder is already the
+ * recipient (it's theirs to receive), but nobody has it in their hands.
+ */
+export function isInTransit(book: Book): boolean {
+  const latest = latestHandoff(book);
+  return Boolean(latest && latest.fromFriend && !latest.receivedAt);
+}
+
+/** Who sent the book that's in the post, or null if nothing is. */
+export function senderId(book: Book): string | null {
+  return isInTransit(book) ? latestHandoff(book)?.fromFriend ?? null : null;
+}
+
+/**
  * Status is derived, never stored. A stored status drifted from the log it was
  * meant to summarise ("in transit" stuck forever after a handoff); deriving it
- * means it can't.
+ * from whether the newest leg has arrived means it can't.
  */
 export function statusLabel(book: Book): string {
   if (!holderId(book)) {
     return 'Not circulating';
+  }
+  if (isInTransit(book)) {
+    return 'In the post';
   }
 
   return isBackHome(book) ? 'Back home' : 'Being read';
@@ -167,17 +184,31 @@ export function friendNameIn(book: Book, friendId: string | null): string {
  * surprising here.
  */
 export function placesVisited(book: Book): number {
-  const legs = journey(book);
-  const places = legs.map((leg) => {
-    const entry = book.queue.find((person) => person.id === leg.toFriend);
-    if (!entry) {
-      return null;
-    }
-
-    return `${entry.city.trim().toLowerCase()}|${entry.state.trim().toLowerCase()}`;
-  });
-
+  const places = journey(book).map((leg) => placeKey(placeOf(book, leg)));
   return new Set(places.filter(Boolean)).size;
+}
+
+export type Place = { city: string; region: string };
+
+/**
+ * Where a leg was read: the city recorded on the leg when it arrived, so a
+ * reader who moves later doesn't move their past stops. Legs from before
+ * that was recorded fall back to the reader's current city.
+ */
+export function placeOf(book: Book, leg: Handoff): Place | null {
+  if (leg.placeCity) {
+    return { city: leg.placeCity, region: leg.placeRegion ?? '' };
+  }
+
+  const entry = book.queue.find((person) => person.id === leg.toFriend);
+  return entry ? { city: entry.city, region: entry.state } : null;
+}
+
+/** City and region together, case-insensitive: two Springfields stay two. */
+export function placeKey(place: Place | null): string | null {
+  return place
+    ? `${place.city.trim().toLowerCase()}|${place.region.trim().toLowerCase()}`
+    : null;
 }
 
 /** The longest any single reader has held this copy, in days. */

@@ -9,10 +9,13 @@ import {
   hasFinished,
   holderId,
   isBackHome,
+  isInTransit,
   nextInLineId,
   placeInLine,
+  placeOf,
   readersSoFar,
   recentActivity,
+  senderId,
   statusLabel,
   timesRead,
 } from './bookState';
@@ -32,14 +35,19 @@ const person = (id: string, position: number, status: ReadingQueueEntry['status'
 });
 
 let legCount = 0;
-const leg = (from: string | null, to: string, day: number, extra: Partial<Handoff> = {}): Handoff => ({
-  id: `leg-${(legCount += 1)}`,
-  bookId: 'book',
-  fromFriend: from,
-  toFriend: to,
-  happenedAt: new Date(Date.UTC(2026, 0, day)).toISOString(),
-  ...extra,
-});
+/** A leg that has arrived (Got it) the moment it was sent, unless overridden. */
+const leg = (from: string | null, to: string, day: number, extra: Partial<Handoff> = {}): Handoff => {
+  const at = new Date(Date.UTC(2026, 0, day)).toISOString();
+  return {
+    id: `leg-${(legCount += 1)}`,
+    bookId: 'book',
+    fromFriend: from,
+    toFriend: to,
+    happenedAt: at,
+    receivedAt: at,
+    ...extra,
+  };
+};
 
 const book = (queue: ReadingQueueEntry[], handoffs: Handoff[]): Book => ({
   id: 'book',
@@ -105,6 +113,38 @@ describe('going home', () => {
     expect(canReturnHome(home)).toBe(false);
     expect(statusLabel(home)).toBe('Back home');
     expect(readersSoFar(home)).toBe(2);
+  });
+});
+
+describe('in the post', () => {
+  const b = book(
+    [person('ana', 0, 'done'), person('bea', 1, 'reading')],
+    [leg(null, 'ana', 1), leg('ana', 'bea', 5, { receivedAt: undefined })],
+  );
+
+  it('is in the post until the recipient says Got it', () => {
+    expect(isInTransit(b)).toBe(true);
+    expect(senderId(b)).toBe('ana');
+    expect(statusLabel(b)).toBe('In the post');
+    expect(holderId(b)).toBe('bea');
+  });
+
+  it('is with them once it arrives', () => {
+    const arrived = book(b.queue, [b.handoffs[0], { ...b.handoffs[1], receivedAt: 'x' }]);
+    expect(isInTransit(arrived)).toBe(false);
+    expect(statusLabel(arrived)).toBe('Being read');
+  });
+});
+
+describe('where it was read', () => {
+  it('uses the city recorded on the leg, not where the reader lives now', () => {
+    const b = book(
+      [person('ana', 0, 'done'), person('bea', 1, 'reading')],
+      [leg(null, 'ana', 1), leg('ana', 'bea', 5, { placeCity: 'Portland', placeRegion: 'OR' })],
+    );
+    expect(placeOf(b, b.handoffs[1])).toEqual({ city: 'Portland', region: 'OR' });
+    // No recorded place: fall back to the profile.
+    expect(placeOf(b, b.handoffs[0])).toEqual({ city: 'anaville', region: 'XX' });
   });
 });
 

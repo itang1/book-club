@@ -103,6 +103,7 @@ function HomeStack({ club }: { club: BookClub }) {
             books={club.books}
             currentUserId={club.currentUserId}
             onHandOff={club.handOff}
+            onMarkReceived={club.markReceived}
             onJoinLine={club.joinLine}
             onLeaveLine={club.leaveLine}
           />
@@ -111,7 +112,12 @@ function HomeStack({ club }: { club: BookClub }) {
       {/* Adding a book is occasional, so it lives behind the + on Home rather
           than taking a permanent tab. */}
       <Stack.Screen name="AddBook" options={{ title: 'Lend a new book' }}>
-        {(props) => <AddBookScreen {...props} owner={me} onAddBook={club.addBook} />}
+        {(props) => <AddBookScreen
+            {...props}
+            owner={me}
+            members={club.members}
+            onAddBook={club.addBook}
+          />}
       </Stack.Screen>
     </Stack.Navigator>
   );
@@ -149,6 +155,7 @@ function Tabs({ club }: { club: BookClub }) {
               friendCount={friendIdsOf(club.friendships, club.currentUserId).size}
               email={club.usesAccounts ? club.email : null}
               onSignOut={club.signOut}
+              onUpdateProfile={club.updateProfile}
             />
           )}
         </Tab.Screen>

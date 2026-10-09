@@ -45,6 +45,14 @@ export type Handoff = {
   note?: string;
   /** 1–5 whole stars. */
   rating?: number;
+  /**
+   * Where the book was read on this leg, recorded when it arrived. Kept on
+   * the leg so a reader who moves later doesn't move their past stops.
+   */
+  placeCity?: string;
+  placeRegion?: string;
+  /** When the recipient said "Got it". Unset while it's in the post. */
+  receivedAt?: string;
 };
 
 export type Letter = Pick<Handoff, 'note' | 'rating'>;
@@ -54,6 +62,8 @@ export type Book = {
   title: string;
   author: string;
   coverColor: string;
+  /** Who gave the owner this copy, if it was a gift. Any name, member or not. */
+  giftedBy?: string;
   queue: ReadingQueueEntry[];
   handoffs: Handoff[];
 };

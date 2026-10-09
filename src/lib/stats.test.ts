@@ -14,13 +14,21 @@ const book: Book = {
     { id: 'cat', name: 'Cat Reader', city: 'Austin', state: 'TX', position: 2, status: 'waiting' },
   ],
   handoffs: [
-    { id: 'a', bookId: 'book', fromFriend: null, toFriend: 'ana', happenedAt: '2026-01-01T12:00:00Z' },
+    {
+      id: 'a',
+      bookId: 'book',
+      fromFriend: null,
+      toFriend: 'ana',
+      happenedAt: '2026-01-01T12:00:00Z',
+      receivedAt: '2026-01-01T12:00:00Z',
+    },
     {
       id: 'b',
       bookId: 'book',
       fromFriend: 'ana',
       toFriend: 'bea',
       happenedAt: '2026-01-11T12:00:00Z',
+      receivedAt: '2026-01-11T12:00:00Z',
       note: 'Hi',
     },
   ],
@@ -34,6 +42,17 @@ describe('routeOf', () => {
       ['Bea', 'current', 5],
       ['Cat', 'upcoming', null],
     ]);
+  });
+});
+
+describe('routeOf while in the post', () => {
+  it("shows the recipient as arriving, with no day count", () => {
+    const inPost: Book = {
+      ...book,
+      handoffs: [book.handoffs[0], { ...book.handoffs[1], receivedAt: undefined }],
+    };
+    const bea = routeOf(inPost).find((stop) => stop.name === 'Bea');
+    expect(bea).toMatchObject({ kind: 'arriving', days: null });
   });
 });
 

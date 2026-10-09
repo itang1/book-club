@@ -28,7 +28,7 @@ export function JourneyRoute({ book }: { book: Book }) {
           ))}
         </View>
       </ScrollView>
-      {stops.filter((stop) => stop.kind === 'past' || stop.kind === 'current').length <= 1 && (
+      {stops.filter((stop) => stop.kind !== 'upcoming' && stop.kind !== 'home').length <= 1 && (
         <Text style={styles.note}>Just getting started. The route grows with every handoff.</Text>
       )}
     </View>
@@ -37,7 +37,10 @@ export function JourneyRoute({ book }: { book: Book }) {
 
 type Connection = 'travelled' | 'planned';
 
-/** The line into a stop: travelled up to the current holder, planned after. */
+/**
+ * The line into a stop: solid where it has travelled, dotted where it's
+ * still to go, including the leg that's in the post right now.
+ */
 function connectionInto(to: RouteStop): Connection {
   return to.kind === 'past' || to.kind === 'current' ? 'travelled' : 'planned';
 }
@@ -74,6 +77,7 @@ function Stop({
   const meta = {
     past: stop.days === null ? '' : `${stop.days} ${stop.days === 1 ? 'day' : 'days'}`,
     current: `has it · ${stop.days ?? 0}d`,
+    arriving: 'on its way',
     upcoming: 'waiting',
     home: 'then home',
   }[stop.kind];
@@ -97,6 +101,7 @@ function Stop({
               stop.kind === 'past' && styles.dotPast,
               stop.kind === 'current' && styles.dotCurrent,
               stop.kind === 'upcoming' && styles.dotHollow,
+              stop.kind === 'arriving' && styles.dotArriving,
             ]}
           />
         )}
@@ -167,6 +172,11 @@ const styles = StyleSheet.create({
     height: 20,
     borderRadius: 10,
     backgroundColor: theme.colors.stamp,
+  },
+  // In the post: an accent ring, not yet filled in.
+  dotArriving: {
+    backgroundColor: theme.colors.card,
+    borderColor: theme.colors.accent,
   },
   dotHollow: {
     backgroundColor: theme.colors.card,

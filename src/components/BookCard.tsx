@@ -4,6 +4,7 @@ import { theme } from '../theme';
 import {
   friendNameIn,
   holderId,
+  isInTransit,
   lastActivityAt,
   nextInLineId,
   placeInLine,
@@ -25,6 +26,11 @@ function whereLine(book: Book, currentUserId: string | null): string {
   const holder = holderId(book);
   if (!holder) {
     return 'Not circulating yet';
+  }
+  if (isInTransit(book)) {
+    return holder === currentUserId
+      ? 'On its way to you'
+      : `In the post to ${friendNameIn(book, holder).split(' ')[0]}`;
   }
   if (holder === currentUserId) {
     return 'With you';

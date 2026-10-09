@@ -5,17 +5,26 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Book, Friend, RootStackParamList } from '../types';
 import { theme } from '../theme';
 import { coverColorFor } from '../lib/covers';
+import { Ionicons } from '@expo/vector-icons';
 
 type AddBookScreenProps = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'AddBook'>;
   /** You add your own copies; nobody adds a book on someone else's behalf. */
   owner: Friend | null;
+  /** Everyone in the club, to suggest who a gift was from. */
+  members: Friend[];
   onAddBook: (book: Book) => void;
 };
 
-export function AddBookScreen({ navigation, owner, onAddBook }: AddBookScreenProps) {
+export function AddBookScreen({ navigation, owner, members, onAddBook }: AddBookScreenProps) {
   const [title, setTitle] = useState('');
   const [author, setAuthor] = useState('');
+  const [isGift, setIsGift] = useState(false);
+  const [giftedBy, setGiftedBy] = useState('');
+  // Quick picks for who it was from; anyone else can be typed in.
+  const giverSuggestions = members
+    .filter((person) => person.id !== owner?.id)
+    .map((person) => person.name.split(' ')[0]);
 
   const missing = [!title.trim() && 'a title', !author.trim() && 'an author'].filter(Boolean);
   const ready = missing.length === 0 && Boolean(owner);
@@ -31,6 +40,7 @@ export function AddBookScreen({ navigation, owner, onAddBook }: AddBookScreenPro
       title: title.trim(),
       author: author.trim(),
       coverColor: coverColorFor(title.trim(), author.trim()),
+      giftedBy: isGift && giftedBy.trim() ? giftedBy.trim() : undefined,
       // Only the owner starts in the queue. Everyone else signs up from the
       // book's page if they want it; nobody is put in line for them.
       queue: [{ ...owner, position: 0, status: 'reading' }],
@@ -43,6 +53,10 @@ export function AddBookScreen({ navigation, owner, onAddBook }: AddBookScreenPro
           fromFriend: null,
           toFriend: owner.id,
           happenedAt: new Date().toISOString(),
+          // You have it already; nothing to wait for in the post.
+          receivedAt: new Date().toISOString(),
+          placeCity: owner.city,
+          placeRegion: owner.state,
         },
       ],
     };
@@ -82,6 +96,44 @@ export function AddBookScreen({ navigation, owner, onAddBook }: AddBookScreenPro
           placeholderTextColor={theme.colors.faint}
           style={styles.input}
         />
+
+        {/* A gift stays yours to lend; the book page credits the giver. */}
+        <Pressable
+          style={styles.giftToggle}
+          onPress={() => setIsGift((on) => !on)}
+          accessibilityRole="checkbox"
+          accessibilityState={{ checked: isGift }}
+        >
+          <View style={[styles.checkbox, isGift && styles.checkboxOn]}>
+            {isGift && <Ionicons name="checkmark" size={14} color={theme.colors.onAccent} />}
+          </View>
+          <Ionicons name="gift-outline" size={16} color={theme.colors.accent} />
+          <Text style={styles.giftToggleText}>It was a gift</Text>
+        </Pressable>
+        {isGift && (
+          <View>
+            <TextInput
+              value={giftedBy}
+              onChangeText={setGiftedBy}
+              placeholder="Who gave it to you?"
+              placeholderTextColor={theme.colors.faint}
+              style={styles.input}
+            />
+            <View style={styles.giverRow}>
+              {giverSuggestions.map((name) => (
+                <Pressable
+                  key={name}
+                  style={[styles.giverChip, giftedBy === name && styles.giverChipOn]}
+                  onPress={() => setGiftedBy(name)}
+                >
+                  <Text style={[styles.giverChipText, giftedBy === name && styles.giverChipTextOn]}>
+                    {name}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+          </View>
+        )}
 
         {owner && (
           <Text style={styles.hint}>
@@ -145,6 +197,55 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
     marginBottom: 6,
+  },
+  giftToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    marginTop: 4,
+  },
+  checkbox: {
+    width: 20,
+    height: 20,
+    borderRadius: 6,
+    borderWidth: 1.5,
+    borderColor: theme.colors.accent,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10,
+  },
+  checkboxOn: {
+    backgroundColor: theme.colors.accent,
+  },
+  giftToggleText: {
+    marginLeft: 6,
+    fontSize: 15,
+    fontWeight: '600',
+    color: theme.colors.text,
+  },
+  giverRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginTop: 2,
+  },
+  giverChip: {
+    backgroundColor: theme.colors.soft,
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    marginRight: 8,
+    marginBottom: 8,
+  },
+  giverChipOn: {
+    backgroundColor: theme.colors.accent,
+  },
+  giverChipText: {
+    color: theme.colors.text,
+    fontWeight: '700',
+    fontSize: 12,
+  },
+  giverChipTextOn: {
+    color: theme.colors.onAccent,
   },
   hint: {
     marginTop: 8,

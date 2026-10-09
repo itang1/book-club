@@ -4,7 +4,10 @@ import {
   copyOwnerId,
   hasLetter,
   heldForDays,
+  isInTransit,
   journey,
+  placeKey,
+  placeOf,
   waitingList,
 } from './bookState';
 
@@ -24,9 +27,10 @@ export type RouteStop = {
   city: string;
   /**
    * past: had it and passed it on · current: has it now ·
-   * upcoming: signed up and waiting · home: where it goes once the line is empty
+   * arriving: it's in the post to them · upcoming: signed up and waiting ·
+   * home: where it goes once the line is empty
    */
-  kind: 'past' | 'current' | 'upcoming' | 'home';
+  kind: 'past' | 'current' | 'arriving' | 'upcoming' | 'home';
   /** Days held for past stops, days so far for the current one. */
   days: number | null;
 };
@@ -39,17 +43,23 @@ export function routeOf(book: Book, now = Date.now()): RouteStop[] {
   const firstName = (id: string) => person(id)?.name.split(' ')[0] ?? 'Someone';
   const legs = journey(book);
 
+  const inPost = isInTransit(book);
   const travelled: RouteStop[] = legs.map((leg, index) => {
     const isLast = index === legs.length - 1;
+    const arriving = isLast && inPost;
     return {
       key: leg.id,
       personId: leg.toFriend,
       name: firstName(leg.toFriend),
-      city: person(leg.toFriend)?.city ?? '',
-      kind: isLast ? 'current' : 'past',
-      days: isLast
-        ? Math.max(0, Math.round((now - Date.parse(leg.happenedAt)) / DAY_MS))
-        : heldForDays(legs, index),
+      city: placeOf(book, leg)?.city ?? '',
+      kind: arriving ? 'arriving' : isLast ? 'current' : 'past',
+      // No count while it's in the post: people tap Got it whenever they
+      // remember, so a mail-time number would mostly be wrong.
+      days: arriving
+        ? null
+        : isLast
+          ? Math.max(0, Math.round((now - Date.parse(leg.receivedAt ?? leg.happenedAt)) / DAY_MS))
+          : heldForDays(legs, index),
     };
   });
 
@@ -159,17 +169,17 @@ export function placesForOwner(books: Book[], ownerId: string | null): PlaceVisi
     }
 
     for (const leg of journey(book)) {
-      const entry = book.queue.find((person) => person.id === leg.toFriend);
-      if (!entry) {
+      const place = placeOf(book, leg);
+      const key = placeKey(place);
+      if (!place || !key) {
         continue;
       }
 
-      const key = `${entry.city.trim().toLowerCase()}|${entry.state.trim().toLowerCase()}`;
       const existing = visits.get(key);
       if (existing) {
         existing.visits += 1;
       } else {
-        visits.set(key, { city: entry.city, region: entry.state, visits: 1 });
+        visits.set(key, { city: place.city, region: place.region, visits: 1 });
       }
     }
   }
@@ -202,9 +212,9 @@ export function clubYear(books: Book[], year: number): ClubYear {
   const readers = new Set<string>();
   for (const { book, leg } of inYear) {
     readers.add(leg.toFriend);
-    const entry = book.queue.find((person) => person.id === leg.toFriend);
-    if (entry) {
-      places.add(`${entry.city.trim().toLowerCase()}|${entry.state.trim().toLowerCase()}`);
+    const key = placeKey(placeOf(book, leg));
+    if (key) {
+      places.add(key);
     }
   }
 

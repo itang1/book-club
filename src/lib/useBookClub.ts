@@ -11,7 +11,9 @@ import {
   fetchBookClubData,
   joinLine,
   leaveLine,
+  markReceived,
   recordHandoff,
+  updateProfile,
   SaveError,
 } from './bookClubService';
 import type { BookClubData } from './bookClubService';
@@ -289,19 +291,30 @@ export function useBookClub() {
     }
 
     const fromFriend = holderId(book);
+    const recipient = members.find((person) => person.id === toFriend);
+    const now = new Date().toISOString();
+    // Sent, not yet received: it's in the post until they tap Got it.
     const handoff: Handoff = {
       id: `handoff-${Date.now()}`,
       bookId,
       fromFriend,
       toFriend,
-      happenedAt: new Date().toISOString(),
+      happenedAt: now,
       note: letter.note?.trim() || undefined,
       rating: letter.rating,
+      placeCity: recipient?.city,
+      placeRegion: recipient?.state,
     };
 
     updateBook(bookId, (candidate) => ({
       ...candidate,
-      handoffs: [...candidate.handoffs, handoff],
+      // Passing it on means you had it, even if you never tapped Got it.
+      handoffs: [
+        ...candidate.handoffs.map((leg) =>
+          leg.toFriend === fromFriend && !leg.receivedAt ? { ...leg, receivedAt: now } : leg,
+        ),
+        handoff,
+      ],
       queue: candidate.queue.map((entry) => {
         if (entry.id === fromFriend) {
           return { ...entry, status: 'done' as const };
@@ -315,6 +328,45 @@ export function useBookClub() {
     }));
 
     track(`pass ${book.title} on`, recordHandoff(handoff));
+  };
+
+  /** "Got it": the book posted to you has arrived, here, now. */
+  const handleMarkReceived = (bookId: string) => {
+    const book = books.find((candidate) => candidate.id === bookId);
+    const me = members.find((person) => person.id === currentUserId);
+    if (!book || !me) {
+      return;
+    }
+
+    const now = new Date().toISOString();
+    updateBook(bookId, (candidate) => ({
+      ...candidate,
+      handoffs: candidate.handoffs.map((leg) =>
+        leg.toFriend === me.id && !leg.receivedAt
+          ? { ...leg, receivedAt: now, placeCity: me.city, placeRegion: me.state }
+          : leg,
+      ),
+    }));
+    track(`mark ${book.title} as arrived`, markReceived(bookId));
+  };
+
+  /** Edit your own name or city. Past stops keep the city they were read in. */
+  const handleUpdateProfile = (changes: Pick<Friend, 'name' | 'city' | 'state'>) => {
+    const me = members.find((person) => person.id === currentUserId);
+    if (!me) {
+      return;
+    }
+
+    const updated = { ...me, ...changes };
+    setMembers((current) => current.map((person) => (person.id === me.id ? updated : person)));
+    // The line and the cards read names and cities off each book's queue.
+    setBooks((current) =>
+      current.map((book) => ({
+        ...book,
+        queue: book.queue.map((entry) => (entry.id === me.id ? { ...entry, ...changes } : entry)),
+      })),
+    );
+    track('save your profile', updateProfile(updated));
   };
 
   const addFriend = (otherId: string) => {
@@ -382,6 +434,8 @@ export function useBookClub() {
     addFriend,
     addBook: handleAddBook,
     joinLine: handleJoinLine,
+    markReceived: handleMarkReceived,
+    updateProfile: handleUpdateProfile,
     leaveLine: handleLeaveLine,
     handOff: handleHandOff,
   };

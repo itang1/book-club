@@ -12,19 +12,18 @@ import {
   daysInCirculation,
   formatDate,
   friendNameIn,
-  hasFinished,
   hasLetter,
   heldForDays,
   holderId,
   isBackHome,
+  isInTransit,
   journey,
-  lastActivityAt,
   nextInLineId,
   placeInLine,
+  placeOf,
   placesVisited,
   readersSoFar,
-  readingQueue,
-  relativeTime,
+  senderId,
   timesRead,
 } from '../lib/bookState';
 
@@ -33,6 +32,7 @@ type BookDetailScreenProps = {
   books: Book[];
   currentUserId: string | null;
   onHandOff: (bookId: string, toFriend: string, letter: Letter) => void;
+  onMarkReceived: (bookId: string) => void;
   onJoinLine: (bookId: string) => void;
   onLeaveLine: (bookId: string) => void;
 };
@@ -42,6 +42,7 @@ export function BookDetailScreen({
   books,
   currentUserId,
   onHandOff,
+  onMarkReceived,
   onJoinLine,
   onLeaveLine,
 }: BookDetailScreenProps) {
@@ -66,28 +67,69 @@ export function BookDetailScreen({
     setNote('');
   };
 
+  const first = (id: string | null) => friendNameIn(book, id).split(' ')[0];
   const holder = holderId(book);
   const owner = copyOwnerId(book);
   const nextId = nextInLineId(book);
+  const sender = senderId(book);
+  const inPost = isInTransit(book);
   const legs = journey(book).reverse();
-  const queue = readingQueue(book);
 
-  const iHoldIt = currentUserId !== null && currentUserId === holder;
+  const comingToMe = inPost && currentUserId !== null && holder === currentUserId;
+  const iSentIt = inPost && currentUserId !== null && sender === currentUserId;
+  const iHoldIt = !inPost && currentUserId !== null && currentUserId === holder;
   const myPlace = placeInLine(book, currentUserId);
   const goingHome = confirmingTo !== null && confirmingTo === owner && confirmingTo !== nextId;
 
+  /** One line saying where the copy is, from the reader's side when it's theirs. */
+  const whereItIs = (() => {
+    if (comingToMe) {
+      return `On its way to you from ${first(sender)}`;
+    }
+    if (iSentIt) {
+      return `In the post to ${first(holder)}`;
+    }
+    if (inPost) {
+      return `In the post from ${first(sender)} to ${first(holder)}`;
+    }
+    if (iHoldIt) {
+      return 'In your hands';
+    }
+    const latest = journey(book).slice(-1)[0];
+    const place = latest ? placeOf(book, latest) : null;
+    const where = place ? ` in ${place.city}` : '';
+    return isBackHome(book) ? `Back home with ${first(holder)}${where}` : `With ${first(holder)}${where}`;
+  })();
+
   /**
-   * The one thing this reader can do with the copy right now. The holder
-   * passes it on (or sends it home); everyone else signs up or steps back.
+   * The one thing this reader can do with the copy right now: receive it,
+   * pass it on (or send it home), or sign up and step back.
    */
   const renderAction = () => {
+    if (comingToMe) {
+      return (
+        <View>
+          <Pressable style={styles.primaryButton} onPress={() => onMarkReceived(book.id)}>
+            <Text style={styles.primaryButtonText}>Got it</Text>
+          </Pressable>
+          <Text style={styles.actionNote}>Tap when it arrives, so {first(sender)} knows.</Text>
+        </View>
+      );
+    }
+
+    if (iSentIt) {
+      return (
+        <Text style={styles.actionNote}>
+          It becomes {first(holder)}'s once they tap Got it.
+        </Text>
+      );
+    }
+
     if (iHoldIt) {
       if (nextId) {
         return (
           <Pressable style={styles.primaryButton} onPress={() => setConfirmingTo(nextId)}>
-            <Text style={styles.primaryButtonText}>
-              Pass on to {friendNameIn(book, nextId)}
-            </Text>
+            <Text style={styles.primaryButtonText}>Send to {first(nextId)}</Text>
           </Pressable>
         );
       }
@@ -95,9 +137,7 @@ export function BookDetailScreen({
       if (canReturnHome(book) && owner) {
         return (
           <Pressable style={styles.primaryButton} onPress={() => setConfirmingTo(owner)}>
-            <Text style={styles.primaryButtonText}>
-              Return to {friendNameIn(book, owner)}
-            </Text>
+            <Text style={styles.primaryButtonText}>Send home to {first(owner)}</Text>
           </Pressable>
         );
       }
@@ -156,6 +196,22 @@ export function BookDetailScreen({
           <View style={styles.coverSpine} />
           <Text style={styles.coverTitle}>{book.title}</Text>
           <Text style={styles.coverAuthor}>{book.author}</Text>
+          {book.giftedBy ? (
+            <View style={styles.gift}>
+              <Ionicons name="gift-outline" size={13} color={theme.colors.coverInk} />
+              <Text style={styles.giftText}>A gift from {book.giftedBy}</Text>
+            </View>
+          ) : null}
+        </View>
+        <Text style={styles.ownership}>{first(owner)}'s copy</Text>
+
+        {/* Where it is and what you can do about it, together, before
+            anything else. This is what people open the page for. */}
+        <View style={styles.statusCard}>
+          <Text style={[styles.whereItIs, (iHoldIt || comingToMe) && styles.whereItIsMine]}>
+            {whereItIs}
+          </Text>
+          <View style={styles.action}>{renderAction()}</View>
         </View>
 
         <View style={styles.statRow}>
@@ -173,96 +229,45 @@ export function BookDetailScreen({
           </View>
         </View>
 
+        {/* The route doubles as the line: who's had it, who has it, who's
+            waiting, and home. */}
         <View style={[styles.box, styles.routeBox]}>
           <Text style={styles.boxTitle}>The route</Text>
-          <Text style={styles.boxCaption}>Where this copy has been, and where it's headed.</Text>
+          <Text style={styles.boxCaption}>Where this copy has been, and who's waiting.</Text>
           <JourneyRoute book={book} />
-        </View>
-
-        <View style={styles.infoRow}>
-          <Text style={styles.label}>With</Text>
-          <Text style={styles.value}>{friendNameIn(book, holder)}</Text>
-        </View>
-        <View style={styles.infoRow}>
-          <Text style={styles.label}>Belongs to</Text>
-          <Text style={styles.value}>{friendNameIn(book, owner)}</Text>
-        </View>
-        <View style={styles.infoRow}>
-          <Text style={styles.label}>Next in line</Text>
-          <Text style={styles.value}>
-            {nextId ? friendNameIn(book, nextId) : 'Nobody yet'}
-          </Text>
-        </View>
-        <View style={styles.infoRow}>
-          <Text style={styles.label}>Last activity</Text>
-          <Text style={styles.value}>{relativeTime(lastActivityAt(book))}</Text>
-        </View>
-
-        {iHoldIt && (
-          <Text style={styles.inHands}>In your hands</Text>
-        )}
-        <View style={styles.action}>{renderAction()}</View>
-
-        <View style={styles.box}>
-          <Text style={styles.boxTitle}>The line</Text>
-          <Text style={styles.boxCaption}>Everyone who signed up, in the order they asked.</Text>
-          {queue.map((person) => {
-            const isCurrent = person.id === holder;
-            const isNext = person.id === nextId;
-
-            return (
-              <View key={person.id} style={styles.pathItem}>
-                <View style={[styles.dot, isCurrent && styles.dotActive]} />
-                <View style={styles.pathPerson}>
-                  <Text style={styles.pathName}>
-                    {person.name}
-                    {isCurrent ? ' · has it now' : isNext ? ' · up next' : ''}
-                    {person.id === owner ? ' · owner' : ''}
-                  </Text>
-                  <Text style={styles.pathLocation}>
-                    {person.city}, {person.state}
-                  </Text>
-                </View>
-                {/* The holder is reading, whatever their row says: the log
-                    decides where the book is, and a stale status shouldn't
-                    contradict it. */}
-                <Text style={styles.pill}>
-                  {isCurrent
-                    ? 'reading'
-                    : person.status === 'waiting' && hasFinished(book, person.id)
-                      ? 'rereading'
-                      : person.status}
-                </Text>
-              </View>
-            );
-          })}
         </View>
 
         <View style={styles.box}>
           <Text style={styles.boxTitle}>Travel history</Text>
           <Text style={styles.boxCaption}>Every leg of the journey, newest first.</Text>
           {legs.length === 0 ? (
-            <Text style={styles.pathLocation}>This copy has not started travelling yet.</Text>
+            <Text style={styles.legMeta}>This copy has not started travelling yet.</Text>
           ) : (
             legs.map((leg, index) => {
               // `legs` is newest-first, so the held duration comes from the
               // original chronological ordering.
               const held = heldForDays(journey(book), legs.length - 1 - index);
+              const place = placeOf(book, leg);
 
               return (
                 <View key={leg.id} style={styles.legItem}>
                   <Text style={styles.legRoute}>
                     {leg.fromFriend
                       ? `${friendNameIn(book, leg.fromFriend)} → ${friendNameIn(book, leg.toFriend)}`
-                      : `Entered circulation with ${friendNameIn(book, leg.toFriend)}`}
+                      : book.giftedBy
+                        ? `A gift from ${book.giftedBy} to ${friendNameIn(book, leg.toFriend)}`
+                        : `Entered circulation with ${friendNameIn(book, leg.toFriend)}`}
                   </Text>
                   <Text style={styles.legMeta}>
                     {formatDate(leg.happenedAt)}
-                    {held !== null
-                      ? ` · held ${held} ${held === 1 ? 'day' : 'days'}`
-                      : isBackHome(book)
-                        ? ' · back home'
-                        : ' · still reading'}
+                    {place ? ` · ${place.city}` : ''}
+                    {leg.fromFriend && !leg.receivedAt
+                      ? ' · in the post'
+                      : held !== null
+                        ? ` · held ${held} ${held === 1 ? 'day' : 'days'}`
+                        : isBackHome(book)
+                          ? ' · back home'
+                          : ' · still reading'}
                   </Text>
                   {leg.fromFriend && hasLetter(leg) && (
                     canReadLetter(book, leg, currentUserId) ? (
@@ -301,9 +306,8 @@ export function BookDetailScreen({
               {goingHome ? 'Send it home?' : 'Send it on its way?'}
             </Text>
             <Text style={styles.sheetBody}>
-              {book.title} moves from {friendNameIn(book, holder)} to{' '}
-              {friendNameIn(book, confirmingTo)}. This adds a leg to the travel history
-              and cannot be undone.
+              Tap this once it's in the post. {first(confirmingTo)} taps Got it when it
+              arrives. The leg goes into the travel history for good.
             </Text>
 
             {/* The letter. Readers who come after see it only once they've
@@ -389,6 +393,45 @@ const styles = StyleSheet.create({
   },
   starButton: {
     marginRight: 6,
+  },
+  gift: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 12,
+    opacity: 0.85,
+  },
+  giftText: {
+    marginLeft: 6,
+    fontFamily: theme.fonts.serif,
+    fontStyle: 'italic',
+    fontSize: 13,
+    color: theme.colors.coverInk,
+  },
+  ownership: {
+    fontSize: 12,
+    color: theme.colors.muted,
+    textAlign: 'center',
+    marginTop: -10,
+    marginBottom: 16,
+  },
+  statusCard: {
+    backgroundColor: theme.colors.card,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 18,
+  },
+  whereItIs: {
+    fontFamily: theme.fonts.serif,
+    fontSize: 19,
+    fontWeight: '700',
+    color: theme.colors.text,
+    textAlign: 'center',
+  },
+  // The stamp red, kept for books that are yours right now.
+  whereItIsMine: {
+    color: theme.colors.stamp,
   },
   routeBox: {
     marginTop: 0,
@@ -514,37 +557,6 @@ const styles = StyleSheet.create({
     color: theme.colors.muted,
     marginTop: 2,
   },
-  infoRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 12,
-  },
-  label: {
-    color: theme.colors.muted,
-    fontSize: 13,
-  },
-  value: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: theme.colors.text,
-    maxWidth: '60%',
-    textAlign: 'right',
-    textTransform: 'capitalize',
-  },
-  inHands: {
-    alignSelf: 'center',
-    marginTop: 6,
-    color: theme.colors.stamp,
-    backgroundColor: theme.colors.stampSoft,
-    fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 0.8,
-    textTransform: 'uppercase',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 999,
-    overflow: 'hidden',
-  },
   action: {
     marginTop: 10,
   },
@@ -646,44 +658,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 4,
     marginBottom: 14,
-  },
-  pathItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  dot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: theme.colors.border,
-    marginRight: 12,
-  },
-  dotActive: {
-    backgroundColor: theme.colors.accent,
-  },
-  pathPerson: {
-    flexShrink: 1,
-  },
-  pathName: {
-    color: theme.colors.text,
-    fontWeight: '700',
-  },
-  pathLocation: {
-    color: theme.colors.muted,
-    fontSize: 12,
-  },
-  pill: {
-    marginLeft: 'auto',
-    textTransform: 'capitalize',
-    color: theme.colors.accent,
-    fontSize: 10,
-    fontWeight: '700',
-    backgroundColor: theme.colors.soft,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 999,
-    overflow: 'hidden',
   },
   legItem: {
     marginBottom: 14,

@@ -109,6 +109,7 @@ export const booksSeed: Book[] = [
     id: 'book-3',
     title: 'Little Women',
     author: 'Louisa May Alcott',
+    giftedBy: 'Grandma',
     coverColor: '#a8927d',
     queue: [
       { ...byId('friend-tibby'), position: 0, status: 'done' },
@@ -204,3 +205,16 @@ export const friendshipsSeed: Friendship[] = [
   ['friend-bridget', 'friend-carmen'],
   ['friend-bridget', 'friend-tibby'],
 ];
+
+/**
+ * Every demo leg has arrived (Got it) when it was sent, except Lena's
+ * A Room with a View to Bridget, sent five hours ago: it's still in the post,
+ * so the demo shows that state too.
+ */
+for (const book of booksSeed) {
+  for (const leg of book.handoffs) {
+    if (leg.id !== 'handoff-2b') {
+      leg.receivedAt = leg.happenedAt;
+    }
+  }
+}

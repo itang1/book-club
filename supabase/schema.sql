@@ -69,6 +69,10 @@ create table if not exists public.books (
   created_at timestamptz not null default now()
 );
 
+-- Who gave the owner this copy, if it was a gift: a name as the owner wrote
+-- it, so it can be someone outside the club ("Mom").
+alter table public.books add column if not exists gifted_by text;
+
 -- ---------------------------------------------------------------
 -- Reading queue: who signed up for a book, in sign-up order, and each
 -- reader's progress. Nobody is added automatically; a row exists because that
@@ -102,6 +106,36 @@ create table if not exists public.handoffs (
 alter table public.handoffs add column if not exists note text;
 alter table public.handoffs add column if not exists rating smallint
   check (rating between 1 and 5);
+
+-- Where the book was read on this leg: the recipient's city when it reached
+-- them. Recorded on the leg, not looked up from their profile, so a reader
+-- who moves later doesn't drag their past stops along with them.
+--
+-- received_at: books go by mail, so a leg starts when it's sent and the
+-- recipient confirms with "Got it". Null means it's in the post.
+--
+-- Rows from before these columns existed are backfilled once, as received
+-- when sent, at the reader's city at the time of the backfill.
+do $$
+begin
+  if not exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'handoffs' and column_name = 'place_city'
+  ) then
+    alter table public.handoffs add column place_city text, add column place_region text;
+    update public.handoffs h
+    set place_city = f.city, place_region = f.state
+    from public.friends f where f.id = h.to_friend;
+  end if;
+
+  if not exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'handoffs' and column_name = 'received_at'
+  ) then
+    alter table public.handoffs add column received_at timestamptz;
+    update public.handoffs set received_at = happened_at;
+  end if;
+end $$;
 
 -- ---------------------------------------------------------------
 -- Accounts. Each person in the club is one Supabase Auth user. A row
@@ -329,29 +363,33 @@ end;
 $$;
 
 -- Put one of your own copies into circulation, starting with you.
+drop function if exists public.lend_book(text, text, text, text, text);
 create or replace function public.lend_book(
-  p_book_id text, p_title text, p_author text, p_cover_color text, p_handoff_id text
+  p_book_id text, p_title text, p_author text, p_cover_color text, p_handoff_id text,
+  p_gifted_by text default null
 ) returns void
 language plpgsql security definer set search_path = public
 as $$
 declare
-  owner text := public.me();
+  owner public.friends;
 begin
-  if owner is null then
+  select * into owner from public.friends where id = public.me();
+  if owner.id is null then
     raise exception 'Make your profile before lending a book';
   end if;
 
-  insert into public.books (id, title, author, cover_color)
-  values (p_book_id, p_title, p_author, p_cover_color);
+  insert into public.books (id, title, author, cover_color, gifted_by)
+  values (p_book_id, p_title, p_author, p_cover_color, nullif(trim(p_gifted_by), ''));
   insert into public.reading_queue (book_id, friend_id, position, status)
-  values (p_book_id, owner, 0, 'reading');
-  insert into public.handoffs (id, book_id, from_friend, to_friend)
-  values (p_handoff_id, p_book_id, null, owner);
+  values (p_book_id, owner.id, 0, 'reading');
+  insert into public.handoffs
+    (id, book_id, from_friend, to_friend, received_at, place_city, place_region)
+  values (p_handoff_id, p_book_id, null, owner.id, now(), owner.city, owner.state);
 end;
 $$;
 
--- Hand the book you're holding to the next reader in line, or home to its
--- owner, with an optional letter.
+-- Send the book you're holding to the next reader in line, or home to its
+-- owner, with an optional letter. It's in the post until they say Got it.
 create or replace function public.pass_on(
   p_handoff_id text, p_book_id text, p_to text, p_note text, p_rating smallint
 ) returns void
@@ -359,15 +397,17 @@ language plpgsql security definer set search_path = public
 as $$
 declare
   me_id text := public.me();
-  holder text;
+  latest public.handoffs;
   owner text;
+  recipient public.friends;
 begin
-  select to_friend into holder from public.handoffs
+  select * into latest from public.handoffs
   where book_id = p_book_id order by happened_at desc limit 1;
   select to_friend into owner from public.handoffs
   where book_id = p_book_id order by happened_at asc limit 1;
+  select * into recipient from public.friends where id = p_to;
 
-  if me_id is null or holder is distinct from me_id then
+  if me_id is null or latest.to_friend is distinct from me_id then
     raise exception 'Only the person holding a book can pass it on';
   end if;
   if p_to = me_id then
@@ -380,8 +420,14 @@ begin
     raise exception 'They are not in line for this book';
   end if;
 
-  insert into public.handoffs (id, book_id, from_friend, to_friend, note, rating)
-  values (p_handoff_id, p_book_id, me_id, p_to, nullif(trim(p_note), ''), p_rating);
+  -- Passing it on means you had it, even if you never tapped Got it.
+  update public.handoffs set received_at = coalesce(received_at, now())
+  where id = latest.id;
+
+  insert into public.handoffs
+    (id, book_id, from_friend, to_friend, note, rating, place_city, place_region)
+  values (p_handoff_id, p_book_id, me_id, p_to, nullif(trim(p_note), ''), p_rating,
+          recipient.city, recipient.state);
   update public.reading_queue set status = 'done'
   where book_id = p_book_id and friend_id = me_id;
   update public.reading_queue set status = 'reading'
@@ -389,13 +435,39 @@ begin
 end;
 $$;
 
+-- "Got it": the book that was posted to you has arrived. The one change ever
+-- made to a leg after it's written, and only once: it stamps the arrival
+-- and where you are now, which is where you'll read it.
+create or replace function public.mark_received(p_book_id text) returns void
+language plpgsql security definer set search_path = public
+as $$
+declare
+  reader public.friends;
+  latest public.handoffs;
+begin
+  select * into reader from public.friends where id = public.me();
+  select * into latest from public.handoffs
+  where book_id = p_book_id order by happened_at desc limit 1;
+
+  if reader.id is null or latest.to_friend is distinct from reader.id then
+    raise exception 'This book isn''t on its way to you';
+  end if;
+
+  update public.handoffs
+  set received_at = now(), place_city = reader.city, place_region = reader.state
+  where id = latest.id and received_at is null;
+end;
+$$;
+
 revoke all on function public.me(), public.claim_profile(text),
-  public.lend_book(text, text, text, text, text),
-  public.pass_on(text, text, text, text, smallint)
+  public.lend_book(text, text, text, text, text, text),
+  public.pass_on(text, text, text, text, smallint),
+  public.mark_received(text)
   from public, anon;
 grant execute on function public.me(), public.claim_profile(text),
-  public.lend_book(text, text, text, text, text),
-  public.pass_on(text, text, text, text, smallint)
+  public.lend_book(text, text, text, text, text, text),
+  public.pass_on(text, text, text, text, smallint),
+  public.mark_received(text)
   to authenticated;
 
 -- ---------------------------------------------------------------

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -5,14 +6,18 @@ import { Book, Friend } from '../types';
 import { theme } from '../theme';
 import { MonthlyColumns } from '../components/MonthlyColumns';
 import { PassportStamps } from '../components/PassportStamps';
+import { EditProfileSheet } from '../components/EditProfileSheet';
 import { finishesByMonth, placesForOwner } from '../lib/stats';
 import {
+  friendNameIn,
   hasFinished,
   hasLetter,
   holderId,
+  isInTransit,
   lastActivityAt,
   nextInLineId,
   relativeTime,
+  senderId,
 } from '../lib/bookState';
 
 type ProfileScreenProps = {
@@ -22,17 +27,35 @@ type ProfileScreenProps = {
   /** With real accounts: who's signed in, and the way out. */
   email?: string | null;
   onSignOut?: () => void;
+  onUpdateProfile: (changes: Pick<Friend, 'name' | 'city' | 'state'>) => void;
 };
 
 /**
  * Just you: who you are, and the books in your life right now. Switching
  * between people is a development tool and lives in the dev bar, not here.
  */
-export function ProfileScreen({ books, me, friendCount, email, onSignOut }: ProfileScreenProps) {
+export function ProfileScreen({
+  books,
+  me,
+  friendCount,
+  email,
+  onSignOut,
+  onUpdateProfile,
+}: ProfileScreenProps) {
   const insets = useSafeAreaInsets();
 
-  const withMe = me ? books.filter((book) => holderId(book) === me.id) : [];
-  const comingToMe = me ? books.filter((book) => nextInLineId(book) === me.id) : [];
+  const [editing, setEditing] = useState(false);
+  // In your hands means arrived; a book in the post to you is coming, along
+  // with any you're next in line for.
+  const withMe = me
+    ? books.filter((book) => holderId(book) === me.id && !isInTransit(book))
+    : [];
+  const comingToMe = me
+    ? books.filter(
+        (book) =>
+          (holderId(book) === me.id && isInTransit(book)) || nextInLineId(book) === me.id,
+      )
+    : [];
   // From the log, so a reread in progress doesn't un-finish the first read.
   const finished = me ? books.filter((book) => hasFinished(book, me.id)) : [];
   const lettersWritten = me
@@ -60,7 +83,20 @@ export function ProfileScreen({ books, me, friendCount, email, onSignOut }: Prof
             </Text>
           )}
         </View>
+        {me && (
+          <Pressable style={styles.editButton} onPress={() => setEditing(true)}>
+            <Text style={styles.editButtonText}>Edit</Text>
+          </Pressable>
+        )}
       </View>
+      {me && (
+        <EditProfileSheet
+          me={me}
+          visible={editing}
+          onClose={() => setEditing(false)}
+          onSave={onUpdateProfile}
+        />
+      )}
 
       <View style={styles.grid}>
         <View style={styles.statCard}>
@@ -111,9 +147,9 @@ export function ProfileScreen({ books, me, friendCount, email, onSignOut }: Prof
               <View style={styles.bookInfo}>
                 <Text style={styles.bookTitle}>{book.title}</Text>
                 <Text style={styles.bookMeta}>
-                  Currently with{' '}
-                  {book.queue.find((entry) => entry.id === holderId(book))?.name ??
-                    'someone in the group'}
+                  {isInTransit(book)
+                    ? `In the post from ${friendNameIn(book, senderId(book)).split(' ')[0]}`
+                    : `You're next. Currently with ${friendNameIn(book, holderId(book)).split(' ')[0]}`}
                 </Text>
               </View>
             </View>
@@ -163,6 +199,19 @@ const styles = StyleSheet.create({
   },
   headerText: {
     flex: 1,
+  },
+  editButton: {
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.card,
+    borderRadius: 999,
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+  },
+  editButtonText: {
+    color: theme.colors.accent,
+    fontWeight: '700',
+    fontSize: 13,
   },
   avatar: {
     width: 60,

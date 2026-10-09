@@ -67,3 +67,12 @@ insert into public.friendships (friend_a, friend_b) values
   ('friend-bridget','friend-carmen'),
   ('friend-bridget','friend-tibby')
 on conflict do nothing;
+
+-- Every leg above has arrived (Got it) when it was sent, except Lena's
+-- A Room with a View to Bridget, which is still in the post.
+update public.handoffs set received_at = happened_at
+where received_at is null and book_id in ('book-1', 'book-2', 'book-3', 'book-4')
+  and id <> 'handoff-2b';
+
+-- Tibby's Little Women was a gift from her grandmother.
+update public.books set gifted_by = 'Grandma' where id = 'book-3' and gifted_by is null;
