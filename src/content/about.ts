@@ -49,13 +49,12 @@ export const bio: BioRun[][] = [
  * ours: plain house rules, written fresh rather than borrowed.
  */
 export const rules = [
-  'Write a letter before you pass it on. Two lines counts.',
-  'No spoilers in the letter. Not even "wait till you get to the end."',
-  "Don't dog-ear the pages. Use a receipt.",
-  'Pencil in the margins is fine. Ask before you use a pen.',
-  "Read it, then send it. Somebody's waiting.",
-  "Media Mail is fine. It's cheaper and the book doesn't mind.",
-  "When everyone's had a turn, it goes home to whoever owns it.",
+  'Write a letter or note before you pass it on.',
+  'No spoilers in the letter.',
+  'Handle the book with care.',
+  'Write in the margins! Your thoughts are meant to be shared.',
+  'Use USPS Media Mail for the best shipping prices.',
+  "When everyone's had a turn, it goes home to whoever owns it. Or it lives on in circulation.",
 ];
 
 export const homage =

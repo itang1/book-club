@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -6,8 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Book, RootStackParamList } from '../types';
 import { BookCard } from '../components/BookCard';
 import { ClubYearCard } from '../components/ClubYearCard';
-import { Byline } from '../components/Byline';
-import { LetterFromIrene } from '../components/LetterFromIrene';
+import { AboutSheet } from '../components/AboutSheet';
 import { describeLeg, hasLetter, holderId, recentActivity, relativeTime } from '../lib/bookState';
 import { theme } from '../theme';
 
@@ -27,6 +27,7 @@ export function HomeScreen({
   onRefresh,
 }: HomeScreenProps) {
   const insets = useSafeAreaInsets();
+  const [aboutOpen, setAboutOpen] = useState(false);
   // What's in your hands comes first: that's the one thing you can act on.
   const mine = books.filter((book) => currentUserId !== null && holderId(book) === currentUserId);
   const others = books.filter((book) => !mine.includes(book));
@@ -48,6 +49,20 @@ export function HomeScreen({
         />
       }
     >
+      {/* The one standing way into the Rules and Irene's message: top of the
+          screen everyone lands on, labelled, small enough not to compete
+          with the books. */}
+      <View style={styles.topRow}>
+        <Pressable
+          style={styles.aboutButton}
+          onPress={() => setAboutOpen(true)}
+          accessibilityRole="button"
+        >
+          <Ionicons name="book-outline" size={14} color={theme.colors.accent} />
+          <Text style={styles.aboutButtonText}>Rules & about</Text>
+        </Pressable>
+      </View>
+
       <View style={styles.headerWrap}>
         <Text style={styles.title}>Sisterhood of the Traveling Books</Text>
         <Text style={styles.subtitle}>Like the Pants, but with pages.</Text>
@@ -62,9 +77,6 @@ export function HomeScreen({
           <Text style={styles.addButtonText}>Lend a new book</Text>
         </Pressable>
       </View>
-
-      {/* Until it's been opened on this device; the byline below still leads there after. */}
-      <LetterFromIrene hideOnceOpened />
 
       {mine.length > 0 && (
         <>
@@ -112,7 +124,7 @@ export function HomeScreen({
       )}
 
       <ClubYearCard books={books} />
-      <Byline />
+      <AboutSheet visible={aboutOpen} onClose={() => setAboutOpen(false)} />
     </ScrollView>
   );
 }
@@ -125,6 +137,27 @@ const styles = StyleSheet.create({
   content: {
     padding: 20,
     paddingBottom: 32,
+  },
+  topRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    marginBottom: 8,
+  },
+  aboutButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.card,
+    borderRadius: 999,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+  },
+  aboutButtonText: {
+    marginLeft: 6,
+    color: theme.colors.accent,
+    fontWeight: '700',
+    fontSize: 13,
   },
   headerWrap: {
     marginBottom: 24,

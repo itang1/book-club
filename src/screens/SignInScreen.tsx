@@ -4,7 +4,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { theme } from '../theme';
 import { emailSignInLink } from '../lib/auth';
-import { LetterFromIrene } from '../components/LetterFromIrene';
 
 /**
  * Sign in with an emailed link. The same screen covers first-timers: a new
@@ -89,10 +88,6 @@ export function SignInScreen() {
         )}
       </View>
 
-      {/* Right where people wait for their email, with nothing else to do. */}
-      <View style={styles.letter}>
-        <LetterFromIrene />
-      </View>
     </ScrollView>
   );
 }
@@ -173,8 +168,5 @@ const styles = StyleSheet.create({
     color: theme.colors.accent,
     fontWeight: '700',
     fontSize: 14,
-  },
-  letter: {
-    marginTop: 20,
   },
 });

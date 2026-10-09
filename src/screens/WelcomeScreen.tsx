@@ -4,7 +4,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Friend } from '../types';
 import { theme } from '../theme';
-import { LetterFromIrene } from '../components/LetterFromIrene';
 import { invitedByFromUrl } from '../lib/invite';
 import type { NewProfile } from '../lib/useBookClub';
 
@@ -123,9 +122,6 @@ export function WelcomeScreen({
         </Pressable>
       )}
 
-      <View style={styles.letter}>
-        <LetterFromIrene />
-      </View>
     </ScrollView>
   );
 }
@@ -228,9 +224,6 @@ const styles = StyleSheet.create({
     color: theme.colors.onAccent,
     fontWeight: '700',
     fontSize: 15,
-  },
-  letter: {
-    marginTop: 16,
   },
   footerLink: {
     marginTop: 12,

@@ -3,7 +3,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Book, Friend } from '../types';
 import { theme } from '../theme';
-import { LetterFromIrene } from '../components/LetterFromIrene';
 import { MonthlyColumns } from '../components/MonthlyColumns';
 import { PassportStamps } from '../components/PassportStamps';
 import { finishesByMonth, placesForOwner } from '../lib/stats';
@@ -131,7 +130,6 @@ export function ProfileScreen({ books, me, friendCount, email, onSignOut }: Prof
         <PassportStamps places={placesForOwner(books, me?.id ?? null)} />
       </View>
 
-      <LetterFromIrene />
       {email && onSignOut && (
         <Pressable style={styles.signOut} onPress={onSignOut}>
           <Text style={styles.signOutText}>Signed in as {email} · Sign out</Text>
