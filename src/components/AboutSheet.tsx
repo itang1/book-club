@@ -20,7 +20,7 @@ type AboutSheetProps = {
 };
 
 /**
- * Rules & about: the Rules of the Books, then who made this. Two sections
+ * Rules & About: the Rules of the Books, then who made this. Two sections
  * built the same way (heading, then a card) so neither reads as an
  * afterthought. Content lives in content/about.
  */
@@ -31,7 +31,7 @@ export function AboutSheet({ visible, onClose }: AboutSheetProps) {
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
       <View style={styles.container}>
         <View style={[styles.topBar, { paddingTop: insets.top + 10 }]}>
-          <Text style={styles.topBarTitle}>Rules & about</Text>
+          <Text style={styles.topBarTitle}>Rules & About</Text>
           <Pressable
             style={styles.done}
             onPress={onClose}

@@ -53,7 +53,7 @@ export function HomeScreen({
         <Text style={styles.title}>Sisterhood of the Traveling Books</Text>
         <Text style={styles.subtitle}>Like the Pants, but with pages.</Text>
         {/* Labelled rather than a bare +: an icon on its own didn't say what
-            it would add until you tapped it. Rules & about sits beside it at
+            it would add until you tapped it. Rules & About sits beside it at
             the same size: the one standing way into the Rules and Irene's
             About, on the screen everyone lands on. */}
         <View style={styles.actions}>
@@ -71,7 +71,7 @@ export function HomeScreen({
             accessibilityRole="button"
           >
             <Ionicons name="book-outline" size={17} color={theme.colors.accent} />
-            <Text style={styles.aboutButtonText}>Rules & about</Text>
+            <Text style={styles.aboutButtonText}>Rules & About</Text>
           </Pressable>
         </View>
       </View>
