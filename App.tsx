@@ -17,6 +17,7 @@ import {
 } from './src/lib/bookClubService';
 import { holderId } from './src/lib/bookState';
 import { loadReaderId, saveReaderId } from './src/lib/identity';
+import { theme } from './src/theme';
 import { HomeScreen } from './src/screens/HomeScreen';
 import { FriendsScreen } from './src/screens/FriendsScreen';
 import { AddBookScreen } from './src/screens/AddBookScreen';
@@ -65,7 +66,7 @@ function TabIcon({
       <Ionicons
         name={focused ? icons.active : icons.idle}
         size={size - 2}
-        color={focused ? '#fff' : color}
+        color={focused ? theme.colors.onAccent : color}
       />
     </View>
   );
@@ -81,13 +82,13 @@ const tabStyles = StyleSheet.create({
     right: 16,
     // Sits just above the tab bar.
     bottom: 104,
-    backgroundColor: '#1f1a17',
+    backgroundColor: theme.colors.text,
     borderRadius: 12,
     paddingVertical: 12,
     paddingHorizontal: 14,
   },
   bannerText: {
-    color: '#fffdfb',
+    color: theme.colors.card,
     fontSize: 13,
     lineHeight: 18,
   },
@@ -101,11 +102,11 @@ const tabStyles = StyleSheet.create({
     marginBottom: 6,
   },
   iconWrapActive: {
-    backgroundColor: '#7a5c48',
+    backgroundColor: theme.colors.accent,
   },
   bar: {
-    backgroundColor: '#fffdfb',
-    borderTopColor: '#eaded3',
+    backgroundColor: theme.colors.card,
+    borderTopColor: theme.colors.border,
     borderTopWidth: 1,
     height: 92,
     paddingTop: 10,
@@ -113,7 +114,7 @@ const tabStyles = StyleSheet.create({
   },
   label: {
     fontSize: 11,
-    fontWeight: '800',
+    fontWeight: '700',
     marginTop: 0,
   },
 });
@@ -312,12 +313,12 @@ export default function App() {
               size={size}
             />
           ),
-          tabBarActiveTintColor: '#7a5c48',
-          tabBarInactiveTintColor: '#8a7d76',
+          tabBarActiveTintColor: theme.colors.accent,
+          tabBarInactiveTintColor: theme.colors.faint,
           tabBarStyle: tabStyles.bar,
           tabBarLabelStyle: tabStyles.label,
-          headerStyle: { backgroundColor: '#f7f1ea' },
-          headerTitleStyle: { color: '#1f1a17' },
+          headerStyle: { backgroundColor: theme.colors.background },
+          headerTitleStyle: { color: theme.colors.text, fontFamily: theme.fonts.serif },
         })}
       >
         <Tab.Screen

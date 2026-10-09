@@ -168,6 +168,9 @@ export function BookDetailScreen({
           <Text style={styles.value}>{relativeTime(lastActivityAt(book))}</Text>
         </View>
 
+        {iHoldIt && (
+          <Text style={styles.yourTurn}>Your turn · it's with you</Text>
+        )}
         <View style={styles.action}>{renderAction()}</View>
 
         <View style={styles.box}>
@@ -296,23 +299,26 @@ const styles = StyleSheet.create({
     top: 0,
     bottom: 0,
     width: 9,
-    backgroundColor: 'rgba(255, 255, 255, 0.26)',
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
   },
   coverTitle: {
-    color: '#fff',
-    fontSize: 24,
-    lineHeight: 30,
-    fontWeight: '800',
+    color: theme.colors.coverInk,
+    fontFamily: theme.fonts.serif,
+    fontSize: 26,
+    lineHeight: 32,
+    fontWeight: '700',
   },
   coverAuthor: {
-    color: 'rgba(255, 255, 255, 0.88)',
+    color: theme.colors.coverInk,
+    opacity: 0.8,
     fontSize: 14,
     fontWeight: '600',
     marginTop: 6,
   },
   title: {
+    fontFamily: theme.fonts.serif,
     fontSize: 28,
-    fontWeight: '800',
+    fontWeight: '700',
     color: theme.colors.text,
   },
   statRow: {
@@ -329,8 +335,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   statValue: {
-    fontSize: 20,
-    fontWeight: '800',
+    fontFamily: theme.fonts.serif,
+    fontSize: 22,
+    fontWeight: '700',
     color: theme.colors.text,
   },
   statLabel: {
@@ -355,6 +362,20 @@ const styles = StyleSheet.create({
     textAlign: 'right',
     textTransform: 'capitalize',
   },
+  yourTurn: {
+    alignSelf: 'center',
+    marginTop: 6,
+    color: theme.colors.stamp,
+    backgroundColor: theme.colors.stampSoft,
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 999,
+    overflow: 'hidden',
+  },
   action: {
     marginTop: 10,
   },
@@ -371,8 +392,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   primaryButtonText: {
-    color: '#fff',
-    fontWeight: '800',
+    color: theme.colors.onAccent,
+    fontWeight: '700',
     fontSize: 15,
   },
   secondaryButton: {
@@ -404,8 +425,9 @@ const styles = StyleSheet.create({
     padding: 22,
   },
   sheetTitle: {
-    fontSize: 20,
-    fontWeight: '800',
+    fontFamily: theme.fonts.serif,
+    fontSize: 21,
+    fontWeight: '700',
     color: theme.colors.text,
     marginBottom: 8,
   },
@@ -422,8 +444,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   sheetConfirmText: {
-    color: '#fff',
-    fontWeight: '800',
+    color: theme.colors.onAccent,
+    fontWeight: '700',
     fontSize: 15,
   },
   sheetCancel: {
@@ -445,8 +467,9 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   boxTitle: {
-    fontSize: 18,
-    fontWeight: '800',
+    fontFamily: theme.fonts.serif,
+    fontSize: 19,
+    fontWeight: '700',
     color: theme.colors.text,
   },
   boxCaption: {
@@ -468,7 +491,7 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   dotActive: {
-    backgroundColor: '#c38e63',
+    backgroundColor: theme.colors.accent,
   },
   pathPerson: {
     flexShrink: 1,

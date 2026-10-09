@@ -145,8 +145,9 @@ const styles = StyleSheet.create({
     paddingBottom: 32,
   },
   title: {
-    fontSize: 28,
-    fontWeight: '800',
+    fontFamily: theme.fonts.serif,
+    fontSize: 30,
+    fontWeight: '700',
     marginBottom: 6,
     color: theme.colors.text,
   },
@@ -164,8 +165,9 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   cardTitle: {
-    fontSize: 16,
-    fontWeight: '800',
+    fontFamily: theme.fonts.serif,
+    fontSize: 18,
+    fontWeight: '700',
     color: theme.colors.text,
     marginBottom: 12,
   },
@@ -195,7 +197,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   chipTextSelected: {
-    color: '#fff',
+    color: theme.colors.onAccent,
   },
   grid: {
     flexDirection: 'row',
@@ -212,8 +214,9 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   statValue: {
-    fontSize: 24,
-    fontWeight: '800',
+    fontFamily: theme.fonts.serif,
+    fontSize: 26,
+    fontWeight: '700',
     color: theme.colors.text,
   },
   statLabel: {

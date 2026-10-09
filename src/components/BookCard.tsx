@@ -81,7 +81,8 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   coverText: {
-    color: '#fff',
+    color: theme.colors.coverInk,
+    fontFamily: theme.fonts.serif,
     fontSize: 12,
     fontWeight: '700',
     lineHeight: 16,
@@ -91,6 +92,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   title: {
+    fontFamily: theme.fonts.serif,
     fontSize: 18,
     fontWeight: '700',
     color: theme.colors.text,
