@@ -2,7 +2,6 @@ import * as React from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Ionicons } from '@expo/vector-icons';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import {
   SafeAreaInsetsContext,
@@ -16,6 +15,7 @@ import { friendIdsOf } from './src/lib/friendGraph';
 import { isDevMode } from './src/lib/devMode';
 import { theme } from './src/theme';
 import { DevBar } from './src/components/DevBar';
+import { TabBar } from './src/components/TabBar';
 import { HomeScreen } from './src/screens/HomeScreen';
 import { FriendsScreen } from './src/screens/FriendsScreen';
 import { AddBookScreen } from './src/screens/AddBookScreen';
@@ -26,44 +26,6 @@ import { SignInScreen } from './src/screens/SignInScreen';
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
 const Stack = createNativeStackNavigator<RootStackParamList>();
-
-/**
- * Outline when idle, solid inside an accent pill when selected. Colour alone
- * was too subtle to read at a glance, so the active tab also changes icon
- * weight and gains a background.
- */
-const TAB_ICONS: Record<
-  keyof RootTabParamList,
-  { active: keyof typeof Ionicons.glyphMap; idle: keyof typeof Ionicons.glyphMap }
-> = {
-  Home: { active: 'book', idle: 'book-outline' },
-  Friends: { active: 'people', idle: 'people-outline' },
-  Profile: { active: 'person', idle: 'person-outline' },
-};
-
-function TabIcon({
-  routeName,
-  focused,
-  color,
-  size,
-}: {
-  routeName: keyof RootTabParamList;
-  focused: boolean;
-  color: string;
-  size: number;
-}) {
-  const icons = TAB_ICONS[routeName];
-
-  return (
-    <View style={[tabStyles.iconWrap, focused && tabStyles.iconWrapActive]}>
-      <Ionicons
-        name={focused ? icons.active : icons.idle}
-        size={size - 2}
-        color={focused ? theme.colors.onAccent : color}
-      />
-    </View>
-  );
-}
 
 const tabStyles = StyleSheet.create({
   root: {
@@ -102,31 +64,6 @@ const tabStyles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  iconWrap: {
-    width: 40,
-    height: 26,
-    borderRadius: 13,
-    alignItems: 'center',
-    justifyContent: 'center',
-    // Keeps the active pill clear of the label underneath.
-    marginBottom: 6,
-  },
-  iconWrapActive: {
-    backgroundColor: theme.colors.accent,
-  },
-  bar: {
-    backgroundColor: theme.colors.card,
-    borderTopColor: theme.colors.border,
-    borderTopWidth: 1,
-    height: 92,
-    paddingTop: 10,
-    paddingBottom: 26,
-  },
-  label: {
-    fontSize: 11,
-    fontWeight: '700',
-    marginTop: 0,
   },
 });
 
@@ -185,17 +122,9 @@ function Tabs({ club }: { club: BookClub }) {
   return (
     <NavigationContainer>
       <Tab.Navigator
-        screenOptions={({ route }) => ({
-          tabBarIcon: ({ color, size, focused }) => (
-            <TabIcon routeName={route.name} focused={focused} color={color} size={size} />
-          ),
-          tabBarActiveTintColor: theme.colors.accent,
-          tabBarInactiveTintColor: theme.colors.faint,
-          tabBarStyle: tabStyles.bar,
-          tabBarLabelStyle: tabStyles.label,
-          // Each tab draws its own large serif title.
-          headerShown: false,
-        })}
+        tabBar={(props) => <TabBar {...props} />}
+        // Each tab draws its own large serif title.
+        screenOptions={{ headerShown: false }}
       >
         <Tab.Screen name="Home" options={{ title: 'Books' }}>
           {() => <HomeStack club={club} />}
