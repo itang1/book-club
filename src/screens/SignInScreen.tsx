@@ -3,6 +3,7 @@ import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { theme } from '../theme';
+import { tagline } from '../content/about';
 import { emailSignInLink } from '../lib/auth';
 
 /**
@@ -42,7 +43,7 @@ export function SignInScreen() {
     >
       <Text style={styles.title}>Sisterhood of the Traveling Books</Text>
       <Text style={styles.subtitle}>
-        The pants fit everyone. So does a good book.
+        {tagline}
       </Text>
 
       <View style={styles.card}>

@@ -8,6 +8,7 @@ import { Book, RootStackParamList } from '../types';
 import { BookCard } from '../components/BookCard';
 import { ClubYearCard } from '../components/ClubYearCard';
 import { AboutSheet } from '../components/AboutSheet';
+import { tagline } from '../content/about';
 import { describeLeg, hasLetter, holderId, recentActivity, relativeTime } from '../lib/bookState';
 import { theme } from '../theme';
 
@@ -51,7 +52,7 @@ export function HomeScreen({
     >
       <View style={styles.headerWrap}>
         <Text style={styles.title}>Sisterhood of the Traveling Books</Text>
-        <Text style={styles.subtitle}>Like the Pants, but with pages.</Text>
+        <Text style={styles.subtitle}>{tagline}</Text>
         {/* Labelled rather than a bare +: an icon on its own didn't say what
             it would add until you tapped it. Rules & About sits beside it at
             the same size: the one standing way into the Rules and Irene's

@@ -68,13 +68,14 @@ export const rules = [
 
 /**
  * The Rules of the Pants from the first book, shown as a taped note beside
- * ours, with a credit linking to the series.
+ * ours, with a credit linking to the series. The one about boys and taking
+ * the Pants off is left out: fine in a teen novel, but out of place on its
+ * own on this page.
  */
 export const pantsRules = [
   'You must never wash the Pants.',
   'You must never double-cuff the Pants. It’s tacky. There will never be a time when this will not be tacky.',
   'You must never say the word “phat” while wearing the Pants. You must also never think “I am fat” while wearing the Pants.',
-  'You must never let a boy take off the Pants (although you may take them off yourself in his presence).',
   'You must not pick your nose while wearing the Pants. You may, however, scratch casually your nostril while really kind of picking.',
   'Upon our reunion, you must follow the proper procedures for documenting your time in the Pants.',
   'You must write to your Sisters throughout the summer, no matter how much fun you are having without them.',
@@ -91,6 +92,9 @@ export const pantsCredit = {
   text: 'From The Sisterhood of the Traveling Pants by Ann Brashares',
   href: SERIES_URL,
 };
+
+/** The line under the title on Books, sign-in and welcome. One, everywhere. */
+export const tagline = 'Read it. Write in it. Pass it on.';
 
 export const homage =
   'A fan homage to The Sisterhood of the Traveling Pants by Ann Brashares. Not affiliated with the author or publisher.';

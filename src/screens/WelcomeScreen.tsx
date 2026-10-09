@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Friend } from '../types';
 import { theme } from '../theme';
+import { tagline } from '../content/about';
 import { invitedByFromUrl } from '../lib/invite';
 import type { NewProfile } from '../lib/useBookClub';
 
@@ -53,8 +54,8 @@ export function WelcomeScreen({
       <Text style={styles.title}>Sisterhood of the Traveling Books</Text>
       <Text style={styles.subtitle}>
         {inviter
-          ? `${inviter.name.split(' ')[0]} invited you. The pants fit everyone. So does a good book.`
-          : 'The pants fit everyone. So does a good book.'}
+          ? `${inviter.name.split(' ')[0]} invited you. ${tagline}`
+          : tagline}
       </Text>
 
       {claimable.length > 0 && (
