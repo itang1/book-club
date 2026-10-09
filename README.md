@@ -194,19 +194,25 @@ Supabase pauses free-tier projects after roughly a week of inactivity, and a
 paused project has to be restored by hand from the dashboard — so the first
 person to open the app after a quiet week would find it broken.
 
-`.github/workflows/supabase-keepalive.yml` runs a tiny read query every Monday
-and Thursday to keep the project marked active. To enable it, add two
-**repository secrets** (Settings → Secrets and variables → Actions):
+That ping lives outside this repo, in
+[`itang1/keep-supabase-alive`](https://github.com/itang1/keep-supabase-alive) —
+one private repo that pings every project from a matrix, rather than a copy of
+the same workflow in each app. It runs a tiny read query against `books` every
+Monday and Thursday.
+
+This app's entry needs two secrets **on that repo**, not this one:
 
 | Secret | Value |
 | --- | --- |
-| `EXPO_PUBLIC_SUPABASE_URL` | your project URL |
-| `EXPO_PUBLIC_SUPABASE_ANON_KEY` | your anon key |
+| `BOOK_CLUB_SUPABASE_URL` | this project's URL |
+| `BOOK_CLUB_SUPABASE_ANON_KEY` | this project's publishable/anon key |
 
-Until those exist the workflow skips with a notice rather than failing. Two
-caveats: GitHub disables scheduled workflows on repos with no activity for 60
-days, and this is a workaround for platform behaviour rather than a guarantee —
-check the dashboard after the first quiet week to confirm it held.
+Until they're set, that matrix entry skips with a notice instead of failing.
+
+Keeping it private also matters: GitHub only auto-disables scheduled workflows
+in *public* repos after 60 days of inactivity, so a private scheduler keeps
+running through a quiet stretch. It still only prevents pausing — it cannot wake
+an already-paused project — so check the dashboard after the first quiet week.
 
 ### Keeping real names out of the repo
 
