@@ -175,6 +175,7 @@ function Tabs({ club }: { club: BookClub }) {
               onSignOut={club.signOut}
               onUpdateProfile={club.updateProfile}
               onUpdateEmailPrefs={club.updateEmailPrefs}
+              onUpdateFriendRequestsFrom={club.updateFriendRequestsFrom}
             />
           )}
         </Tab.Screen>

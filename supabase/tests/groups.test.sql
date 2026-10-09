@@ -109,6 +109,15 @@ select test.as_user('00000000-0000-0000-0000-0000000000a3');
 delete from friendships where friend_a = 'p-irene' and friend_b = 'p-juhyae';
 select test.expect('Juhyae unfriended Irene', (select count(*) from friendships), 0);
 
+-- "Nobody" means nobody: Irene turns friend requests off, and Juhyae (a
+-- groupmate) can no longer ask.
+select test.as_user('00000000-0000-0000-0000-0000000000a2');
+update friends set friend_requests_from = 'nobody' where id = 'p-irene';
+select test.as_user('00000000-0000-0000-0000-0000000000a3');
+select test.refused('Juhyae cannot ask Irene once Irene takes no requests', $$insert into friendships (friend_a, friend_b, requested_by, status) values ('p-irene', 'p-juhyae', 'p-juhyae', 'pending')$$);
+select test.as_user('00000000-0000-0000-0000-0000000000a2');
+update friends set friend_requests_from = 'groups' where id = 'p-irene';
+
 -- Claiming: only with the right invite code.
 select test.as_user('00000000-0000-0000-0000-0000000000a6');   -- Albert, from Irene's link
 select test.expect('An account with no profile yet sees nothing', (select count(*) from books), 0);

@@ -216,6 +216,11 @@ alter table public.groups add column if not exists is_sample boolean not null de
 -- those must stay hidden from strangers.
 alter table public.friends add column if not exists is_character boolean not null default false;
 
+-- Who can send this person a friend request: people they share a group with
+-- (the default), or nobody.
+alter table public.friends add column if not exists friend_requests_from text not null default 'groups'
+  check (friend_requests_from in ('groups', 'nobody'));
+
 -- Once, when groups first arrive: everyone already here becomes one group,
 -- "Our Book Club", and every existing book belongs to it. Skipped on an
 -- empty database, where the seeds make their own.
@@ -290,6 +295,13 @@ create or replace function public.is_character(p_person_id text) returns boolean
 language sql stable security definer set search_path = public
 as $$
   select coalesce((select is_character from public.friends where id = p_person_id), false)
+$$;
+
+-- Whether this person takes friend requests at all.
+create or replace function public.accepts_requests(p_person_id text) returns boolean
+language sql stable security definer set search_path = public
+as $$
+  select coalesce((select friend_requests_from = 'groups' from public.friends where id = p_person_id), false)
 $$;
 
 -- Someone who has signed in at least once, as opposed to a profile nobody
@@ -499,6 +511,7 @@ create policy "ask to be friends"
     and public.me() in (friend_a, friend_b)
     and public.can_see_person(case when friend_a = public.me() then friend_b else friend_a end)
     and public.has_account(case when friend_a = public.me() then friend_b else friend_a end)
+    and public.accepts_requests(case when friend_a = public.me() then friend_b else friend_a end)
   );
 drop policy if exists "accept a request" on public.friendships;
 create policy "accept a request"
@@ -752,7 +765,7 @@ $$;
 
 revoke all on function public.me(), public.is_member(text), public.can_see_book(text),
   public.is_sample_group(text), public.is_sample_book(text), public.has_account(text),
-  public.is_character(text),
+  public.is_character(text), public.accepts_requests(text),
   public.can_see_person(text), public.claim_profile(text, text),
   public.unclaimed_in_group(text), public.group_preview(text),
   public.create_group(text, text), public.join_group(text), public.leave_group(text),
@@ -762,7 +775,7 @@ revoke all on function public.me(), public.is_member(text), public.can_see_book(
   from public, anon;
 grant execute on function public.me(), public.is_member(text), public.can_see_book(text),
   public.is_sample_group(text), public.is_sample_book(text), public.has_account(text),
-  public.is_character(text),
+  public.is_character(text), public.accepts_requests(text),
   public.can_see_person(text), public.claim_profile(text, text),
   public.unclaimed_in_group(text), public.group_preview(text),
   public.create_group(text, text), public.join_group(text), public.leave_group(text),

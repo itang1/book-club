@@ -1,8 +1,8 @@
 # Groups, friends, and who can borrow what
 
 Built (October 2026), with the decisions below: one group per copy, anyone
-can start a group, and you join by invite link only. The friend-request
-setting ("who can send me requests") isn't built yet. What follows is the
+can start a group, and you join by invite link only. "Who can send me
+friend requests" is a switch on You (people in my groups, or nobody). What follows is the
 reasoning it was built from. It answers one question per copy, *who can see this book
 and sign up for it?*, and makes the database enforce the answer.
 

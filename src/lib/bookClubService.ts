@@ -28,6 +28,7 @@ type FriendRow = {
   email_book_arrived?: boolean;
   email_next_in_line?: boolean;
   email_friend_request?: boolean;
+  friend_requests_from?: 'groups' | 'nobody';
 };
 
 type BookRow = {
@@ -121,6 +122,7 @@ function toFriend(row: FriendRow): Friend {
       nextInLine: row.email_next_in_line ?? true,
       friendRequest: row.email_friend_request ?? true,
     },
+    friendRequestsFrom: row.friend_requests_from ?? 'groups',
   };
 }
 
@@ -366,6 +368,12 @@ export const updateEmailPrefs = (personId: string, prefs: EmailPrefs) =>
         email_friend_request: prefs.friendRequest,
       })
       .eq('id', personId),
+  );
+
+/** Who can send you friend requests; only your own row can be changed. */
+export const updateFriendRequestsFrom = (personId: string, value: 'groups' | 'nobody') =>
+  save('updateFriendRequestsFrom', (db) =>
+    db.from('friends').update({ friend_requests_from: value }).eq('id', personId),
   );
 
 /** Rows store each pair once, smaller id first (see schema.sql). */

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Book, EmailPrefs, Friend } from '../types';
@@ -30,6 +30,7 @@ type ProfileScreenProps = {
   onSignOut?: () => void;
   onUpdateProfile: (changes: Pick<Friend, 'name' | 'city' | 'state'>) => void;
   onUpdateEmailPrefs: (prefs: EmailPrefs) => void;
+  onUpdateFriendRequestsFrom: (value: 'groups' | 'nobody') => void;
 };
 
 /**
@@ -44,6 +45,7 @@ export function ProfileScreen({
   onSignOut,
   onUpdateProfile,
   onUpdateEmailPrefs,
+  onUpdateFriendRequestsFrom,
 }: ProfileScreenProps) {
   const insets = useSafeAreaInsets();
 
@@ -181,6 +183,27 @@ export function ProfileScreen({
         </View>
       )}
 
+      {me && (
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Friend requests</Text>
+          <View style={styles.settingRow}>
+            <View style={styles.settingText}>
+              <Text style={styles.settingLabel}>Let people in my groups ask</Text>
+              <Text style={styles.settingDetail}>
+                Off means nobody can send you a request. You can still ask others.
+              </Text>
+            </View>
+            <Switch
+              value={(me.friendRequestsFrom ?? 'groups') === 'groups'}
+              onValueChange={(on) => onUpdateFriendRequestsFrom(on ? 'groups' : 'nobody')}
+              trackColor={{ true: theme.colors.accent, false: theme.colors.border }}
+              thumbColor={theme.colors.card}
+              accessibilityLabel="Let people in my groups send friend requests"
+            />
+          </View>
+        </View>
+      )}
+
       {email && onSignOut && (
         <Pressable style={styles.signOut} onPress={onSignOut}>
           <Text style={styles.signOutText}>Signed in as {email} · Sign out</Text>
@@ -214,6 +237,25 @@ const styles = StyleSheet.create({
   },
   headerText: {
     flex: 1,
+  },
+  settingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  settingText: {
+    flex: 1,
+    paddingRight: 12,
+  },
+  settingLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: theme.colors.text,
+  },
+  settingDetail: {
+    fontSize: 12,
+    lineHeight: 17,
+    color: theme.colors.muted,
+    marginTop: 2,
   },
   editButton: {
     borderWidth: 1,

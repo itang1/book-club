@@ -99,7 +99,14 @@ export function suggestionsFor(
     );
 
   return members
-    .filter((person) => groupmates.has(person.id) && !mine.has(person.id) && !asked.has(person.id))
+    .filter(
+      (person) =>
+        groupmates.has(person.id) &&
+        !mine.has(person.id) &&
+        !asked.has(person.id) &&
+        // Someone who takes no requests isn't suggested: Add would only fail.
+        person.friendRequestsFrom !== 'nobody',
+    )
     .map((person) => {
       const theirs = friendIdsOf(friendships, person.id);
       const mutual = [...theirs].filter((id) => mine.has(id)).length;

@@ -41,6 +41,8 @@ export type Friend = {
   agreedRulesAt?: string;
   /** Which emails they want. All on unless they turn one off. */
   emails?: EmailPrefs;
+  /** Who can send them friend requests: groupmates (default) or nobody. */
+  friendRequestsFrom?: 'groups' | 'nobody';
 };
 
 export type EmailPrefs = {

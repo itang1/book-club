@@ -19,6 +19,7 @@ import {
   markReceived,
   recordHandoff,
   updateEmailPrefs,
+  updateFriendRequestsFrom,
   updateProfile,
   SaveError,
 } from './bookClubService';
@@ -368,6 +369,20 @@ export function useBookClub() {
     track('save your email settings', updateEmailPrefs(currentUserId, prefs));
   };
 
+  /** Take friend requests from groupmates, or from nobody. */
+  const handleUpdateFriendRequestsFrom = (value: 'groups' | 'nobody') => {
+    if (!currentUserId) {
+      return;
+    }
+
+    setMembers((current) =>
+      current.map((person) =>
+        person.id === currentUserId ? { ...person, friendRequestsFrom: value } : person,
+      ),
+    );
+    track('save who can send you requests', updateFriendRequestsFrom(currentUserId, value));
+  };
+
   /** Edit your own name or city. Past stops keep the city they were read in. */
   const handleUpdateProfile = (changes: Pick<Friend, 'name' | 'city' | 'state'>) => {
     const me = members.find((person) => person.id === currentUserId);
@@ -552,6 +567,7 @@ export function useBookClub() {
     markReceived: handleMarkReceived,
     updateProfile: handleUpdateProfile,
     updateEmailPrefs: handleUpdateEmailPrefs,
+    updateFriendRequestsFrom: handleUpdateFriendRequestsFrom,
     leaveLine: handleLeaveLine,
     handOff: handleHandOff,
   };
