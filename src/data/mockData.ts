@@ -55,7 +55,6 @@ export const booksSeed: Book[] = [
     title: 'The Secret Life of Bees',
     author: 'Sue Monk Kidd',
     coverColor: '#d9a77d',
-    status: 'reading',
     queue: [
       { ...byId('friend-carmen'), position: 0, status: 'done' },
       { ...byId('friend-lena'), position: 1, status: 'reading' },
@@ -84,10 +83,9 @@ export const booksSeed: Book[] = [
     title: 'Circe',
     author: 'Madeline Miller',
     coverColor: '#b4b8a9',
-    status: 'in-transit',
     queue: [
       { ...byId('friend-lena'), position: 0, status: 'done' },
-      { ...byId('friend-bridget'), position: 1, status: 'waiting' },
+      { ...byId('friend-bridget'), position: 1, status: 'reading' },
       { ...byId('friend-tibby'), position: 2, status: 'waiting' },
     ],
     handoffs: [
@@ -112,7 +110,6 @@ export const booksSeed: Book[] = [
     title: 'Tomorrow, and Tomorrow, and Tomorrow',
     author: 'Gabrielle Zevin',
     coverColor: '#c7a6b5',
-    status: 'annotated',
     queue: [
       { ...byId('friend-tibby'), position: 0, status: 'done' },
       { ...byId('friend-carmen'), position: 1, status: 'done' },
@@ -147,7 +144,6 @@ export const booksSeed: Book[] = [
     title: 'Piranesi',
     author: 'Susanna Clarke',
     coverColor: '#93a7a5',
-    status: 'returned',
     queue: [
       { ...byId('friend-bridget'), position: 0, status: 'done' },
       { ...byId('friend-tibby'), position: 1, status: 'done' },
@@ -174,6 +170,13 @@ export const booksSeed: Book[] = [
         fromFriend: 'friend-tibby',
         toFriend: 'friend-carmen',
         happenedAt: daysAgo(59),
+      },
+      {
+        id: 'handoff-4d',
+        bookId: 'book-4',
+        fromFriend: 'friend-carmen',
+        toFriend: 'friend-bridget',
+        happenedAt: daysAgo(20),
       },
     ],
   },

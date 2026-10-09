@@ -22,10 +22,9 @@ type BookRow = {
   title: string;
   author: string;
   cover_color: string;
-  status: Book['status'];
 };
 
-type QueueRow = {
+export type QueueRow = {
   book_id: string;
   friend_id: string;
   position: number;
@@ -98,7 +97,6 @@ function fromBook(book: Book): BookRow {
     title: book.title,
     author: book.author,
     cover_color: book.coverColor,
-    status: book.status,
   };
 }
 
@@ -141,7 +139,6 @@ function assembleBooks(
       title: row.title,
       author: row.author,
       coverColor: row.cover_color,
-      status: row.status,
       queue,
       handoffs: handoffRows
         .filter((entry) => entry.book_id === row.id)
@@ -186,16 +183,23 @@ export async function fetchBookClubData(): Promise<BookClubData> {
   }
 }
 
-export async function createBook(book: Book): Promise<void> {
+/**
+ * Writes are optimistic: the screen updates first, then these run. Each one
+ * resolves to whether it reached the database, so the app can say so instead
+ * of quietly drifting from what's stored. With no backend configured there is
+ * nothing to fail, so they resolve true.
+ */
+
+export async function createBook(book: Book): Promise<boolean> {
   if (!supabase) {
-    return;
+    return true;
   }
 
   try {
     const { error } = await supabase.from('books').insert([fromBook(book)]);
     if (error) {
       console.warn('Supabase createBook failed:', error.message);
-      return;
+      return false;
     }
 
     const queue = queueRowsFor(book);
@@ -203,6 +207,7 @@ export async function createBook(book: Book): Promise<void> {
       const { error: queueError } = await supabase.from('reading_queue').insert(queue);
       if (queueError) {
         console.warn('Supabase queue insert failed:', queueError.message);
+        return false;
       }
     }
 
@@ -212,25 +217,78 @@ export async function createBook(book: Book): Promise<void> {
         .insert(book.handoffs.map(fromHandoff));
       if (handoffError) {
         console.warn('Supabase handoff insert failed:', handoffError.message);
+        return false;
       }
     }
+
+    return true;
   } catch (error) {
     console.warn('Create book error:', error);
+    return false;
   }
 }
 
-export async function createFriend(friend: Friend): Promise<void> {
+export async function createFriend(friend: Friend): Promise<boolean> {
   if (!supabase) {
-    return;
+    return true;
   }
 
   try {
     const { error } = await supabase.from('friends').insert([fromFriend(friend)]);
     if (error) {
       console.warn('Supabase createFriend failed:', error.message);
+      return false;
     }
+
+    return true;
   } catch (error) {
     console.warn('Create friend error:', error);
+    return false;
+  }
+}
+
+/** Sign someone up for a book, at the back of the line. */
+export async function joinLine(entry: QueueRow): Promise<boolean> {
+  if (!supabase) {
+    return true;
+  }
+
+  try {
+    const { error } = await supabase.from('reading_queue').insert([entry]);
+    if (error) {
+      console.warn('Supabase joinLine failed:', error.message);
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.warn('Join line error:', error);
+    return false;
+  }
+}
+
+/** Take back a sign-up. Only allowed while still waiting; see schema.sql. */
+export async function leaveLine(bookId: string, friendId: string): Promise<boolean> {
+  if (!supabase) {
+    return true;
+  }
+
+  try {
+    const { error } = await supabase
+      .from('reading_queue')
+      .delete()
+      .eq('book_id', bookId)
+      .eq('friend_id', friendId)
+      .eq('status', 'waiting');
+    if (error) {
+      console.warn('Supabase leaveLine failed:', error.message);
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.warn('Leave line error:', error);
+    return false;
   }
 }
 
@@ -238,41 +296,48 @@ export async function createFriend(friend: Friend): Promise<void> {
  * Append one leg to a book's journey and move the queue statuses along with it.
  * The handoff row is the source of truth for location; the queue statuses are
  * a convenience for the UI.
+ *
+ * Only a *waiting* recipient becomes "reading": a copy going home to an owner
+ * who already read it leaves their "done" alone.
  */
-export async function recordHandoff(
-  handoff: Handoff,
-  bookStatus: Book['status'],
-): Promise<void> {
+export async function recordHandoff(handoff: Handoff): Promise<boolean> {
   if (!supabase) {
-    return;
+    return true;
   }
 
   try {
     const { error } = await supabase.from('handoffs').insert([fromHandoff(handoff)]);
     if (error) {
       console.warn('Supabase recordHandoff failed:', error.message);
-      return;
+      return false;
     }
 
-    await supabase
-      .from('books')
-      .update({ status: bookStatus })
-      .eq('id', handoff.bookId);
-
     if (handoff.fromFriend) {
-      await supabase
+      const { error: fromError } = await supabase
         .from('reading_queue')
         .update({ status: 'done' })
         .eq('book_id', handoff.bookId)
         .eq('friend_id', handoff.fromFriend);
+      if (fromError) {
+        console.warn('Supabase queue update failed:', fromError.message);
+        return false;
+      }
     }
 
-    await supabase
+    const { error: toError } = await supabase
       .from('reading_queue')
       .update({ status: 'reading' })
       .eq('book_id', handoff.bookId)
-      .eq('friend_id', handoff.toFriend);
+      .eq('friend_id', handoff.toFriend)
+      .eq('status', 'waiting');
+    if (toError) {
+      console.warn('Supabase queue update failed:', toError.message);
+      return false;
+    }
+
+    return true;
   } catch (error) {
     console.warn('Record handoff error:', error);
+    return false;
   }
 }

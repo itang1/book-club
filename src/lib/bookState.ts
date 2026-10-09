@@ -15,8 +15,16 @@ export function latestHandoff(book: Book): Handoff | undefined {
 }
 
 /** The book is wherever the newest handoff delivered it. */
-export function currentOwnerId(book: Book): string | null {
+export function holderId(book: Book): string | null {
   return latestHandoff(book)?.toFriend ?? null;
+}
+
+/**
+ * Whose copy this is: the person the first leg delivered it to. The copy goes
+ * home to them once nobody else is waiting for it.
+ */
+export function copyOwnerId(book: Book): string | null {
+  return journey(book)[0]?.toFriend ?? null;
 }
 
 export function lastActivityAt(book: Book): string | null {
@@ -27,29 +35,60 @@ export function readingQueue(book: Book): ReadingQueueEntry[] {
   return [...book.queue].sort((a, b) => a.position - b.position);
 }
 
+/** Everyone who has signed up and not had their turn yet, in sign-up order. */
+export function waitingList(book: Book): ReadingQueueEntry[] {
+  const holder = holderId(book);
+  return readingQueue(book).filter(
+    (entry) => entry.status === 'waiting' && entry.id !== holder,
+  );
+}
+
 /**
- * Whoever is next in the reading queue after the current holder, or null when
- * the queue runs out.
+ * Whoever signed up earliest and is still waiting, or null when nobody is.
  *
- * Note this is derived from queue *position*, not from anyone asking for the
- * book. It answers "who is next in the agreed order", not "who wants it next".
- * A request model — people asking for a copy and the holder accepting — would
- * replace this with the oldest accepted request.
+ * Nobody is put in line automatically: the queue only holds people who asked
+ * for the book, so "next" is simply the oldest sign-up that hasn't had a turn.
  */
 export function nextInLineId(book: Book): string | null {
-  const queue = readingQueue(book);
-  const ownerId = currentOwnerId(book);
+  return waitingList(book)[0]?.id ?? null;
+}
 
-  if (!ownerId) {
-    return queue[0]?.id ?? null;
+/** 1-based place in line, or null if this person isn't waiting. */
+export function placeInLine(book: Book, friendId: string | null): number | null {
+  const index = waitingList(book).findIndex((entry) => entry.id === friendId);
+  return index === -1 ? null : index + 1;
+}
+
+/** The copy has made its rounds and is back with whoever it belongs to. */
+export function isBackHome(book: Book): boolean {
+  return book.handoffs.length > 1 && holderId(book) === copyOwnerId(book);
+}
+
+/**
+ * The holder can send it home once nobody else is waiting. Never true for the
+ * owner, who already has it.
+ */
+export function canReturnHome(book: Book): boolean {
+  const owner = copyOwnerId(book);
+  return Boolean(owner) && holderId(book) !== owner && nextInLineId(book) === null;
+}
+
+/**
+ * Status is derived, never stored. A stored status drifted from the log it was
+ * meant to summarise ("in transit" stuck forever after a handoff); deriving it
+ * means it can't.
+ */
+export function statusLabel(book: Book): string {
+  if (!holderId(book)) {
+    return 'Not circulating';
   }
 
-  const index = queue.findIndex((entry) => entry.id === ownerId);
-  if (index === -1) {
-    return queue[0]?.id ?? null;
-  }
+  return isBackHome(book) ? 'Back home' : 'Being read';
+}
 
-  return queue[index + 1]?.id ?? null;
+/** Distinct people who have had this copy; a trip home isn't a new reader. */
+export function readersSoFar(book: Book): number {
+  return new Set(book.handoffs.map((leg) => leg.toFriend)).size;
 }
 
 export function friendNameIn(book: Book, friendId: string | null): string {

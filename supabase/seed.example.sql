@@ -22,11 +22,11 @@ insert into public.friends (id, name, city, state, email) values
   ('friend-bridget', 'Bridget Vreeland', 'Baja California', 'Mexico', 'bridget@example.com')
 on conflict (id) do nothing;
 
-insert into public.books (id, title, author, cover_color, status) values
-  ('book-1', 'The Secret Life of Bees', 'Sue Monk Kidd', '#d9a77d', 'reading'),
-  ('book-2', 'Circe', 'Madeline Miller', '#b4b8a9', 'in-transit'),
-  ('book-3', 'Tomorrow, and Tomorrow, and Tomorrow', 'Gabrielle Zevin', '#c7a6b5', 'annotated'),
-  ('book-4', 'Piranesi', 'Susanna Clarke', '#93a7a5', 'returned')
+insert into public.books (id, title, author, cover_color) values
+  ('book-1', 'The Secret Life of Bees', 'Sue Monk Kidd', '#d9a77d'),
+  ('book-2', 'Circe', 'Madeline Miller', '#b4b8a9'),
+  ('book-3', 'Tomorrow, and Tomorrow, and Tomorrow', 'Gabrielle Zevin', '#c7a6b5'),
+  ('book-4', 'Piranesi', 'Susanna Clarke', '#93a7a5')
 on conflict (id) do nothing;
 
 insert into public.reading_queue (book_id, friend_id, position, status) values
@@ -35,7 +35,7 @@ insert into public.reading_queue (book_id, friend_id, position, status) values
   ('book-1', 'friend-tibby',   2, 'waiting'),
   ('book-1', 'friend-bridget', 3, 'waiting'),
   ('book-2', 'friend-lena',    0, 'done'),
-  ('book-2', 'friend-bridget', 1, 'waiting'),
+  ('book-2', 'friend-bridget', 1, 'reading'),
   ('book-2', 'friend-tibby',   2, 'waiting'),
   ('book-3', 'friend-tibby',   0, 'done'),
   ('book-3', 'friend-carmen',  1, 'done'),
@@ -55,5 +55,6 @@ insert into public.handoffs (id, book_id, from_friend, to_friend, happened_at) v
   ('handoff-3c', 'book-3', 'friend-carmen',   'friend-bridget', now() - interval '7 days'),
   ('handoff-4a', 'book-4', null,              'friend-bridget', now() - interval '121 days'),
   ('handoff-4b', 'book-4', 'friend-bridget',  'friend-tibby',   now() - interval '88 days'),
-  ('handoff-4c', 'book-4', 'friend-tibby',    'friend-carmen',  now() - interval '59 days')
+  ('handoff-4c', 'book-4', 'friend-tibby',    'friend-carmen',  now() - interval '59 days'),
+  ('handoff-4d', 'book-4', 'friend-carmen',   'friend-bridget', now() - interval '20 days')
 on conflict (id) do nothing;

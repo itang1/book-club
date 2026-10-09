@@ -13,6 +13,9 @@ export type Friend = {
  * A friend's place in one book's reading queue. Reading status lives here, on
  * the (book, friend) edge, rather than on the friend: the same person can be
  * reading one copy while waiting on another.
+ *
+ * Nobody is added automatically. An entry exists because that person signed
+ * up for the book, and `position` is their sign-up order.
  */
 export type ReadingQueueEntry = Friend & {
   position: number;
@@ -32,14 +35,11 @@ export type Handoff = {
   happenedAt: string;
 };
 
-export type BookStatus = 'in-transit' | 'reading' | 'returned' | 'annotated';
-
 export type Book = {
   id: string;
   title: string;
   author: string;
   coverColor: string;
-  status: BookStatus;
   queue: ReadingQueueEntry[];
   handoffs: Handoff[];
 };

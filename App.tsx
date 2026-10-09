@@ -1,24 +1,32 @@
 import * as React from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
-import { Book, Friend, RootStackParamList, RootTabParamList } from './src/types';
+import { Book, Friend, Handoff, RootStackParamList, RootTabParamList } from './src/types';
 import { booksSeed, friends as friendsSeed } from './src/data/mockData';
 import {
   createBook,
   createFriend,
   fetchBookClubData,
+  joinLine,
+  leaveLine,
   recordHandoff,
 } from './src/lib/bookClubService';
-import { currentOwnerId, nextInLineId } from './src/lib/bookState';
+import { holderId } from './src/lib/bookState';
 import { HomeScreen } from './src/screens/HomeScreen';
 import { FriendsScreen } from './src/screens/FriendsScreen';
 import { AddBookScreen } from './src/screens/AddBookScreen';
 import { ProfileScreen } from './src/screens/ProfileScreen';
 import { BookDetailScreen } from './src/screens/BookDetailScreen';
+
+type BookActions = {
+  onHandOff: (bookId: string, toFriend: string) => void;
+  onJoinLine: (bookId: string) => void;
+  onLeaveLine: (bookId: string) => void;
+};
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -63,6 +71,25 @@ function TabIcon({
 }
 
 const tabStyles = StyleSheet.create({
+  root: {
+    flex: 1,
+  },
+  banner: {
+    position: 'absolute',
+    left: 16,
+    right: 16,
+    // Sits just above the tab bar.
+    bottom: 104,
+    backgroundColor: '#1f1a17',
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+  },
+  bannerText: {
+    color: '#fffdfb',
+    fontSize: 13,
+    lineHeight: 18,
+  },
   iconWrap: {
     width: 40,
     height: 26,
@@ -92,10 +119,12 @@ const tabStyles = StyleSheet.create({
 
 function HomeStack({
   books,
-  onPassOn,
+  currentUserId,
+  actions,
 }: {
   books: Book[];
-  onPassOn: (bookId: string) => void;
+  currentUserId: string | null;
+  actions: BookActions;
 }) {
   return (
     <Stack.Navigator>
@@ -107,7 +136,12 @@ function HomeStack({
       <Stack.Screen
         name="BookDetail"
         children={(props) => (
-          <BookDetailScreen {...props} books={books} onPassOn={onPassOn} />
+          <BookDetailScreen
+            {...props}
+            books={books}
+            currentUserId={currentUserId}
+            {...actions}
+          />
         )}
         options={{
           // The cover block carries title and author, so the header stays
@@ -145,33 +179,78 @@ export default function App() {
     };
   }, []);
 
+  /**
+   * Writes are optimistic. If one doesn't reach the database, say so rather
+   * than let the screen and the stored data quietly disagree.
+   */
+  const [syncFailed, setSyncFailed] = React.useState(false);
+  const track = (write: Promise<boolean>) => {
+    write.then((ok) => {
+      if (!ok) {
+        setSyncFailed(true);
+      }
+    });
+  };
+
+  const updateBook = (bookId: string, change: (book: Book) => Book) => {
+    setBooks((currentBooks) =>
+      currentBooks.map((candidate) => (candidate.id === bookId ? change(candidate) : candidate)),
+    );
+  };
+
   const handleAddBook = (book: Book) => {
     setBooks((currentBooks) => [book, ...currentBooks]);
-    createBook(book);
+    track(createBook(book));
   };
 
   const handleAddFriend = (friend: Friend) => {
     setFriends((currentFriends) => [...currentFriends, friend]);
-    createFriend(friend);
+    track(createFriend(friend));
+  };
+
+  /** Sign the current reader up for a book, at the back of the line. */
+  const handleJoinLine = (bookId: string) => {
+    const book = books.find((candidate) => candidate.id === bookId);
+    const me = friends.find((friend) => friend.id === currentUserId);
+    if (!book || !me || book.queue.some((entry) => entry.id === me.id)) {
+      return;
+    }
+
+    const position = Math.max(-1, ...book.queue.map((entry) => entry.position)) + 1;
+    updateBook(bookId, (candidate) => ({
+      ...candidate,
+      queue: [...candidate.queue, { ...me, position, status: 'waiting' }],
+    }));
+    track(joinLine({ book_id: bookId, friend_id: me.id, position, status: 'waiting' }));
+  };
+
+  const handleLeaveLine = (bookId: string) => {
+    if (!currentUserId) {
+      return;
+    }
+
+    updateBook(bookId, (candidate) => ({
+      ...candidate,
+      queue: candidate.queue.filter(
+        (entry) => !(entry.id === currentUserId && entry.status === 'waiting'),
+      ),
+    }));
+    track(leaveLine(bookId, currentUserId));
   };
 
   /**
-   * Append a leg to the book's journey. History is never rewritten: the new
-   * handoff becomes the newest entry, and location follows from it.
+   * Append a leg to the book's journey: either to whoever is next in line, or
+   * home to its owner. History is never rewritten: the new handoff becomes the
+   * newest entry, and location follows from it.
    */
-  const handlePassOn = (bookId: string) => {
+  const handleHandOff = (bookId: string, toFriend: string) => {
     const book = books.find((candidate) => candidate.id === bookId);
     if (!book) {
       return;
     }
 
-    const fromFriend = currentOwnerId(book);
-    const toFriend = nextInLineId(book);
-    if (!toFriend) {
-      return;
-    }
-
-    const handoff = {
+    const fromFriend = holderId(book);
+    const handoff: Handoff = {
       id: `handoff-${Date.now()}`,
       bookId,
       fromFriend,
@@ -179,33 +258,32 @@ export default function App() {
       happenedAt: new Date().toISOString(),
     };
 
-    const nextStatus: Book['status'] = 'in-transit';
+    updateBook(bookId, (candidate) => ({
+      ...candidate,
+      handoffs: [...candidate.handoffs, handoff],
+      queue: candidate.queue.map((entry) => {
+        if (entry.id === fromFriend) {
+          return { ...entry, status: 'done' as const };
+        }
+        // An owner getting their copy back has already read it.
+        if (entry.id === toFriend && entry.status === 'waiting') {
+          return { ...entry, status: 'reading' as const };
+        }
+        return entry;
+      }),
+    }));
 
-    setBooks((currentBooks) =>
-      currentBooks.map((candidate) =>
-        candidate.id === bookId
-          ? {
-              ...candidate,
-              status: nextStatus,
-              handoffs: [...candidate.handoffs, handoff],
-              queue: candidate.queue.map((entry) => {
-                if (entry.id === fromFriend) {
-                  return { ...entry, status: 'done' as const };
-                }
-                if (entry.id === toFriend) {
-                  return { ...entry, status: 'reading' as const };
-                }
-                return entry;
-              }),
-            }
-          : candidate,
-      ),
-    );
+    track(recordHandoff(handoff));
+  };
 
-    recordHandoff(handoff, nextStatus);
+  const bookActions: BookActions = {
+    onHandOff: handleHandOff,
+    onJoinLine: handleJoinLine,
+    onLeaveLine: handleLeaveLine,
   };
 
   return (
+    <View style={tabStyles.root}>
     <NavigationContainer>
       <Tab.Navigator
         screenOptions={({ route }) => ({
@@ -227,7 +305,9 @@ export default function App() {
       >
         <Tab.Screen
           name="Home"
-          children={() => <HomeStack books={books} onPassOn={handlePassOn} />}
+          children={() => (
+            <HomeStack books={books} currentUserId={currentUserId} actions={bookActions} />
+          )}
           options={{ headerShown: false }}
         />
         <Tab.Screen name="Friends">
@@ -256,5 +336,13 @@ export default function App() {
         </Tab.Screen>
       </Tab.Navigator>
     </NavigationContainer>
+      {syncFailed && (
+        <Pressable style={tabStyles.banner} onPress={() => setSyncFailed(false)}>
+          <Text style={tabStyles.bannerText}>
+            A change didn't save. It shows here but may be gone next time. Tap to dismiss.
+          </Text>
+        </Pressable>
+      )}
+    </View>
   );
 }

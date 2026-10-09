@@ -2,7 +2,7 @@ import { FlatList, StyleSheet, Text, View } from 'react-native';
 
 import { Book, Friend } from '../types';
 import { theme } from '../theme';
-import { currentOwnerId } from '../lib/bookState';
+import { holderId, placeInLine } from '../lib/bookState';
 
 type FriendsScreenProps = {
   friends: Friend[];
@@ -15,19 +15,19 @@ type FriendsScreenProps = {
  * wrong as soon as two books are in circulation.
  */
 function activityFor(friend: Friend, books: Book[]) {
-  const holding = books.filter((book) => currentOwnerId(book) === friend.id);
-  const waiting = books.filter(
-    (book) =>
-      currentOwnerId(book) !== friend.id &&
-      book.queue.some((entry) => entry.id === friend.id && entry.status === 'waiting'),
-  );
+  const holding = books.filter((book) => holderId(book) === friend.id);
+  const next = books.filter((book) => placeInLine(book, friend.id) === 1);
+  const later = books.filter((book) => (placeInLine(book, friend.id) ?? 0) > 1);
 
   const lines: string[] = [];
   if (holding.length > 0) {
     lines.push(`Has ${holding.map((book) => book.title).join(', ')}`);
   }
-  if (waiting.length > 0) {
-    lines.push(`Next in line for ${waiting.map((book) => book.title).join(', ')}`);
+  if (next.length > 0) {
+    lines.push(`Next in line for ${next.map((book) => book.title).join(', ')}`);
+  }
+  if (later.length > 0) {
+    lines.push(`Signed up for ${later.map((book) => book.title).join(', ')}`);
   }
 
   return lines.join(' · ') || 'No books in hand';

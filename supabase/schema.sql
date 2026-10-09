@@ -40,6 +40,10 @@ alter table if exists public.books drop column if exists current_owner;
 alter table if exists public.books drop column if exists next_stop;
 alter table if exists public.books drop column if exists last_updated;
 alter table if exists public.friends drop column if exists status;
+-- Book status is derived from the handoff log in the app; storing it let the
+-- two drift apart.
+drop index if exists public.books_status_idx;
+alter table if exists public.books drop column if exists status;
 
 -- ---------------------------------------------------------------
 -- Friends: the group
@@ -62,15 +66,14 @@ create table if not exists public.books (
   title text not null,
   author text not null,
   cover_color text not null default '#d9a77d',
-  status text not null default 'in-transit'
-    check (status in ('in-transit', 'reading', 'returned', 'annotated')),
   created_at timestamptz not null default now()
 );
 
 -- ---------------------------------------------------------------
--- Reading queue: the order a book travels, and each reader's progress.
--- Status lives on the (book, friend) edge, not on the friend: one person can
--- be reading one copy while waiting on another.
+-- Reading queue: who signed up for a book, in sign-up order, and each
+-- reader's progress. Nobody is added automatically; a row exists because that
+-- person asked for the book. Status lives on the (book, friend) edge, not on
+-- the friend: one person can be reading one copy while waiting on another.
 -- ---------------------------------------------------------------
 create table if not exists public.reading_queue (
   book_id text not null references public.books (id) on delete cascade,
@@ -93,7 +96,6 @@ create table if not exists public.handoffs (
   happened_at timestamptz not null default now()
 );
 
-create index if not exists books_status_idx on public.books (status);
 create index if not exists reading_queue_book_idx on public.reading_queue (book_id, position);
 create index if not exists handoffs_book_idx on public.handoffs (book_id, happened_at);
 
@@ -130,6 +132,9 @@ grant usage on schema public to anon, authenticated;
 grant select, insert, update on public.friends to anon, authenticated;
 grant select, insert, update on public.books to anon, authenticated;
 grant select, insert, update on public.reading_queue to anon, authenticated;
+-- Delete exists only so a waiting reader can leave the line; the policy below
+-- refuses it for anyone who has already had the book.
+grant delete on public.reading_queue to anon, authenticated;
 
 -- No update or delete on handoffs, deliberately. The journey log is
 -- append-only at the privilege layer as well as the policy layer, so history
@@ -177,6 +182,10 @@ create policy "anyone can add to the queue"
 drop policy if exists "anyone can update the queue" on public.reading_queue;
 create policy "anyone can update the queue"
   on public.reading_queue for update using (true) with check (true);
+
+drop policy if exists "waiting readers can leave the queue" on public.reading_queue;
+create policy "waiting readers can leave the queue"
+  on public.reading_queue for delete using (status = 'waiting');
 
 drop policy if exists "handoffs are viewable by everyone" on public.handoffs;
 create policy "handoffs are viewable by everyone"

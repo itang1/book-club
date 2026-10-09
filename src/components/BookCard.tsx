@@ -2,12 +2,13 @@ import { StyleSheet, Text, View, Pressable } from 'react-native';
 import { Book } from '../types';
 import { theme } from '../theme';
 import {
-  currentOwnerId,
+  holderId,
   friendNameIn,
   journey,
   lastActivityAt,
   nextInLineId,
   relativeTime,
+  statusLabel,
 } from '../lib/bookState';
 
 type BookCardProps = {
@@ -16,7 +17,7 @@ type BookCardProps = {
 };
 
 export function BookCard({ book, onPress }: BookCardProps) {
-  const ownerId = currentOwnerId(book);
+  const ownerId = holderId(book);
   const nextId = nextInLineId(book);
   const readers = journey(book).length;
 
@@ -48,7 +49,7 @@ export function BookCard({ book, onPress }: BookCardProps) {
         </View>
 
         <View style={styles.footer}>
-          <Text style={styles.status}>{book.status.replace('-', ' ')}</Text>
+          <Text style={styles.status}>{statusLabel(book)}</Text>
           <Text style={styles.updated}>{relativeTime(lastActivityAt(book))}</Text>
         </View>
       </View>

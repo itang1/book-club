@@ -3,7 +3,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Book, Friend } from '../types';
 import { theme } from '../theme';
 import {
-  currentOwnerId,
+  holderId,
   journey,
   lastActivityAt,
   nextInLineId,
@@ -27,7 +27,7 @@ export function ProfileScreen({
 
   // There is no auth yet, so "who am I" is a local choice. Every stat below is
   // scoped to that person rather than the whole group.
-  const withMe = me ? books.filter((book) => currentOwnerId(book) === me.id) : [];
+  const withMe = me ? books.filter((book) => holderId(book) === me.id) : [];
   const comingToMe = me ? books.filter((book) => nextInLineId(book) === me.id) : [];
   const finished = me
     ? books.filter((book) =>
@@ -123,7 +123,7 @@ export function ProfileScreen({
                 <Text style={styles.bookTitle}>{book.title}</Text>
                 <Text style={styles.bookMeta}>
                   Currently with{' '}
-                  {book.queue.find((entry) => entry.id === currentOwnerId(book))?.name ??
+                  {book.queue.find((entry) => entry.id === holderId(book))?.name ??
                     'someone in the group'}
                 </Text>
               </View>

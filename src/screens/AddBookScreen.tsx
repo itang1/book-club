@@ -33,9 +33,6 @@ export function AddBookScreen({ friends, onAddBook, onAddFriend }: AddBookScreen
       return;
     }
 
-    // Start the reading queue at the chosen friend, then follow the rest of the group.
-    const startIndex = friends.findIndex((friend) => friend.id === selectedFriend.id);
-    const rotated = [...friends.slice(startIndex), ...friends.slice(0, startIndex)];
     const bookId = `book-${Date.now()}`;
 
     const newBook: Book = {
@@ -43,12 +40,9 @@ export function AddBookScreen({ friends, onAddBook, onAddFriend }: AddBookScreen
       title: title.trim(),
       author: author.trim(),
       coverColor: coverColorFor(title.trim(), author.trim()),
-      status: 'reading',
-      queue: rotated.map((friend, index) => ({
-        ...friend,
-        position: index,
-        status: index === 0 ? 'reading' : 'waiting',
-      })),
+      // Only the owner starts in the queue. Everyone else signs up from the
+      // book's page if they want it; nobody is put in line for them.
+      queue: [{ ...selectedFriend, position: 0, status: 'reading' }],
       // Opening the journey log is what puts the book in someone's hands:
       // current location is derived from this entry.
       handoffs: [
@@ -108,7 +102,7 @@ export function AddBookScreen({ friends, onAddBook, onAddFriend }: AddBookScreen
           style={styles.input}
         />
 
-        <Text style={styles.fieldLabel}>First reader</Text>
+        <Text style={styles.fieldLabel}>Whose copy is it?</Text>
         <View style={styles.friendRow}>
           {friends.map((friend) => (
             <Pressable

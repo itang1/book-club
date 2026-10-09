@@ -4,15 +4,19 @@ import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-nati
 import { Book } from '../types';
 import { theme } from '../theme';
 import {
-  placesVisited,
-  currentOwnerId,
+  canReturnHome,
+  copyOwnerId,
   daysInCirculation,
   formatDate,
   friendNameIn,
   heldForDays,
+  holderId,
   journey,
   lastActivityAt,
   nextInLineId,
+  placeInLine,
+  placesVisited,
+  readersSoFar,
   readingQueue,
   relativeTime,
 } from '../lib/bookState';
@@ -20,12 +24,23 @@ import {
 type BookDetailScreenProps = {
   route: { params: { bookId: string; bookTitle: string } };
   books: Book[];
-  onPassOn: (bookId: string) => void;
+  currentUserId: string | null;
+  onHandOff: (bookId: string, toFriend: string) => void;
+  onJoinLine: (bookId: string) => void;
+  onLeaveLine: (bookId: string) => void;
 };
 
-export function BookDetailScreen({ route, books, onPassOn }: BookDetailScreenProps) {
+export function BookDetailScreen({
+  route,
+  books,
+  currentUserId,
+  onHandOff,
+  onJoinLine,
+  onLeaveLine,
+}: BookDetailScreenProps) {
   const { bookId } = route.params;
-  const [confirming, setConfirming] = useState(false);
+  // Who the pending handoff is going to; non-null while the confirm sheet is up.
+  const [confirmingTo, setConfirmingTo] = useState<string | null>(null);
   const book = books.find((item) => item.id === bookId);
 
   if (!book) {
@@ -36,10 +51,77 @@ export function BookDetailScreen({ route, books, onPassOn }: BookDetailScreenPro
     );
   }
 
-  const ownerId = currentOwnerId(book);
+  const holder = holderId(book);
+  const owner = copyOwnerId(book);
   const nextId = nextInLineId(book);
   const legs = journey(book).reverse();
   const queue = readingQueue(book);
+
+  const iHoldIt = currentUserId !== null && currentUserId === holder;
+  const myEntry = book.queue.find((entry) => entry.id === currentUserId);
+  const myPlace = placeInLine(book, currentUserId);
+  const goingHome = confirmingTo !== null && confirmingTo === owner && confirmingTo !== nextId;
+
+  /**
+   * The one thing this reader can do with the copy right now. The holder
+   * passes it on (or sends it home); everyone else signs up or steps back.
+   */
+  const renderAction = () => {
+    if (iHoldIt) {
+      if (nextId) {
+        return (
+          <Pressable style={styles.primaryButton} onPress={() => setConfirmingTo(nextId)}>
+            <Text style={styles.primaryButtonText}>
+              Pass on to {friendNameIn(book, nextId)}
+            </Text>
+          </Pressable>
+        );
+      }
+
+      if (canReturnHome(book) && owner) {
+        return (
+          <Pressable style={styles.primaryButton} onPress={() => setConfirmingTo(owner)}>
+            <Text style={styles.primaryButtonText}>
+              Return to {friendNameIn(book, owner)}
+            </Text>
+          </Pressable>
+        );
+      }
+
+      return (
+        <Text style={styles.actionNote}>
+          Nobody has signed up yet. It stays with you until someone does.
+        </Text>
+      );
+    }
+
+    if (!currentUserId) {
+      return null;
+    }
+
+    if (myPlace !== null) {
+      return (
+        <View>
+          <Text style={styles.actionNote}>
+            {myPlace === 1 ? "You're next in line." : `You're #${myPlace} in line.`}
+          </Text>
+          <Pressable style={styles.secondaryButton} onPress={() => onLeaveLine(book.id)}>
+            <Text style={styles.secondaryButtonText}>Leave the line</Text>
+          </Pressable>
+        </View>
+      );
+    }
+
+    if (myEntry) {
+      return <Text style={styles.actionNote}>You've had your turn with this copy.</Text>;
+    }
+
+    return (
+      <Pressable style={styles.primaryButton} onPress={() => onJoinLine(book.id)}>
+        <Text style={styles.primaryButtonText}>Join the line</Text>
+      </Pressable>
+    );
+  };
 
   return (
     <>
@@ -54,7 +136,7 @@ export function BookDetailScreen({ route, books, onPassOn }: BookDetailScreenPro
 
         <View style={styles.statRow}>
           <View style={styles.stat}>
-            <Text style={styles.statValue}>{journey(book).length}</Text>
+            <Text style={styles.statValue}>{readersSoFar(book)}</Text>
             <Text style={styles.statLabel}>readers so far</Text>
           </View>
           <View style={styles.stat}>
@@ -68,12 +150,12 @@ export function BookDetailScreen({ route, books, onPassOn }: BookDetailScreenPro
         </View>
 
         <View style={styles.infoRow}>
-          <Text style={styles.label}>Status</Text>
-          <Text style={styles.value}>{book.status.replace('-', ' ')}</Text>
+          <Text style={styles.label}>With</Text>
+          <Text style={styles.value}>{friendNameIn(book, holder)}</Text>
         </View>
         <View style={styles.infoRow}>
-          <Text style={styles.label}>Current owner</Text>
-          <Text style={styles.value}>{friendNameIn(book, ownerId)}</Text>
+          <Text style={styles.label}>Belongs to</Text>
+          <Text style={styles.value}>{friendNameIn(book, owner)}</Text>
         </View>
         <View style={styles.infoRow}>
           <Text style={styles.label}>Next in line</Text>
@@ -86,19 +168,13 @@ export function BookDetailScreen({ route, books, onPassOn }: BookDetailScreenPro
           <Text style={styles.value}>{relativeTime(lastActivityAt(book))}</Text>
         </View>
 
-        {nextId && (
-          <Pressable style={styles.passButton} onPress={() => setConfirming(true)}>
-            <Text style={styles.passButtonText}>
-              Pass on to {friendNameIn(book, nextId)}
-            </Text>
-          </Pressable>
-        )}
+        <View style={styles.action}>{renderAction()}</View>
 
         <View style={styles.box}>
-          <Text style={styles.boxTitle}>Reading path</Text>
-          <Text style={styles.boxCaption}>The order this copy travels the group.</Text>
+          <Text style={styles.boxTitle}>The line</Text>
+          <Text style={styles.boxCaption}>Everyone who signed up, in the order they asked.</Text>
           {queue.map((person) => {
-            const isCurrent = person.id === ownerId;
+            const isCurrent = person.id === holder;
             const isNext = person.id === nextId;
 
             return (
@@ -108,6 +184,7 @@ export function BookDetailScreen({ route, books, onPassOn }: BookDetailScreenPro
                   <Text style={styles.pathName}>
                     {person.name}
                     {isCurrent ? ' · has it now' : isNext ? ' · up next' : ''}
+                    {person.id === owner ? ' · owner' : ''}
                   </Text>
                   <Text style={styles.pathLocation}>
                     {person.city}, {person.state}
@@ -153,33 +230,37 @@ export function BookDetailScreen({ route, books, onPassOn }: BookDetailScreenPro
           A custom modal rather than Alert.alert, which react-native-web
           does not implement reliably. */}
       <Modal
-        visible={confirming}
+        visible={confirmingTo !== null}
         transparent
         animationType="fade"
-        onRequestClose={() => setConfirming(false)}
+        onRequestClose={() => setConfirmingTo(null)}
       >
         <View style={styles.backdrop}>
           <View style={styles.sheet}>
-            <Text style={styles.sheetTitle}>Pass this on?</Text>
+            <Text style={styles.sheetTitle}>
+              {goingHome ? 'Send it home?' : 'Pass this on?'}
+            </Text>
             <Text style={styles.sheetBody}>
-              {book.title} moves from {friendNameIn(book, ownerId)} to{' '}
-              {friendNameIn(book, nextId)}. This adds a leg to the travel history
+              {book.title} moves from {friendNameIn(book, holder)} to{' '}
+              {friendNameIn(book, confirmingTo)}. This adds a leg to the travel history
               and cannot be undone.
             </Text>
 
             <Pressable
               style={styles.sheetConfirm}
               onPress={() => {
-                setConfirming(false);
-                onPassOn(book.id);
+                if (confirmingTo) {
+                  onHandOff(book.id, confirmingTo);
+                }
+                setConfirmingTo(null);
               }}
             >
               <Text style={styles.sheetConfirmText}>
-                Yes, pass to {friendNameIn(book, nextId)}
+                Yes, {goingHome ? 'return' : 'pass'} to {friendNameIn(book, confirmingTo)}
               </Text>
             </Pressable>
 
-            <Pressable style={styles.sheetCancel} onPress={() => setConfirming(false)}>
+            <Pressable style={styles.sheetCancel} onPress={() => setConfirmingTo(null)}>
               <Text style={styles.sheetCancelText}>Cancel</Text>
             </Pressable>
           </View>
@@ -274,17 +355,37 @@ const styles = StyleSheet.create({
     textAlign: 'right',
     textTransform: 'capitalize',
   },
-  passButton: {
+  action: {
     marginTop: 10,
+  },
+  actionNote: {
+    color: theme.colors.muted,
+    fontSize: 13,
+    textAlign: 'center',
+    paddingVertical: 6,
+  },
+  primaryButton: {
     backgroundColor: theme.colors.accent,
     borderRadius: 12,
     paddingVertical: 13,
     alignItems: 'center',
   },
-  passButtonText: {
+  primaryButtonText: {
     color: '#fff',
     fontWeight: '800',
     fontSize: 15,
+  },
+  secondaryButton: {
+    marginTop: 8,
+    backgroundColor: theme.colors.soft,
+    borderRadius: 12,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  secondaryButtonText: {
+    color: theme.colors.text,
+    fontWeight: '700',
+    fontSize: 14,
   },
   backdrop: {
     flex: 1,

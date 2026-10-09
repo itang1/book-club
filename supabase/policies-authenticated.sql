@@ -50,6 +50,7 @@ create policy "signed-in users can update books"
 drop policy if exists "queue is viewable by everyone" on public.reading_queue;
 drop policy if exists "anyone can add to the queue" on public.reading_queue;
 drop policy if exists "anyone can update the queue" on public.reading_queue;
+drop policy if exists "waiting readers can leave the queue" on public.reading_queue;
 
 create policy "signed-in users can read the queue"
   on public.reading_queue for select to authenticated using (true);
@@ -59,6 +60,9 @@ create policy "signed-in users can add to the queue"
 
 create policy "signed-in users can update the queue"
   on public.reading_queue for update to authenticated using (true) with check (true);
+
+create policy "signed-in users can leave the queue while waiting"
+  on public.reading_queue for delete to authenticated using (status = 'waiting');
 
 -- ---------------------------------------------------------------
 -- handoffs — still append-only: no update or delete policy is granted,
