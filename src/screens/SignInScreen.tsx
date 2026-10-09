@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { theme } from '../theme';
 import { emailSignInLink } from '../lib/auth';
-import { AboutSheet } from '../components/AboutSheet';
+import { LetterFromIrene } from '../components/LetterFromIrene';
 
 /**
  * Sign in with an emailed link. The same screen covers first-timers: a new
@@ -16,7 +16,6 @@ export function SignInScreen() {
   const [sending, setSending] = useState(false);
   const [sentTo, setSentTo] = useState<string | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
-  const [aboutOpen, setAboutOpen] = useState(false);
 
   const valid = /\S+@\S+\.\S+/.test(email.trim());
 
@@ -44,7 +43,7 @@ export function SignInScreen() {
     >
       <Text style={styles.title}>Sisterhood of the Traveling Books</Text>
       <Text style={styles.subtitle}>
-        One copy, passed between friends, and every place it's been.
+        The pants fit everyone. So does a good book.
       </Text>
 
       <View style={styles.card}>
@@ -90,10 +89,10 @@ export function SignInScreen() {
         )}
       </View>
 
-      <Pressable style={styles.about} onPress={() => setAboutOpen(true)}>
-        <Text style={styles.link}>What is this? Read the Rules of the Books</Text>
-      </Pressable>
-      <AboutSheet visible={aboutOpen} onClose={() => setAboutOpen(false)} />
+      {/* Right where people wait for their email, with nothing else to do. */}
+      <View style={styles.letter}>
+        <LetterFromIrene />
+      </View>
     </ScrollView>
   );
 }
@@ -175,8 +174,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     fontSize: 14,
   },
-  about: {
-    marginTop: 24,
-    alignItems: 'center',
+  letter: {
+    marginTop: 20,
   },
 });

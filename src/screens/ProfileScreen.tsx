@@ -1,10 +1,9 @@
-import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Book, Friend } from '../types';
 import { theme } from '../theme';
-import { AboutSheet } from '../components/AboutSheet';
+import { LetterFromIrene } from '../components/LetterFromIrene';
 import { MonthlyColumns } from '../components/MonthlyColumns';
 import { PassportStamps } from '../components/PassportStamps';
 import { finishesByMonth, placesForOwner } from '../lib/stats';
@@ -32,7 +31,6 @@ type ProfileScreenProps = {
  */
 export function ProfileScreen({ books, me, friendCount, email, onSignOut }: ProfileScreenProps) {
   const insets = useSafeAreaInsets();
-  const [aboutOpen, setAboutOpen] = useState(false);
 
   const withMe = me ? books.filter((book) => holderId(book) === me.id) : [];
   const comingToMe = me ? books.filter((book) => nextInLineId(book) === me.id) : [];
@@ -133,15 +131,12 @@ export function ProfileScreen({ books, me, friendCount, email, onSignOut }: Prof
         <PassportStamps places={placesForOwner(books, me?.id ?? null)} />
       </View>
 
-      <Pressable style={styles.aboutLink} onPress={() => setAboutOpen(true)}>
-        <Text style={styles.aboutLinkText}>The Rules of the Books · About</Text>
-      </Pressable>
+      <LetterFromIrene />
       {email && onSignOut && (
         <Pressable style={styles.signOut} onPress={onSignOut}>
           <Text style={styles.signOutText}>Signed in as {email} · Sign out</Text>
         </Pressable>
       )}
-      <AboutSheet visible={aboutOpen} onClose={() => setAboutOpen(false)} />
     </ScrollView>
   );
 }
@@ -154,16 +149,6 @@ const styles = StyleSheet.create({
   signOutText: {
     color: theme.colors.muted,
     fontSize: 12,
-  },
-  aboutLink: {
-    alignItems: 'center',
-    paddingVertical: 14,
-    marginTop: 4,
-  },
-  aboutLinkText: {
-    color: theme.colors.accent,
-    fontWeight: '700',
-    fontSize: 14,
   },
   container: {
     flex: 1,

@@ -7,6 +7,7 @@ import { Book, RootStackParamList } from '../types';
 import { BookCard } from '../components/BookCard';
 import { ClubYearCard } from '../components/ClubYearCard';
 import { Byline } from '../components/Byline';
+import { LetterFromIrene } from '../components/LetterFromIrene';
 import { describeLeg, hasLetter, holderId, recentActivity, relativeTime } from '../lib/bookState';
 import { theme } from '../theme';
 
@@ -61,6 +62,9 @@ export function HomeScreen({
           <Text style={styles.addButtonText}>Lend a new book</Text>
         </Pressable>
       </View>
+
+      {/* Until it's been opened on this device; the byline below still leads there after. */}
+      <LetterFromIrene hideOnceOpened />
 
       {mine.length > 0 && (
         <>

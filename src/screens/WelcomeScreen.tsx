@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Friend } from '../types';
 import { theme } from '../theme';
-import { AboutSheet } from '../components/AboutSheet';
+import { LetterFromIrene } from '../components/LetterFromIrene';
 import { invitedByFromUrl } from '../lib/invite';
 import type { NewProfile } from '../lib/useBookClub';
 
@@ -40,7 +40,6 @@ export function WelcomeScreen({
   const [name, setName] = useState('');
   const [city, setCity] = useState('');
   const [region, setRegion] = useState('');
-  const [aboutOpen, setAboutOpen] = useState(false);
 
   const invitedBy = invitedByFromUrl();
   const inviter = members.find((person) => person.id === invitedBy);
@@ -55,8 +54,8 @@ export function WelcomeScreen({
       <Text style={styles.title}>Sisterhood of the Traveling Books</Text>
       <Text style={styles.subtitle}>
         {inviter
-          ? `${inviter.name.split(' ')[0]} invited you. One copy, passed between friends, and every place it's been.`
-          : "One copy, passed between friends, and every place it's been."}
+          ? `${inviter.name.split(' ')[0]} invited you. The pants fit everyone. So does a good book.`
+          : 'The pants fit everyone. So does a good book.'}
       </Text>
 
       {claimable.length > 0 && (
@@ -124,10 +123,9 @@ export function WelcomeScreen({
         </Pressable>
       )}
 
-      <Pressable style={styles.footerLink} onPress={() => setAboutOpen(true)}>
-        <Text style={styles.link}>What is this? Read the Rules of the Books</Text>
-      </Pressable>
-      <AboutSheet visible={aboutOpen} onClose={() => setAboutOpen(false)} />
+      <View style={styles.letter}>
+        <LetterFromIrene />
+      </View>
     </ScrollView>
   );
 }
@@ -230,6 +228,9 @@ const styles = StyleSheet.create({
     color: theme.colors.onAccent,
     fontWeight: '700',
     fontSize: 15,
+  },
+  letter: {
+    marginTop: 16,
   },
   footerLink: {
     marginTop: 12,

@@ -33,3 +33,22 @@ export async function clearReaderId(): Promise<void> {
     // As above.
   }
 }
+
+const LETTER_KEY = 'book-club:letter-opened';
+
+/** Whether this device has opened Irene's letter, so Books can stop offering it. */
+export async function loadLetterOpened(): Promise<boolean> {
+  try {
+    return (await AsyncStorage.getItem(LETTER_KEY)) === 'yes';
+  } catch {
+    return false;
+  }
+}
+
+export async function saveLetterOpened(): Promise<void> {
+  try {
+    await AsyncStorage.setItem(LETTER_KEY, 'yes');
+  } catch {
+    // Seeing it again is harmless.
+  }
+}

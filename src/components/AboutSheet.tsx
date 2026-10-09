@@ -9,7 +9,7 @@ type AboutSheetProps = {
   onClose: () => void;
 };
 
-/** The Rules of the Books, who made this, and the homage. Content lives in content/about. */
+/** Irene's letter (why this exists), the Rules of the Books, and the homage. Content lives in content/about. */
 export function AboutSheet({ visible, onClose }: AboutSheetProps) {
   const insets = useSafeAreaInsets();
 
@@ -23,17 +23,7 @@ export function AboutSheet({ visible, onClose }: AboutSheetProps) {
           <Text style={styles.closeText}>Done</Text>
         </Pressable>
 
-        <Text style={styles.title}>The Rules of the Books</Text>
-        <View style={styles.rules}>
-          {rules.map((rule, index) => (
-            <View key={rule} style={styles.rule}>
-              <Text style={styles.ruleNumber}>{index + 1}.</Text>
-              <Text style={styles.ruleText}>{rule}</Text>
-            </View>
-          ))}
-        </View>
-
-        <Text style={styles.heading}>Who made this</Text>
+        <Text style={styles.title}>A letter from {authorName}</Text>
         <View style={styles.polaroid}>
           {photo ? (
             <Image source={photo} style={styles.photo} resizeMode="cover" />
@@ -67,6 +57,16 @@ export function AboutSheet({ visible, onClose }: AboutSheetProps) {
           </Text>
         ))}
         <Text style={styles.signature}>— {authorName}</Text>
+
+        <Text style={styles.heading}>The Rules of the Books</Text>
+        <View style={styles.rules}>
+          {rules.map((rule, index) => (
+            <View key={rule} style={styles.rule}>
+              <Text style={styles.ruleNumber}>{index + 1}.</Text>
+              <Text style={styles.ruleText}>{rule}</Text>
+            </View>
+          ))}
+        </View>
 
         <Text style={styles.homage}>{homage}</Text>
       </ScrollView>
