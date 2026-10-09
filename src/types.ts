@@ -19,6 +19,11 @@ export type Group = {
   name: string;
   inviteCode: string;
   memberIds: string[];
+  /**
+   * The sample club: everyone's in it to look around, nobody can act in it,
+   * and real members can't see each other through it.
+   */
+  isSample?: boolean;
 };
 
 export type FriendStatus = 'waiting' | 'reading' | 'done';

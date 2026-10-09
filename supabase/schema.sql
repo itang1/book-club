@@ -206,6 +206,16 @@ create table if not exists public.group_members (
 alter table public.books
   add column if not exists group_id text references public.groups (id) on delete set null;
 
+-- A sample group (supabase/sample.sql) is a look around, not a real circle:
+-- everyone is added to it automatically, nobody can act in it, and sharing
+-- it doesn't make real members visible to each other.
+alter table public.groups add column if not exists is_sample boolean not null default false;
+
+-- The made-up people who live in a sample group. Marked explicitly, because
+-- "no account yet" also describes real people who haven't signed in, and
+-- those must stay hidden from strangers.
+alter table public.friends add column if not exists is_character boolean not null default false;
+
 -- Once, when groups first arrive: everyone already here becomes one group,
 -- "Our Book Club", and every existing book belongs to it. Skipped on an
 -- empty database, where the seeds make their own.
@@ -261,6 +271,35 @@ $$;
 -- Who can see what. security definer so the policies below can ask without
 -- tripping over each other's row security; each answers only about you.
 -- ---------------------------------------------------------------
+create or replace function public.is_sample_group(p_group_id text) returns boolean
+language sql stable security definer set search_path = public
+as $$
+  select coalesce((select is_sample from public.groups where id = p_group_id), false)
+$$;
+
+create or replace function public.is_sample_book(p_book_id text) returns boolean
+language sql stable security definer set search_path = public
+as $$
+  select coalesce((
+    select g.is_sample from public.books b join public.groups g on g.id = b.group_id
+    where b.id = p_book_id
+  ), false)
+$$;
+
+create or replace function public.is_character(p_person_id text) returns boolean
+language sql stable security definer set search_path = public
+as $$
+  select coalesce((select is_character from public.friends where id = p_person_id), false)
+$$;
+
+-- Someone who has signed in at least once, as opposed to a profile nobody
+-- has claimed yet (or a sample character, who never will).
+create or replace function public.has_account(p_person_id text) returns boolean
+language sql stable security definer set search_path = public
+as $$
+  select exists (select 1 from public.friends where id = p_person_id and user_id is not null)
+$$;
+
 create or replace function public.is_member(p_group_id text) returns boolean
 language sql stable security definer set search_path = public
 as $$
@@ -296,6 +335,7 @@ as $$
   or exists (
     select 1 from public.group_members mine
     join public.group_members theirs on theirs.group_id = mine.group_id
+    join public.groups g on g.id = mine.group_id and not g.is_sample
     where mine.person_id = public.me() and theirs.person_id = p_person_id
   ) or exists (
     select 1 from public.friendships
@@ -406,7 +446,17 @@ create policy "see your groups"
   on public.groups for select to authenticated using (public.is_member(id));
 drop policy if exists "see who is in your groups" on public.group_members;
 create policy "see who is in your groups"
-  on public.group_members for select to authenticated using (public.is_member(group_id));
+  on public.group_members for select to authenticated
+  using (
+    public.is_member(group_id)
+    -- In a sample group you see its characters and yourself, never the
+    -- other real people looking around it.
+    and (
+      not public.is_sample_group(group_id)
+      or person_id = public.me()
+      or public.is_character(person_id)
+    )
+  );
 
 -- Your profile: one per account, made and edited only by you.
 drop policy if exists "make your own profile" on public.friends;
@@ -422,7 +472,10 @@ create policy "edit your own profile"
 drop policy if exists "join a line yourself" on public.reading_queue;
 create policy "join a line yourself"
   on public.reading_queue for insert to authenticated
-  with check (friend_id = public.me() and status = 'waiting' and public.can_see_book(book_id));
+  with check (
+    friend_id = public.me() and status = 'waiting'
+    and public.can_see_book(book_id) and not public.is_sample_book(book_id)
+  );
 drop policy if exists "manage your own place in line" on public.reading_queue;
 create policy "manage your own place in line"
   on public.reading_queue for update to authenticated
@@ -445,6 +498,7 @@ create policy "ask to be friends"
     and status = 'pending'
     and public.me() in (friend_a, friend_b)
     and public.can_see_person(case when friend_a = public.me() then friend_b else friend_a end)
+    and public.has_account(case when friend_a = public.me() then friend_b else friend_a end)
   );
 drop policy if exists "accept a request" on public.friendships;
 create policy "accept a request"
@@ -490,7 +544,7 @@ begin
   where f.id = p_person_id and f.user_id is null
     and exists (
       select 1 from public.group_members m join public.groups g on g.id = m.group_id
-      where m.person_id = f.id and g.invite_code = p_invite_code
+      where m.person_id = f.id and g.invite_code = p_invite_code and not g.is_sample
     )
   returning f.id into person;
 
@@ -512,7 +566,7 @@ as $$
   from public.friends f
   join public.group_members m on m.person_id = f.id
   join public.groups g on g.id = m.group_id
-  where g.invite_code = p_invite_code and f.user_id is null
+  where g.invite_code = p_invite_code and f.user_id is null and not g.is_sample
   order by f.name
 $$;
 
@@ -576,6 +630,24 @@ as $$
   delete from public.group_members where group_id = p_group_id and person_id = public.me();
 $$;
 
+-- Everyone is in the sample group(s) from the start, so a new member has
+-- a group with some history to look around before their own is busy.
+create or replace function public.join_sample_groups() returns trigger
+language plpgsql security definer set search_path = public
+as $$
+begin
+  insert into public.group_members (group_id, person_id)
+  select id, new.id from public.groups where is_sample
+  on conflict do nothing;
+  return new;
+end;
+$$;
+
+drop trigger if exists join_sample_groups on public.friends;
+create trigger join_sample_groups
+  after insert on public.friends
+  for each row execute function public.join_sample_groups();
+
 -- Put one of your own copies into circulation, starting with you, in one
 -- of your groups.
 drop function if exists public.lend_book(text, text, text, text, text);
@@ -593,7 +665,7 @@ begin
   if owner.id is null then
     raise exception 'Make your profile before lending a book';
   end if;
-  if p_group_id is null or not public.is_member(p_group_id) then
+  if p_group_id is null or not public.is_member(p_group_id) or public.is_sample_group(p_group_id) then
     raise exception 'Pick one of your groups to lend it to';
   end if;
 
@@ -679,6 +751,8 @@ end;
 $$;
 
 revoke all on function public.me(), public.is_member(text), public.can_see_book(text),
+  public.is_sample_group(text), public.is_sample_book(text), public.has_account(text),
+  public.is_character(text),
   public.can_see_person(text), public.claim_profile(text, text),
   public.unclaimed_in_group(text), public.group_preview(text),
   public.create_group(text, text), public.join_group(text), public.leave_group(text),
@@ -687,6 +761,8 @@ revoke all on function public.me(), public.is_member(text), public.can_see_book(
   public.mark_received(text)
   from public, anon;
 grant execute on function public.me(), public.is_member(text), public.can_see_book(text),
+  public.is_sample_group(text), public.is_sample_book(text), public.has_account(text),
+  public.is_character(text),
   public.can_see_person(text), public.claim_profile(text, text),
   public.unclaimed_in_group(text), public.group_preview(text),
   public.create_group(text, text), public.join_group(text), public.leave_group(text),

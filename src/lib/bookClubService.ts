@@ -65,6 +65,7 @@ type GroupRow = {
   id: string;
   name: string;
   invite_code: string;
+  is_sample: boolean;
 };
 
 type MemberRow = {
@@ -191,7 +192,7 @@ export async function fetchBookClubData(): Promise<BookClubData> {
       supabase.from('reading_queue').select('*'),
       supabase.from('handoffs').select('*').order('happened_at', { ascending: true }),
       supabase.from('friendships').select('friend_a, friend_b, requested_by, status'),
-      supabase.from('groups').select('id, name, invite_code').order('name'),
+      supabase.from('groups').select('id, name, invite_code, is_sample').order('name'),
       supabase.from('group_members').select('group_id, person_id'),
     ]);
 
@@ -234,6 +235,7 @@ export async function fetchBookClubData(): Promise<BookClubData> {
         id: row.id,
         name: row.name,
         inviteCode: row.invite_code,
+        isSample: row.is_sample,
         memberIds: ((membersRes.data ?? []) as MemberRow[])
           .filter((member) => member.group_id === row.id)
           .map((member) => member.person_id),

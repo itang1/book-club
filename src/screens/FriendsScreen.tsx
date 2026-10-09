@@ -122,7 +122,10 @@ function GroupCard({
       <Pressable style={styles.groupHeader} onPress={() => setOpen((value) => !value)}>
         <Ionicons name="people-outline" size={18} color={theme.colors.accent} />
         <View style={styles.groupTitle}>
-          <Text style={styles.groupName}>{group.name}</Text>
+          <Text style={styles.groupName}>
+            {group.name}
+            {group.isSample ? <Text style={styles.sampleTag}>  Sample</Text> : null}
+          </Text>
           <Text style={styles.muted}>
             {group.memberIds.length} {group.memberIds.length === 1 ? 'member' : 'members'}
           </Text>
@@ -139,12 +142,22 @@ function GroupCard({
           <Text style={styles.memberList}>
             {people.map((person) => (person.id === currentUserId ? 'You' : person.name)).join(', ')}
           </Text>
-          <Text style={styles.note}>
-            Members see each other's books and can join their lines. Nobody outside the
-            group can.
-          </Text>
-          <InviteButton group={group} />
-          {confirmLeave ? (
+          {group.isSample ? (
+            <Text style={styles.note}>
+              A sample club, so you can see what a group with some history looks like.
+              Everyone's in it to look around; nobody can lend or sign up here, and you
+              won't see the other real people in it.
+            </Text>
+          ) : (
+            <>
+              <Text style={styles.note}>
+                Members see each other's books and can join their lines. Nobody outside the
+                group can.
+              </Text>
+              <InviteButton group={group} />
+            </>
+          )}
+          {group.isSample ? null : confirmLeave ? (
             <View style={styles.confirmRow}>
               <Text style={styles.note}>
                 Leave {group.name}? You'll stop seeing its books, and come off any lines
@@ -229,7 +242,10 @@ export function FriendsScreen({
   const [unfriending, setUnfriending] = useState<Friend | null>(null);
 
   const person = (id: string) => members.find((candidate) => candidate.id === id);
-  const myGroups = groups.filter((group) => currentUserId && group.memberIds.includes(currentUserId));
+  // Your real groups first; the sample club last.
+  const myGroups = groups
+    .filter((group) => currentUserId && group.memberIds.includes(currentUserId))
+    .sort((a, b) => Number(Boolean(a.isSample)) - Number(Boolean(b.isSample)));
   const friendIds = friendIdsOf(friendships, currentUserId);
   const friends = members.filter((candidate) => friendIds.has(candidate.id));
   const requests = incomingRequests(friendships, currentUserId)
@@ -455,6 +471,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     color: theme.colors.text,
+  },
+  sampleTag: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: theme.colors.muted,
   },
   groupBody: {
     marginTop: 12,

@@ -50,8 +50,12 @@ are already set: `SUPABASE_DB_URL`, `EXPO_PUBLIC_SUPABASE_URL`,
 | File | What it is | Runs |
 | --- | --- | --- |
 | `supabase/schema.sql` | Tables, access rules, functions | Automatically, on every deploy |
-| `supabase/seed.example.sql` | The fictional demo group | By hand, if you want it |
-| `supabase/seed.local.sql` | Your real group (gitignored) | By hand |
+| `supabase/sample.sql` | The sample club: the Carmen, Lena, Tibby and Bridget passing five classics around | Automatically, after schema.sql |
+| `supabase/seed.local.sql` | Your real groups and books (gitignored) | By hand |
+
+**The sample club.** Everyone is added to The Traveling Pants when they
+join, so there's a group with some history to look around. It's read-only
+for real people, and real members can't see each other through it.
 
 Sign-in links need **Authentication → URL Configuration** to allow
 `https://itang1.github.io/book-club/**` (and `http://localhost:8081/**` for

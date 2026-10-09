@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Book, RootStackParamList } from '../types';
+import { Book, Group, RootStackParamList } from '../types';
 import { BookCard } from '../components/BookCard';
 import { ClubYearCard } from '../components/ClubYearCard';
 import { AboutSheet } from '../components/AboutSheet';
@@ -15,6 +15,7 @@ import { theme } from '../theme';
 type HomeScreenProps = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'Home'>;
   books: Book[];
+  groups: Group[];
   currentUserId: string | null;
   refreshing: boolean;
   onRefresh: () => void;
@@ -23,6 +24,7 @@ type HomeScreenProps = {
 export function HomeScreen({
   navigation,
   books,
+  groups,
   currentUserId,
   refreshing,
   onRefresh,
@@ -31,7 +33,12 @@ export function HomeScreen({
   const [aboutOpen, setAboutOpen] = useState(false);
   // What's in your hands comes first: that's the one thing you can act on.
   const mine = books.filter((book) => currentUserId !== null && holderId(book) === currentUserId);
-  const others = books.filter((book) => !mine.includes(book));
+  // Sample-club books come after real ones, so your own groups lead.
+  const sampleGroupIds = new Set(groups.filter((group) => group.isSample).map((group) => group.id));
+  const isSampleBook = (book: Book) => Boolean(book.groupId && sampleGroupIds.has(book.groupId));
+  const others = books
+    .filter((book) => !mine.includes(book))
+    .sort((a, b) => Number(isSampleBook(a)) - Number(isSampleBook(b)));
   const recent = recentActivity(books, 4);
 
   const open = (book: Book) =>
@@ -118,7 +125,13 @@ export function HomeScreen({
         </Text>
       ) : (
         others.map((book) => (
-          <BookCard key={book.id} book={book} currentUserId={currentUserId} onPress={open} />
+          <BookCard
+            key={book.id}
+            book={book}
+            currentUserId={currentUserId}
+            isSample={isSampleBook(book)}
+            onPress={open}
+          />
         ))
       )}
 

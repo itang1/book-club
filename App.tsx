@@ -71,8 +71,10 @@ const tabStyles = StyleSheet.create({
 
 function HomeStack({ club }: { club: BookClub }) {
   const me = club.members.find((person) => person.id === club.currentUserId) ?? null;
+  // Groups you can lend into: yours, and never the sample club.
   const myGroups = club.groups.filter(
-    (group) => club.currentUserId && group.memberIds.includes(club.currentUserId),
+    (group) =>
+      !group.isSample && club.currentUserId && group.memberIds.includes(club.currentUserId),
   );
 
   return (
@@ -89,6 +91,7 @@ function HomeStack({ club }: { club: BookClub }) {
           <HomeScreen
             {...props}
             books={club.books}
+            groups={club.groups}
             currentUserId={club.currentUserId}
             refreshing={club.refreshing}
             onRefresh={club.refresh}

@@ -42,3 +42,16 @@ describe('people you may know', () => {
     expect(suggested[0].reason).toBe('1 mutual friend');
   });
 });
+
+describe('the sample club', () => {
+  it("doesn't make its members groupmates", () => {
+    const sample: Group = {
+      id: 's',
+      name: 'Sample',
+      inviteCode: '',
+      memberIds: ['ana', 'eve'],
+      isSample: true,
+    };
+    expect(groupmateIdsOf([...groups, sample], 'eve')).toEqual(new Set());
+  });
+});

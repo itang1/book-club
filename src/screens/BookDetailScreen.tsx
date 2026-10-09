@@ -76,7 +76,9 @@ export function BookDetailScreen({
   const sender = senderId(book);
   const inPost = isInTransit(book);
   const legs = journey(book).reverse();
-  const groupName = groups.find((group) => group.id === book.groupId)?.name;
+  const group = groups.find((candidate) => candidate.id === book.groupId);
+  const groupName = group?.name;
+  const isSample = Boolean(group?.isSample);
 
   const comingToMe = inPost && currentUserId !== null && holder === currentUserId;
   const iSentIt = inPost && currentUserId !== null && sender === currentUserId;
@@ -109,6 +111,15 @@ export function BookDetailScreen({
    * pass it on (or send it home), or sign up and step back.
    */
   const renderAction = () => {
+    if (isSample) {
+      return (
+        <Text style={styles.actionNote}>
+          This is the sample club: a look at a group with some history. Start your own
+          group, or ask a friend for an invite, to lend and borrow for real.
+        </Text>
+      );
+    }
+
     if (comingToMe) {
       return (
         <View>
@@ -209,7 +220,11 @@ export function BookDetailScreen({
         {/* Whose it is, and the one circle it travels in. */}
         <Text style={styles.ownership}>
           {first(owner)}'s copy
-          {groupName ? ` · only ${groupName} can see it` : ''}
+          {isSample
+            ? ' · in the sample club'
+            : groupName
+              ? ` · only ${groupName} can see it`
+              : ''}
         </Text>
 
         {/* Where it is and what you can do about it, together, before

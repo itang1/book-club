@@ -15,6 +15,8 @@ import {
 type BookCardProps = {
   book: Book;
   currentUserId: string | null;
+  /** In the sample club: tagged so it's never mistaken for a real loan. */
+  isSample?: boolean;
   onPress?: (book: Book) => void;
 };
 
@@ -53,7 +55,7 @@ function nextLine(book: Book, currentUserId: string | null): string {
   return nextId ? `${friendNameIn(book, nextId)} is next` : 'Nobody in line yet';
 }
 
-export function BookCard({ book, currentUserId, onPress }: BookCardProps) {
+export function BookCard({ book, currentUserId, isSample, onPress }: BookCardProps) {
   const withMe = currentUserId !== null && holderId(book) === currentUserId;
 
   return (
@@ -72,7 +74,10 @@ export function BookCard({ book, currentUserId, onPress }: BookCardProps) {
         <Text style={styles.lineQuiet}>{nextLine(book, currentUserId)}</Text>
 
         <View style={styles.footer}>
-          <Text style={styles.status}>{statusLabel(book)}</Text>
+          <View style={styles.tags}>
+            <Text style={styles.status}>{statusLabel(book)}</Text>
+            {isSample && <Text style={styles.sample}>Sample</Text>}
+          </View>
           <Text style={styles.updated}>{relativeTime(lastActivityAt(book))}</Text>
         </View>
       </View>
@@ -153,6 +158,21 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '700',
     color: theme.colors.accent,
+    overflow: 'hidden',
+  },
+  tags: {
+    flexDirection: 'row',
+  },
+  sample: {
+    marginLeft: 6,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 999,
+    fontSize: 10,
+    fontWeight: '700',
+    color: theme.colors.muted,
     overflow: 'hidden',
   },
   updated: {

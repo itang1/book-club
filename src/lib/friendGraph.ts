@@ -47,11 +47,11 @@ export function outgoingRequests(friendships: Friendship[], personId: string | n
   );
 }
 
-/** Everyone you share at least one group with. */
+/** Everyone you share at least one real group with (the sample club doesn't count). */
 export function groupmateIdsOf(groups: Group[], personId: string | null): Set<string> {
   const ids = new Set<string>();
   for (const group of groups) {
-    if (personId && group.memberIds.includes(personId)) {
+    if (personId && !group.isSample && group.memberIds.includes(personId)) {
       group.memberIds.forEach((id) => ids.add(id));
     }
   }
@@ -93,7 +93,10 @@ export function suggestionsFor(
   const groupmates = groupmateIdsOf(groups, meId);
   const myBooks = books.filter((book) => book.queue.some((entry) => entry.id === meId));
   const sharedGroup = (personId: string) =>
-    groups.find((group) => group.memberIds.includes(meId) && group.memberIds.includes(personId));
+    groups.find(
+      (group) =>
+        !group.isSample && group.memberIds.includes(meId) && group.memberIds.includes(personId),
+    );
 
   return members
     .filter((person) => groupmates.has(person.id) && !mine.has(person.id) && !asked.has(person.id))

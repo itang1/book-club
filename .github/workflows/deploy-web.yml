@@ -88,7 +88,7 @@ jobs:
           # cancel the transaction; it rolls back cleanly, so just try again.
           for attempt in 1 2 3; do
             if psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 --single-transaction --quiet \
-                 -c "set lock_timeout = '15s'" -f supabase/schema.sql; then
+                 -c "set lock_timeout = '15s'" -f supabase/schema.sql -f supabase/sample.sql; then
               exit 0
             fi
             echo "Attempt $attempt failed; retrying in $((attempt * 10))s"
