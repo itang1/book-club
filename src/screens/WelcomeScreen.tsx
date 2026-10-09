@@ -39,7 +39,21 @@ export function WelcomeScreen({ members, onCreate, onPick, email, onSignOut }: W
 
   const invitedBy = invitedByFromUrl();
   const inviter = members.find((person) => person.id === invitedBy);
-  const ready = Boolean(name.trim() && city.trim());
+  const [differentPerson, setDifferentPerson] = useState(false);
+
+  /**
+   * With real accounts: an existing member with the same first name whose
+   * profile isn't linked to any account yet. Probably this person, signed in
+   * before their email was linked; making a new profile would split them in
+   * two. They have to say they're someone else before Join works.
+   */
+  const firstName = (full: string) => full.trim().split(/\s+/)[0]?.toLowerCase() ?? '';
+  const lookalike =
+    email && name.trim()
+      ? members.find((person) => !person.userId && firstName(person.name) === firstName(name))
+      : undefined;
+  const blocked = Boolean(lookalike) && !differentPerson;
+  const ready = Boolean(name.trim() && city.trim()) && !blocked;
 
   return (
     <ScrollView
@@ -81,6 +95,20 @@ export function WelcomeScreen({ members, onCreate, onPick, email, onSignOut }: W
         <Text style={styles.note}>
           Friends see your city so they know where their book has been.
         </Text>
+
+        {lookalike && blocked && (
+          <View style={styles.lookalike}>
+            <Text style={styles.lookalikeTitle}>Is that you?</Text>
+            <Text style={styles.lookalikeText}>
+              There's already a {lookalike.name} in the club ({lookalike.city}) who hasn't
+              signed in yet. If that's you, don't make a new profile: ask whoever runs
+              the club to link {email} to it, then sign in again.
+            </Text>
+            <Pressable onPress={() => setDifferentPerson(true)}>
+              <Text style={styles.link}>No, I'm a different {lookalike.name.split(' ')[0]}</Text>
+            </Pressable>
+          </View>
+        )}
 
         <Pressable
           style={[styles.primaryButton, !ready && styles.disabled]}
@@ -182,6 +210,24 @@ const styles = StyleSheet.create({
     color: theme.colors.muted,
     marginTop: 2,
     marginBottom: 6,
+  },
+  lookalike: {
+    backgroundColor: theme.colors.soft,
+    borderRadius: 12,
+    padding: 12,
+    marginTop: 8,
+  },
+  lookalikeTitle: {
+    fontWeight: '700',
+    fontSize: 14,
+    color: theme.colors.text,
+    marginBottom: 4,
+  },
+  lookalikeText: {
+    fontSize: 13,
+    lineHeight: 18,
+    color: theme.colors.text,
+    marginBottom: 8,
   },
   primaryButton: {
     marginTop: 10,
