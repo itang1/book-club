@@ -69,7 +69,7 @@ export function ProfileScreen({
           })}
         </View>
         <Text style={styles.cardNote}>
-          Stands in for sign-in. Resets when the app restarts.
+          Stands in for sign-in. Remembered on this device.
         </Text>
       </View>
 

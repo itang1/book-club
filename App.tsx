@@ -16,6 +16,7 @@ import {
   recordHandoff,
 } from './src/lib/bookClubService';
 import { holderId } from './src/lib/bookState';
+import { loadReaderId, saveReaderId } from './src/lib/identity';
 import { HomeScreen } from './src/screens/HomeScreen';
 import { FriendsScreen } from './src/screens/FriendsScreen';
 import { AddBookScreen } from './src/screens/AddBookScreen';
@@ -164,6 +165,12 @@ export default function App() {
   React.useEffect(() => {
     let active = true;
 
+    loadReaderId().then((saved) => {
+      if (active && saved) {
+        setCurrentUserId(saved);
+      }
+    });
+
     fetchBookClubData().then((data) => {
       if (!active) {
         return;
@@ -171,13 +178,23 @@ export default function App() {
 
       setBooks(data.books);
       setFriends(data.friends);
-      setCurrentUserId((previous) => previous ?? data.friends[0]?.id ?? null);
+      // Keep the remembered reader only if they're still in the group.
+      setCurrentUserId((previous) =>
+        data.friends.some((friend) => friend.id === previous)
+          ? previous
+          : data.friends[0]?.id ?? null,
+      );
     });
 
     return () => {
       active = false;
     };
   }, []);
+
+  const chooseReader = (friendId: string) => {
+    setCurrentUserId(friendId);
+    saveReaderId(friendId);
+  };
 
   /**
    * Writes are optimistic. If one doesn't reach the database, say so rather
@@ -330,7 +347,7 @@ export default function App() {
               books={books}
               friends={friends}
               currentUserId={currentUserId}
-              onChangeUser={setCurrentUserId}
+              onChangeUser={chooseReader}
             />
           )}
         </Tab.Screen>
