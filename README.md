@@ -85,7 +85,7 @@ docs/                   plans
 ## Notes
 
 - The free Supabase project is kept awake by
-  [`keep-supabase-alive`](https://github.com/itang1/keep-supabase-alive).
+  [`hub`](https://github.com/itang1/hub#supabase-keep-alive).
 - A fan homage to *The Sisterhood of the Traveling Pants* by Ann Brashares.
   Not affiliated with the author or publisher.
 - Made by Irene. MIT licensed.
