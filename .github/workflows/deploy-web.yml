@@ -50,6 +50,15 @@ jobs:
             echo "::notice::SUPABASE_DB_URL isn't set, so the schema wasn't synced. Run supabase/schema.sql by hand if it changed."
             exit 0
           fi
+          # The direct connection (db.<ref>.supabase.co) is IPv6 only, which
+          # GitHub's runners can't reach. Catch it with a clear message rather
+          # than "Network is unreachable".
+          case "$SUPABASE_DB_URL" in
+            *@db.*.supabase.co*)
+              echo "::error::SUPABASE_DB_URL is the Direct connection string. Replace it with the Session pooler one (Supabase → Connect → Session pooler; its host ends in pooler.supabase.com)."
+              exit 1
+              ;;
+          esac
           psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 --single-transaction --quiet -f supabase/schema.sql
 
   build:
