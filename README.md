@@ -92,6 +92,19 @@ A past reader can **Join the line to reread**. Whether someone has read a copy
 comes from the handoff log (did they ever pass it on?), so a second read never
 re-seals letters they've opened.
 
+### Visualisations
+
+- **The route** (each book): every stop the copy has made, who has it now, and
+  a dotted line to whoever's waiting, then home.
+- **Your reading** (You): books finished per month for the last year; tap a
+  column for the titles.
+- **Where your books have been** (You): a passport stamp for every place your
+  copies have visited.
+- **The club's year** (bottom of Books): handoffs, letters, readers and places
+  so far this year; the full year in review is meant for December.
+
+All of it is derived from the handoff log (`src/lib/stats.ts`).
+
 ### The line is opt-in
 
 Nobody is put in line for a book. A new copy's queue holds only its owner, and
@@ -215,6 +228,7 @@ src/
 │   ├── friendGraph.ts         # Friends and "people you may know"
 │   ├── invite.ts              # Invite links
 │   ├── devMode.ts             # When the dev bar shows
+│   ├── stats.ts               # Numbers behind the visualisations
 │   ├── identity.ts            # Who's reading, remembered on this device
 │   └── bookState.ts           # Derives location/next in line/status/history
 ├── theme.ts

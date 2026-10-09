@@ -5,6 +5,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Book, Friend } from '../types';
 import { theme } from '../theme';
 import { AboutSheet } from '../components/AboutSheet';
+import { MonthlyColumns } from '../components/MonthlyColumns';
+import { PassportStamps } from '../components/PassportStamps';
+import { finishesByMonth, placesForOwner } from '../lib/stats';
 import {
   hasFinished,
   hasLetter,
@@ -117,6 +120,16 @@ export function ProfileScreen({ books, me, friendCount }: ProfileScreenProps) {
           ))
         )}
       </View>
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>Your reading</Text>
+        <MonthlyColumns data={finishesByMonth(books, me?.id ?? null)} />
+      </View>
+
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>Where your books have been</Text>
+        <PassportStamps places={placesForOwner(books, me?.id ?? null)} />
+      </View>
+
       <Pressable style={styles.aboutLink} onPress={() => setAboutOpen(true)}>
         <Text style={styles.aboutLinkText}>The Rules of the Books · About</Text>
       </Pressable>

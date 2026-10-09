@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 import { Book, Letter } from '../types';
 import { theme } from '../theme';
+import { JourneyRoute } from '../components/JourneyRoute';
 import {
   canReadLetter,
   canReturnHome,
@@ -170,6 +171,12 @@ export function BookDetailScreen({
             <Text style={styles.statValue}>{daysInCirculation(book)}</Text>
             <Text style={styles.statLabel}>days travelling</Text>
           </View>
+        </View>
+
+        <View style={[styles.box, styles.routeBox]}>
+          <Text style={styles.boxTitle}>The route</Text>
+          <Text style={styles.boxCaption}>Where this copy has been, and where it's headed.</Text>
+          <JourneyRoute book={book} />
         </View>
 
         <View style={styles.infoRow}>
@@ -382,6 +389,10 @@ const styles = StyleSheet.create({
   },
   starButton: {
     marginRight: 6,
+  },
+  routeBox: {
+    marginTop: 0,
+    marginBottom: 18,
   },
   letter: {
     marginTop: 8,
