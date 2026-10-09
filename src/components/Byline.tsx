@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { theme } from '../theme';
-import { authorName, face } from '../content/about';
+import { authorName, face, noteTitle } from '../content/about';
 import { AboutSheet } from './AboutSheet';
 
 /**
@@ -27,7 +27,7 @@ export function Byline() {
           <View style={[styles.face, styles.facePlaceholder]} />
         )}
         <Text style={styles.text}>
-          <Text style={styles.link}>Why this exists</Text> · a note from {authorName}
+          <Text style={styles.link}>{noteTitle}</Text> · {authorName}
         </Text>
       </Pressable>
       <AboutSheet visible={open} onClose={() => setOpen(false)} />

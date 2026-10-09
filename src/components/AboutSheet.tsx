@@ -2,14 +2,23 @@ import { Image, Linking, Modal, Pressable, ScrollView, StyleSheet, Text, View } 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { theme } from '../theme';
-import { authorName, bio, homage, photo, photoCaption, photoCredit, rules } from '../content/about';
+import {
+  authorName,
+  bio,
+  homage,
+  noteTitle,
+  photo,
+  photoCaption,
+  photoCredit,
+  rules,
+} from '../content/about';
 
 type AboutSheetProps = {
   visible: boolean;
   onClose: () => void;
 };
 
-/** Irene's letter (why this exists), the Rules of the Books, and the homage. Content lives in content/about. */
+/** The Rules of the Books, the maker's message, and the homage. Content lives in content/about. */
 export function AboutSheet({ visible, onClose }: AboutSheetProps) {
   const insets = useSafeAreaInsets();
 
@@ -23,7 +32,17 @@ export function AboutSheet({ visible, onClose }: AboutSheetProps) {
           <Text style={styles.closeText}>Done</Text>
         </Pressable>
 
-        <Text style={styles.title}>A letter from {authorName}</Text>
+        <Text style={styles.title}>The Rules of the Books</Text>
+        <View style={styles.rules}>
+          {rules.map((rule, index) => (
+            <View key={rule} style={styles.rule}>
+              <Text style={styles.ruleNumber}>{index + 1}.</Text>
+              <Text style={styles.ruleText}>{rule}</Text>
+            </View>
+          ))}
+        </View>
+
+        <Text style={styles.heading}>{noteTitle}</Text>
         <View style={styles.polaroid}>
           {photo ? (
             <Image source={photo} style={styles.photo} resizeMode="cover" />
@@ -57,16 +76,6 @@ export function AboutSheet({ visible, onClose }: AboutSheetProps) {
           </Text>
         ))}
         <Text style={styles.signature}>— {authorName}</Text>
-
-        <Text style={styles.heading}>The Rules of the Books</Text>
-        <View style={styles.rules}>
-          {rules.map((rule, index) => (
-            <View key={rule} style={styles.rule}>
-              <Text style={styles.ruleNumber}>{index + 1}.</Text>
-              <Text style={styles.ruleText}>{rule}</Text>
-            </View>
-          ))}
-        </View>
 
         <Text style={styles.homage}>{homage}</Text>
       </ScrollView>

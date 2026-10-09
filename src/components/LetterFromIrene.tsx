@@ -3,7 +3,7 @@ import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import { theme } from '../theme';
-import { authorName, face } from '../content/about';
+import { authorName, face, noteTitle } from '../content/about';
 import { loadLetterOpened, saveLetterOpened } from '../lib/identity';
 import { AboutSheet } from './AboutSheet';
 
@@ -46,15 +46,15 @@ export function LetterFromIrene({ hideOnceOpened = false }: LetterFromIreneProps
           saveLetterOpened();
         }}
         accessibilityRole="button"
-        accessibilityLabel={`Open a letter from ${authorName}`}
+        accessibilityLabel={`Open the ${noteTitle.toLowerCase()} from ${authorName}`}
       >
         {/* The flap: a fold line across the top of the envelope. */}
         <View style={styles.flap} />
         <View style={styles.body}>
           <View style={styles.text}>
             <Text style={styles.kicker}>{opened ? 'Read again' : 'For you'}</Text>
-            <Text style={styles.title}>A letter from {authorName}</Text>
-            <Text style={styles.subtitle}>Why this exists, and the Rules of the Books.</Text>
+            <Text style={styles.title}>{noteTitle}</Text>
+            <Text style={styles.subtitle}>The Rules of the Books, and why I made this.</Text>
           </View>
           {face ? (
             <View style={styles.stamp}>
