@@ -2,51 +2,68 @@ import { StyleSheet, Text, View, Pressable } from 'react-native';
 import { Book } from '../types';
 import { theme } from '../theme';
 import {
-  holderId,
   friendNameIn,
-  journey,
+  holderId,
   lastActivityAt,
   nextInLineId,
+  placeInLine,
   relativeTime,
   statusLabel,
 } from '../lib/bookState';
 
 type BookCardProps = {
   book: Book;
+  currentUserId: string | null;
   onPress?: (book: Book) => void;
 };
 
-export function BookCard({ book, onPress }: BookCardProps) {
-  const ownerId = holderId(book);
+/**
+ * Where the copy is and who's next, said as two short sentences rather than a
+ * label/value table. Phrased from the reader's side when it involves them.
+ */
+function whereLine(book: Book, currentUserId: string | null): string {
+  const holder = holderId(book);
+  if (!holder) {
+    return 'Not circulating yet';
+  }
+  if (holder === currentUserId) {
+    return 'With you';
+  }
+
+  const entry = book.queue.find((person) => person.id === holder);
+  return entry ? `With ${entry.name} · ${entry.city}` : `With ${friendNameIn(book, holder)}`;
+}
+
+function nextLine(book: Book, currentUserId: string | null): string {
+  const myPlace = placeInLine(book, currentUserId);
+  if (myPlace === 1) {
+    return "You're next";
+  }
+  if (myPlace !== null) {
+    return `You're #${myPlace} in line`;
+  }
+
   const nextId = nextInLineId(book);
-  const readers = journey(book).length;
+  return nextId ? `${friendNameIn(book, nextId)} is next` : 'Nobody in line yet';
+}
+
+export function BookCard({ book, currentUserId, onPress }: BookCardProps) {
+  const withMe = currentUserId !== null && holderId(book) === currentUserId;
 
   return (
     <Pressable style={styles.card} onPress={() => onPress?.(book)}>
       <View style={[styles.cover, { backgroundColor: book.coverColor }]}>
-        <Text style={styles.coverText}>{book.title}</Text>
+        <Text style={styles.coverText} numberOfLines={4}>
+          {book.title}
+        </Text>
       </View>
 
       <View style={styles.details}>
         <Text style={styles.title}>{book.title}</Text>
         <Text style={styles.author}>{book.author}</Text>
 
-        <View style={styles.metaRow}>
-          <Text style={styles.metaLabel}>Current owner</Text>
-          <Text style={styles.metaValue}>{friendNameIn(book, ownerId)}</Text>
-        </View>
-
-        <View style={styles.metaRow}>
-          <Text style={styles.metaLabel}>Next in line</Text>
-          <Text style={styles.metaValue}>
-            {nextId ? friendNameIn(book, nextId) : 'Nobody yet'}
-          </Text>
-        </View>
-
-        <View style={styles.metaRow}>
-          <Text style={styles.metaLabel}>Readers so far</Text>
-          <Text style={styles.metaValue}>{readers}</Text>
-        </View>
+        <Text style={[styles.line, withMe && styles.lineMine]}>{whereLine(book, currentUserId)}</Text>
+        <Text style={styles.lineQuiet}>{nextLine(book, currentUserId)}</Text>
 
         <View style={styles.footer}>
           <Text style={styles.status}>{statusLabel(book)}</Text>
@@ -66,7 +83,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     borderWidth: 1,
     borderColor: theme.colors.border,
-    shadowColor: '#000',
+    shadowColor: theme.colors.text,
     shadowOpacity: 0.04,
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 4 },
@@ -96,29 +113,28 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '700',
     color: theme.colors.text,
-    marginBottom: 4,
+    marginBottom: 2,
   },
   author: {
-    fontSize: 14,
+    fontSize: 13,
     color: theme.colors.muted,
     marginBottom: 10,
   },
-  metaRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 6,
-  },
-  metaLabel: {
-    fontSize: 12,
-    color: theme.colors.muted,
-  },
-  metaValue: {
-    fontSize: 12,
-    color: theme.colors.text,
+  line: {
+    fontSize: 13,
     fontWeight: '600',
+    color: theme.colors.text,
+  },
+  lineMine: {
+    color: theme.colors.stamp,
+  },
+  lineQuiet: {
+    fontSize: 13,
+    color: theme.colors.muted,
+    marginTop: 2,
   },
   footer: {
-    marginTop: 8,
+    marginTop: 10,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -131,7 +147,6 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '700',
     color: theme.colors.accent,
-    textTransform: 'capitalize',
     overflow: 'hidden',
   },
   updated: {

@@ -4,6 +4,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { Book, Friend, Handoff, RootStackParamList, RootTabParamList } from './src/types';
 import { booksSeed, friends as friendsSeed } from './src/data/mockData';
@@ -44,7 +45,6 @@ const TAB_ICONS: Record<
 > = {
   Home: { active: 'book', idle: 'book-outline' },
   Friends: { active: 'people', idle: 'people-outline' },
-  AddBook: { active: 'add-circle', idle: 'add-circle-outline' },
   Profile: { active: 'person', idle: 'person-outline' },
 };
 
@@ -121,23 +121,36 @@ const tabStyles = StyleSheet.create({
 
 function HomeStack({
   books,
+  friends,
   currentUserId,
   actions,
+  onAddBook,
 }: {
   books: Book[];
+  friends: Friend[];
   currentUserId: string | null;
   actions: BookActions;
+  onAddBook: (book: Book) => void;
 }) {
   return (
-    <Stack.Navigator>
-      <Stack.Screen
-        name="Home"
-        children={(props) => <HomeScreen {...props} books={books} />}
-        options={{ headerShown: false }}
-      />
+    <Stack.Navigator
+      screenOptions={{
+        headerStyle: { backgroundColor: theme.colors.background },
+        headerTintColor: theme.colors.accent,
+        headerTitleStyle: { color: theme.colors.text, fontFamily: theme.fonts.serif },
+        headerShadowVisible: false,
+      }}
+    >
+      <Stack.Screen name="Home" options={{ headerShown: false }}>
+        {(props) => <HomeScreen {...props} books={books} currentUserId={currentUserId} />}
+      </Stack.Screen>
       <Stack.Screen
         name="BookDetail"
-        children={(props) => (
+        // The cover block carries title and author, so the header stays
+        // empty rather than repeating them.
+        options={{ title: '' }}
+      >
+        {(props) => (
           <BookDetailScreen
             {...props}
             books={books}
@@ -145,13 +158,19 @@ function HomeStack({
             {...actions}
           />
         )}
-        options={{
-          // The cover block carries title and author, so the header stays
-          // empty rather than repeating them.
-          title: '',
-          headerShadowVisible: false,
-        }}
-      />
+      </Stack.Screen>
+      {/* Adding a book is occasional, so it lives behind the + on Home rather
+          than taking a permanent tab. */}
+      <Stack.Screen name="AddBook" options={{ title: 'Add a book' }}>
+        {(props) => (
+          <AddBookScreen
+            {...props}
+            friends={friends}
+            currentUserId={currentUserId}
+            onAddBook={onAddBook}
+          />
+        )}
+      </Stack.Screen>
     </Stack.Navigator>
   );
 }
@@ -301,59 +320,60 @@ export default function App() {
   };
 
   return (
-    <View style={tabStyles.root}>
-    <NavigationContainer>
-      <Tab.Navigator
-        screenOptions={({ route }) => ({
-          tabBarIcon: ({ color, size, focused }) => (
-            <TabIcon
-              routeName={route.name}
-              focused={focused}
-              color={color}
-              size={size}
-            />
-          ),
-          tabBarActiveTintColor: theme.colors.accent,
-          tabBarInactiveTintColor: theme.colors.faint,
-          tabBarStyle: tabStyles.bar,
-          tabBarLabelStyle: tabStyles.label,
-          headerStyle: { backgroundColor: theme.colors.background },
-          headerTitleStyle: { color: theme.colors.text, fontFamily: theme.fonts.serif },
-        })}
-      >
-        <Tab.Screen
-          name="Home"
-          children={() => (
-            <HomeStack books={books} currentUserId={currentUserId} actions={bookActions} />
-          )}
-          options={{ headerShown: false }}
-        />
-        <Tab.Screen name="Friends">
-          {(props) => <FriendsScreen {...props} friends={friends} books={books} />}
-        </Tab.Screen>
-        <Tab.Screen name="AddBook" options={{ title: 'Add Book' }}>
-          {(props) => (
-            <AddBookScreen
-              {...props}
-              friends={friends}
-              onAddBook={handleAddBook}
-              onAddFriend={handleAddFriend}
-            />
-          )}
-        </Tab.Screen>
-        <Tab.Screen name="Profile">
-          {(props) => (
-            <ProfileScreen
-              {...props}
-              books={books}
-              friends={friends}
-              currentUserId={currentUserId}
-              onChangeUser={chooseReader}
-            />
-          )}
-        </Tab.Screen>
-      </Tab.Navigator>
-    </NavigationContainer>
+    <SafeAreaProvider style={tabStyles.root}>
+      <NavigationContainer>
+        <Tab.Navigator
+          screenOptions={({ route }) => ({
+            tabBarIcon: ({ color, size, focused }) => (
+              <TabIcon
+                routeName={route.name}
+                focused={focused}
+                color={color}
+                size={size}
+              />
+            ),
+            tabBarActiveTintColor: theme.colors.accent,
+            tabBarInactiveTintColor: theme.colors.faint,
+            tabBarStyle: tabStyles.bar,
+            tabBarLabelStyle: tabStyles.label,
+            // Each tab draws its own large serif title.
+            headerShown: false,
+          })}
+        >
+          <Tab.Screen name="Home" options={{ title: 'Books' }}>
+            {() => (
+              <HomeStack
+                books={books}
+                friends={friends}
+                currentUserId={currentUserId}
+                actions={bookActions}
+                onAddBook={handleAddBook}
+              />
+            )}
+          </Tab.Screen>
+          <Tab.Screen name="Friends">
+            {(props) => (
+              <FriendsScreen
+                {...props}
+                friends={friends}
+                books={books}
+                onAddFriend={handleAddFriend}
+              />
+            )}
+          </Tab.Screen>
+          <Tab.Screen name="Profile" options={{ title: 'You' }}>
+            {(props) => (
+              <ProfileScreen
+                {...props}
+                books={books}
+                friends={friends}
+                currentUserId={currentUserId}
+                onChangeUser={chooseReader}
+              />
+            )}
+          </Tab.Screen>
+        </Tab.Navigator>
+      </NavigationContainer>
       {syncFailed && (
         <Pressable style={tabStyles.banner} onPress={() => setSyncFailed(false)}>
           <Text style={tabStyles.bannerText}>
@@ -361,6 +381,6 @@ export default function App() {
           </Text>
         </Pressable>
       )}
-    </View>
+    </SafeAreaProvider>
   );
 }

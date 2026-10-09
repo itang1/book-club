@@ -1,4 +1,5 @@
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Book, Friend } from '../types';
 import { theme } from '../theme';
@@ -23,6 +24,7 @@ export function ProfileScreen({
   currentUserId,
   onChangeUser,
 }: ProfileScreenProps) {
+  const insets = useSafeAreaInsets();
   const me = friends.find((friend) => friend.id === currentUserId) ?? null;
 
   // There is no auth yet, so "who am I" is a local choice. Every stat below is
@@ -43,8 +45,11 @@ export function ProfileScreen({
     : 0;
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.title}>Your profile</Text>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={[styles.content, { paddingTop: insets.top + 20 }]}
+    >
+      <Text style={styles.title}>You</Text>
       <Text style={styles.subtitle}>
         {me ? `Reading as ${me.name} — ${me.city}, ${me.state}` : 'Pick who you are in the group.'}
       </Text>

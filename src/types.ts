@@ -47,11 +47,11 @@ export type Book = {
 export type RootTabParamList = {
   Home: undefined;
   Friends: undefined;
-  AddBook: undefined;
   Profile: undefined;
 };
 
 export type RootStackParamList = {
   Home: undefined;
   BookDetail: { bookId: string; bookTitle: string };
+  AddBook: undefined;
 };
