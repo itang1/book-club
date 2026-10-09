@@ -29,34 +29,38 @@ Bees*?", you open the app.
 
 ## Example: a book's journey
 
-Four readers pass one copy around. Here's what the app knows after three
-handoffs:
+Carmen adds her copy, and friends sign up for it. Here's what the app shows
+Lena, who has it now:
 
 ```
 The Secret Life of Bees — Sue Monk Kidd
-  3 stops · 3 cities · 94 days out                      [ reading ]
+  2 readers so far · 2 places visited · 41 days travelling
 
-  Current owner   Lena Kaligaris
-  Next stop       Tibby Rollins
+  With            Lena Kaligaris
+  Belongs to      Carmen Lowell
+  Next in line    Tibby Rollins
   Last activity   12d ago
 
-  READING PATH
-  ○ Carmen Lowell      Charleston, SC         done
+                    [ YOUR TURN · IT'S WITH YOU ]
+  [ Pass on to Tibby Rollins ]
+
+  THE LINE
+  ○ Carmen Lowell      Charleston, SC         done      · owner
   ● Lena Kaligaris     Santorini, Greece      reading   ← has it now
   ○ Tibby Rollins      Bethesda, MD           waiting   ← up next
-  ○ Bridget Vreeland   Baja California        waiting
 
   TRAVEL HISTORY
   Carmen Lowell → Lena Kaligaris
-    Aug 26, 2026 · held 29 days
+    Sep 26, 2026 · still reading
+    ✉ Sealed letter from Carmen Lowell. It opens once you've finished the book.
   Entered circulation with Carmen Lowell
-    Jul 28, 2026 · held 29 days
-
-  [ Pass on to Tibby Rollins ]
+    Aug 28, 2026 · held 29 days
 ```
 
-Tapping **Pass on** appends a leg to the history. It never overwrites the last
-one — which is why "3 cities over 94 days" is answerable at all.
+Tapping **Pass on** asks for an optional rating and note (the letter), then
+appends a leg to the history. It never overwrites the last one, which is why
+"places visited" is answerable at all. Once nobody is waiting, the holder can
+**Return** it to its owner.
 
 The demo data is the four girls from the novel, in the places they spend that
 first summer: Lena with her grandparents on Santorini, Bridget at soccer camp in
@@ -65,13 +69,27 @@ home in Bethesda.
 
 ## Features
 
-- **Home** — every copy in circulation, with who has it and who's next
-- **Book Detail** — the reading path, the full travel history, and a one-tap
-  handoff
-- **Friends** — the group, each person's status derived *per book*
-- **Add Book** — introduce a copy and pick its first reader; the queue follows
-  the group from there
-- **Profile** — your own view: what's in your hands, what's heading your way
+- **Books** — "Your turn" first, a short "Recently" feed, then every copy in
+  circulation. **+** adds a copy.
+- **Book Detail** — join or leave the line, pass it on or send it home, and the
+  full travel history with each reader's letter
+- **Friends** — the group, each person's status derived *per book*; add a
+  friend at the bottom
+- **You** — pick who you are (remembered on this device), what's in your hands,
+  what's heading your way
+
+### The line is opt-in
+
+Nobody is put in line for a book. A new copy's queue holds only its owner, and
+friends tap **Join the line** if they want it. Next in line is the earliest
+sign-up who hasn't had a turn. You can leave the line while you're still
+waiting.
+
+### Letters in the book
+
+When you pass a copy on, you can tuck in a letter: 1–5 stars and a short note,
+saved with the handoff. Letters stay **sealed** until you've finished the copy
+yourself, so nobody's opinion colours your read.
 
 ## How location works
 
@@ -79,12 +97,15 @@ A book's current location is **not stored**. It's derived from the newest row in
 an append-only log:
 
 ```sql
-handoffs(id, book_id, from_friend, to_friend, happened_at)
+handoffs(id, book_id, from_friend, to_friend, happened_at, note, rating)
 ```
 
 Passing a book on appends a leg. `from_friend` is `null` for the leg that first
 put a book into circulation, and the journey log has no update or delete policy —
 history can't be rewritten, even by a signed-in user.
+
+A book's status ("Being read", "Back home") isn't stored either; it's derived
+from the same log. The owner is whoever the first leg went to.
 
 Reading status lives on `reading_queue`, keyed by *(book, friend)*, rather than
 on the friend — the same person can be reading one copy while waiting on
@@ -102,9 +123,12 @@ dashboard.
 | Text | `#1f1a17` | near-black |
 | Muted | `#54473f` | taupe |
 | Accent | `#7a5c48` | warm brown |
+| Stamp | `#a6463a` | library-stamp red, only for "your turn" |
 | Border | `#eaded3` | hairline |
 | Soft | `#f0e5dc` | light beige |
 
+Titles are set in the platform serif (Georgia on iOS and web), so no font files
+ship. Cover swatches carry near-black text, which clears 5.7:1 on every swatch.
 All of it lives in `src/theme.ts`.
 
 ## Getting Started
@@ -144,17 +168,18 @@ src/
 ├── components/
 │   └── BookCard.tsx           # Book summary card
 ├── screens/
-│   ├── HomeScreen.tsx         # Books in circulation
-│   ├── BookDetailScreen.tsx   # Reading path, history, handoff
-│   ├── FriendsScreen.tsx      # The group
-│   ├── AddBookScreen.tsx      # Add a copy / add a friend
+│   ├── HomeScreen.tsx         # Your turn, Recently, books in circulation
+│   ├── BookDetailScreen.tsx   # The line, history, letters, handoff
+│   ├── FriendsScreen.tsx      # The group, add a friend
+│   ├── AddBookScreen.tsx      # Add a copy
 │   └── ProfileScreen.tsx      # Your own view
 ├── data/
 │   └── mockData.ts            # Fictional seed group
 ├── lib/
 │   ├── supabase.ts            # Client setup
 │   ├── bookClubService.ts     # Row mappers + fallback to mock data
-│   └── bookState.ts           # Derives location/next stop/history
+│   ├── identity.ts            # Who's reading, remembered on this device
+│   └── bookState.ts           # Derives location/next in line/status/history
 ├── theme.ts
 └── types.ts
 ```
@@ -163,10 +188,11 @@ src/
 
 Supabase (Postgres). Four tables:
 
-- **books** — title, author, cover color, status
+- **books** — title, author, cover color
 - **friends** — the group (name, location, contact)
-- **reading_queue** — travel order plus each reader's progress
-- **handoffs** — the append-only journey log location derives from
+- **reading_queue** — who signed up, in order, plus each reader's progress
+- **handoffs** — the append-only journey log location derives from, with the
+  passer's letter
 
 Plus a `book_current_location` view for ad-hoc queries, which the app recomputes
 client-side.
