@@ -45,16 +45,16 @@ insert into public.reading_queue (book_id, friend_id, position, status) values
   ('book-4', 'friend-carmen',  2, 'done')
 on conflict (book_id, friend_id) do nothing;
 
-insert into public.handoffs (id, book_id, from_friend, to_friend, happened_at) values
-  ('handoff-1a', 'book-1', null,              'friend-carmen',  now() - interval '41 days'),
-  ('handoff-1b', 'book-1', 'friend-carmen',   'friend-lena',    now() - interval '12 days'),
-  ('handoff-2a', 'book-2', null,              'friend-lena',    now() - interval '63 days'),
-  ('handoff-2b', 'book-2', 'friend-lena',     'friend-bridget', now() - interval '5 hours'),
-  ('handoff-3a', 'book-3', null,              'friend-tibby',   now() - interval '94 days'),
-  ('handoff-3b', 'book-3', 'friend-tibby',    'friend-carmen',  now() - interval '38 days'),
-  ('handoff-3c', 'book-3', 'friend-carmen',   'friend-bridget', now() - interval '7 days'),
-  ('handoff-4a', 'book-4', null,              'friend-bridget', now() - interval '121 days'),
-  ('handoff-4b', 'book-4', 'friend-bridget',  'friend-tibby',   now() - interval '88 days'),
-  ('handoff-4c', 'book-4', 'friend-tibby',    'friend-carmen',  now() - interval '59 days'),
-  ('handoff-4d', 'book-4', 'friend-carmen',   'friend-bridget', now() - interval '20 days')
+insert into public.handoffs (id, book_id, from_friend, to_friend, happened_at, rating, note) values
+  ('handoff-1a', 'book-1', null,              'friend-carmen',  now() - interval '41 days', null, null),
+  ('handoff-1b', 'book-1', 'friend-carmen',   'friend-lena',    now() - interval '12 days', 5, 'Read the honey chapters on the porch if you can. Don''t skip the epigraphs.'),
+  ('handoff-2a', 'book-2', null,              'friend-lena',    now() - interval '63 days', null, null),
+  ('handoff-2b', 'book-2', 'friend-lena',     'friend-bridget', now() - interval '5 hours', 3, 'Gorgeous sentences, a little slow in the middle. Push through to Aeaea.'),
+  ('handoff-3a', 'book-3', null,              'friend-tibby',   now() - interval '94 days', null, null),
+  ('handoff-3b', 'book-3', 'friend-tibby',    'friend-carmen',  now() - interval '38 days', 4, 'The ending wrecked me. Call me when you get there.'),
+  ('handoff-3c', 'book-3', 'friend-carmen',   'friend-bridget', now() - interval '7 days', 5, 'I underlined way too much, sorry not sorry.'),
+  ('handoff-4a', 'book-4', null,              'friend-bridget', now() - interval '121 days', null, null),
+  ('handoff-4b', 'book-4', 'friend-bridget',  'friend-tibby',   now() - interval '88 days', 4, 'Trust it for the first fifty pages.'),
+  ('handoff-4c', 'book-4', 'friend-tibby',    'friend-carmen',  now() - interval '59 days', 5, 'The statues. That''s all I''ll say.'),
+  ('handoff-4d', 'book-4', 'friend-carmen',   'friend-bridget', now() - interval '20 days', 4, 'Thank you for lending me your copy. It''s a little sandier now.')
 on conflict (id) do nothing;

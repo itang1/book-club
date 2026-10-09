@@ -26,6 +26,10 @@ export type ReadingQueueEntry = Friend & {
  * One leg of a book's journey. Append-only: handoffs are never edited, and a
  * book's current location is derived from the most recent one.
  * `fromFriend` is null for the handoff that put the book into circulation.
+ *
+ * `note` and `rating` are the letter `fromFriend` tucks into the book as they
+ * pass it on, the way the girls in the novel wrote letters with the pants.
+ * Both optional, and as permanent as the leg itself.
  */
 export type Handoff = {
   id: string;
@@ -33,7 +37,12 @@ export type Handoff = {
   fromFriend: string | null;
   toFriend: string;
   happenedAt: string;
+  note?: string;
+  /** 1–5 whole stars. */
+  rating?: number;
 };
+
+export type Letter = Pick<Handoff, 'note' | 'rating'>;
 
 export type Book = {
   id: string;

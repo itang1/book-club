@@ -37,6 +37,8 @@ type HandoffRow = {
   from_friend: string | null;
   to_friend: string;
   happened_at: string;
+  note: string | null;
+  rating: number | null;
 };
 
 export type BookClubData = {
@@ -78,6 +80,8 @@ function toHandoff(row: HandoffRow): Handoff {
     fromFriend: row.from_friend,
     toFriend: row.to_friend,
     happenedAt: row.happened_at,
+    note: row.note ?? undefined,
+    rating: row.rating ?? undefined,
   };
 }
 
@@ -88,6 +92,8 @@ function fromHandoff(handoff: Handoff): HandoffRow {
     from_friend: handoff.fromFriend,
     to_friend: handoff.toFriend,
     happened_at: handoff.happenedAt,
+    note: handoff.note ?? null,
+    rating: handoff.rating ?? null,
   };
 }
 

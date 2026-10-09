@@ -96,6 +96,13 @@ create table if not exists public.handoffs (
   happened_at timestamptz not null default now()
 );
 
+-- The letter the passer leaves in the book. Written once with the leg and,
+-- like the leg, never edited. The app keeps it sealed from anyone who hasn't
+-- finished the book yet.
+alter table public.handoffs add column if not exists note text;
+alter table public.handoffs add column if not exists rating smallint
+  check (rating between 1 and 5);
+
 create index if not exists reading_queue_book_idx on public.reading_queue (book_id, position);
 create index if not exists handoffs_book_idx on public.handoffs (book_id, happened_at);
 

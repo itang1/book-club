@@ -6,7 +6,14 @@ import { Ionicons } from '@expo/vector-icons';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-import { Book, Friend, Handoff, RootStackParamList, RootTabParamList } from './src/types';
+import {
+  Book,
+  Friend,
+  Handoff,
+  Letter,
+  RootStackParamList,
+  RootTabParamList,
+} from './src/types';
 import { booksSeed, friends as friendsSeed } from './src/data/mockData';
 import {
   createBook,
@@ -26,7 +33,7 @@ import { ProfileScreen } from './src/screens/ProfileScreen';
 import { BookDetailScreen } from './src/screens/BookDetailScreen';
 
 type BookActions = {
-  onHandOff: (bookId: string, toFriend: string) => void;
+  onHandOff: (bookId: string, toFriend: string, letter: Letter) => void;
   onJoinLine: (bookId: string) => void;
   onLeaveLine: (bookId: string) => void;
 };
@@ -280,7 +287,7 @@ export default function App() {
    * home to its owner. History is never rewritten: the new handoff becomes the
    * newest entry, and location follows from it.
    */
-  const handleHandOff = (bookId: string, toFriend: string) => {
+  const handleHandOff = (bookId: string, toFriend: string, letter: Letter) => {
     const book = books.find((candidate) => candidate.id === bookId);
     if (!book) {
       return;
@@ -293,6 +300,8 @@ export default function App() {
       fromFriend,
       toFriend,
       happenedAt: new Date().toISOString(),
+      note: letter.note?.trim() || undefined,
+      rating: letter.rating,
     };
 
     updateBook(bookId, (candidate) => ({

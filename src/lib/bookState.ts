@@ -91,6 +91,25 @@ export function readersSoFar(book: Book): number {
   return new Set(book.handoffs.map((leg) => leg.toFriend)).size;
 }
 
+/**
+ * Letters stay sealed until you've finished this copy yourself, so nobody's
+ * opinion colours your read. You can always see a letter you wrote.
+ */
+export function canReadLetter(book: Book, leg: Handoff, viewerId: string | null): boolean {
+  if (!viewerId) {
+    return false;
+  }
+  if (leg.fromFriend === viewerId) {
+    return true;
+  }
+
+  return book.queue.some((entry) => entry.id === viewerId && entry.status === 'done');
+}
+
+export function hasLetter(leg: Handoff): boolean {
+  return Boolean(leg.note?.trim() || leg.rating);
+}
+
 export function friendNameIn(book: Book, friendId: string | null): string {
   if (!friendId) {
     return 'Unassigned';

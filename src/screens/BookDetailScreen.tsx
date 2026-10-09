@@ -1,16 +1,20 @@
 import { useState } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
-import { Book } from '../types';
+import { Book, Letter } from '../types';
 import { theme } from '../theme';
 import {
+  canReadLetter,
   canReturnHome,
   copyOwnerId,
   daysInCirculation,
   formatDate,
   friendNameIn,
+  hasLetter,
   heldForDays,
   holderId,
+  isBackHome,
   journey,
   lastActivityAt,
   nextInLineId,
@@ -25,7 +29,7 @@ type BookDetailScreenProps = {
   route: { params: { bookId: string; bookTitle: string } };
   books: Book[];
   currentUserId: string | null;
-  onHandOff: (bookId: string, toFriend: string) => void;
+  onHandOff: (bookId: string, toFriend: string, letter: Letter) => void;
   onJoinLine: (bookId: string) => void;
   onLeaveLine: (bookId: string) => void;
 };
@@ -41,6 +45,8 @@ export function BookDetailScreen({
   const { bookId } = route.params;
   // Who the pending handoff is going to; non-null while the confirm sheet is up.
   const [confirmingTo, setConfirmingTo] = useState<string | null>(null);
+  const [rating, setRating] = useState<number | undefined>(undefined);
+  const [note, setNote] = useState('');
   const book = books.find((item) => item.id === bookId);
 
   if (!book) {
@@ -50,6 +56,12 @@ export function BookDetailScreen({
       </View>
     );
   }
+
+  const closeSheet = () => {
+    setConfirmingTo(null);
+    setRating(undefined);
+    setNote('');
+  };
 
   const holder = holderId(book);
   const owner = copyOwnerId(book);
@@ -219,10 +231,28 @@ export function BookDetailScreen({
                   </Text>
                   <Text style={styles.legMeta}>
                     {formatDate(leg.happenedAt)}
-                    {held === null
-                      ? ' · still reading'
-                      : ` · held ${held} ${held === 1 ? 'day' : 'days'}`}
+                    {held !== null
+                      ? ` · held ${held} ${held === 1 ? 'day' : 'days'}`
+                      : isBackHome(book)
+                        ? ' · back home'
+                        : ' · still reading'}
                   </Text>
+                  {leg.fromFriend && hasLetter(leg) && (
+                    canReadLetter(book, leg, currentUserId) ? (
+                      <View style={styles.letter}>
+                        {leg.rating ? <Stars value={leg.rating} size={13} /> : null}
+                        {leg.note ? <Text style={styles.letterText}>“{leg.note}”</Text> : null}
+                        <Text style={styles.letterSign}>— {friendNameIn(book, leg.fromFriend)}</Text>
+                      </View>
+                    ) : (
+                      <View style={[styles.letter, styles.letterSealed]}>
+                        <Text style={styles.letterSealedText}>
+                          ✉ Sealed letter from {friendNameIn(book, leg.fromFriend)}. It opens
+                          once you've finished the book.
+                        </Text>
+                      </View>
+                    )
+                  )}
                 </View>
               );
             })
@@ -236,7 +266,7 @@ export function BookDetailScreen({
         visible={confirmingTo !== null}
         transparent
         animationType="fade"
-        onRequestClose={() => setConfirmingTo(null)}
+        onRequestClose={closeSheet}
       >
         <View style={styles.backdrop}>
           <View style={styles.sheet}>
@@ -249,13 +279,27 @@ export function BookDetailScreen({
               and cannot be undone.
             </Text>
 
+            {/* The letter. Readers who come after see it only once they've
+                finished the book too. */}
+            <Text style={styles.sheetLabel}>How was it?</Text>
+            <Stars value={rating} size={28} onChange={setRating} />
+            <TextInput
+              value={note}
+              onChangeText={setNote}
+              placeholder={`A note for ${friendNameIn(book, confirmingTo)} (optional)`}
+              placeholderTextColor={theme.colors.faint}
+              multiline
+              maxLength={500}
+              style={styles.sheetInput}
+            />
+
             <Pressable
               style={styles.sheetConfirm}
               onPress={() => {
                 if (confirmingTo) {
-                  onHandOff(book.id, confirmingTo);
+                  onHandOff(book.id, confirmingTo, { note, rating });
                 }
-                setConfirmingTo(null);
+                closeSheet();
               }}
             >
               <Text style={styles.sheetConfirmText}>
@@ -263,7 +307,7 @@ export function BookDetailScreen({
               </Text>
             </Pressable>
 
-            <Pressable style={styles.sheetCancel} onPress={() => setConfirmingTo(null)}>
+            <Pressable style={styles.sheetCancel} onPress={closeSheet}>
               <Text style={styles.sheetCancelText}>Cancel</Text>
             </Pressable>
           </View>
@@ -273,7 +317,101 @@ export function BookDetailScreen({
   );
 }
 
+/** Whole stars, 1–5. Read-only unless `onChange` is given; tap a star again to clear. */
+function Stars({
+  value,
+  size,
+  onChange,
+}: {
+  value?: number;
+  size: number;
+  onChange?: (value: number | undefined) => void;
+}) {
+  return (
+    <View style={styles.stars} accessibilityLabel={value ? `${value} of 5 stars` : 'No rating'}>
+      {[1, 2, 3, 4, 5].map((star) => {
+        const icon = (
+          <Ionicons
+            name={value !== undefined && star <= value ? 'star' : 'star-outline'}
+            size={size}
+            color={theme.colors.accent}
+          />
+        );
+
+        return onChange ? (
+          <Pressable
+            key={star}
+            onPress={() => onChange(star === value ? undefined : star)}
+            hitSlop={4}
+            style={styles.starButton}
+            accessibilityLabel={`${star} star${star === 1 ? '' : 's'}`}
+          >
+            {icon}
+          </Pressable>
+        ) : (
+          <View key={star}>{icon}</View>
+        );
+      })}
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
+  stars: {
+    flexDirection: 'row',
+  },
+  starButton: {
+    marginRight: 6,
+  },
+  letter: {
+    marginTop: 8,
+    backgroundColor: theme.colors.background,
+    borderRadius: 10,
+    padding: 10,
+  },
+  letterText: {
+    fontFamily: theme.fonts.serif,
+    fontStyle: 'italic',
+    fontSize: 14,
+    lineHeight: 20,
+    color: theme.colors.text,
+    marginTop: 4,
+  },
+  letterSign: {
+    fontSize: 11,
+    color: theme.colors.muted,
+    marginTop: 4,
+  },
+  letterSealed: {
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.card,
+  },
+  letterSealedText: {
+    fontSize: 12,
+    color: theme.colors.muted,
+    lineHeight: 17,
+  },
+  sheetLabel: {
+    fontSize: 12,
+    color: theme.colors.muted,
+    marginBottom: 8,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    fontWeight: '700',
+  },
+  sheetInput: {
+    backgroundColor: theme.colors.soft,
+    borderRadius: 12,
+    padding: 12,
+    marginTop: 14,
+    marginBottom: 16,
+    minHeight: 72,
+    color: theme.colors.text,
+    fontSize: 14,
+    textAlignVertical: 'top',
+  },
   container: {
     flex: 1,
     backgroundColor: theme.colors.background,
