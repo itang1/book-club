@@ -1,12 +1,12 @@
 import { Linking, StyleSheet, Text, View } from 'react-native';
 
 import { theme } from '../theme';
-import { pantsCredit, pantsRules } from '../content/about';
+import { pantsCredit, pantsPreamble, pantsRules } from '../content/about';
 
 /**
  * The Rules of the Pants as a page torn from a notebook and taped in beside
  * ours: tilted, two strips of tape across the top corners, handwritten.
- * Paraphrased (see content/about), with the credit underneath.
+ * Credited underneath.
  */
 export function TapedNote() {
   return (
@@ -16,6 +16,7 @@ export function TapedNote() {
         <View style={[styles.tape, styles.tapeRight]} />
 
         <Text style={styles.title}>The Rules of the Pants</Text>
+        <Text style={styles.preamble}>{pantsPreamble}</Text>
         {pantsRules.map((rule, index) => (
           <View key={rule} style={styles.ruleRow}>
             <Text style={[styles.rule, styles.number]}>{index + 1}.</Text>
@@ -77,6 +78,13 @@ const styles = StyleSheet.create({
     color: theme.colors.text,
     marginBottom: 10,
     textAlign: 'center',
+  },
+  preamble: {
+    fontFamily: theme.fonts.hand,
+    fontSize: 15,
+    lineHeight: 22,
+    color: theme.colors.text,
+    marginBottom: 8,
   },
   ruleRow: {
     flexDirection: 'row',
