@@ -2,6 +2,7 @@ import { Image, Linking, Modal, Pressable, ScrollView, StyleSheet, Text, View } 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { theme } from '../theme';
+import { TapedNote } from './TapedNote';
 import {
   authorName,
   bio,
@@ -53,6 +54,9 @@ export function AboutSheet({ visible, onClose }: AboutSheetProps) {
                 </View>
               ))}
             </View>
+
+            {/* Where ours came from. */}
+            <TapedNote />
 
             <Text style={styles.heading}>{noteTitle}</Text>
             <View style={styles.card}>

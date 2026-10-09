@@ -37,6 +37,16 @@ export const theme = {
       android: 'serif',
       default: 'Georgia, "Times New Roman", serif',
     }),
+    /**
+     * Handwriting, for the taped-in Rules of the Pants. Faces that ship with
+     * the system (Noteworthy on Apple devices), falling back to the
+     * browser's cursive.
+     */
+    hand: Platform.select({
+      ios: 'Noteworthy',
+      android: 'casual',
+      default: 'Noteworthy, "Bradley Hand", "Segoe Print", "Comic Sans MS", cursive',
+    }),
   },
   spacing: {
     xs: 8,
