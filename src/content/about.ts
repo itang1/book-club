@@ -13,15 +13,32 @@ import type { ImageSourcePropType } from 'react-native';
  */
 export const photo: ImageSourcePropType | null = require('../../assets/about/me.jpg');
 
-export const photoCaption = 'Me, middle school, mid-chapter.';
+/** The same photo cropped tight on the face, for small round avatars. */
+export const face: ImageSourcePropType | null = require('../../assets/about/me-face.jpg');
 
-export const photoCredit = 'Photo: Dad';
+export const photoCaption = 'Me, middle school.';
+
+export const photoCredit = 'Photo creds: Dad';
 
 export const authorName = 'Irene';
 
-export const bio = [
-  'I read The Sisterhood of the Traveling Pants series in middle school and wanted, very badly, to experience life and letters and summers like the girls in the book world.',
-  'I never found the pants, but I did find the friends who pass books around (a tradition spawned out of an annual social distancing secret santa tradition).',
+/**
+ * A run of bio text: plain, or italic (a title), optionally a link.
+ * Paragraphs are lists of runs so a title can sit mid-sentence.
+ */
+export type BioRun = string | { text: string; italic?: boolean; href?: string };
+
+const SERIES_URL = 'https://en.wikipedia.org/wiki/The_Sisterhood_of_the_Traveling_Pants';
+
+export const bio: BioRun[][] = [
+  [
+    'I read ',
+    { text: 'The Sisterhood of the Traveling Pants', italic: true, href: SERIES_URL },
+    ' series by Ann Brashares in middle school (four best friends spend their first summer apart and share a thrift-store pair of jeans that somehow fits every one of them, mailing it back and forth with letters about everything that happens) and wanted, very badly, the life those fictional girls had.',
+  ],
+  [
+    'I never found that life, or jeans that fit like that, but I did find friends who pass books around (a habit that spawned out of an annual long-distance Secret Santa tradition).',
+  ],
 ];
 
 /**

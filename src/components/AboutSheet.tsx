@@ -1,4 +1,4 @@
-import { Image, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image, Linking, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { theme } from '../theme';
@@ -48,9 +48,22 @@ export function AboutSheet({ visible, onClose }: AboutSheetProps) {
           {photo && <Text style={styles.credit}>{photoCredit}</Text>}
         </View>
 
-        {bio.map((paragraph) => (
-          <Text key={paragraph} style={styles.bio}>
-            {paragraph}
+        {bio.map((paragraph, index) => (
+          <Text key={index} style={styles.bio}>
+            {paragraph.map((run, runIndex) =>
+              typeof run === 'string' ? (
+                run
+              ) : (
+                <Text
+                  key={runIndex}
+                  style={[run.italic && styles.italic, run.href && styles.link]}
+                  onPress={run.href ? () => Linking.openURL(run.href as string) : undefined}
+                  accessibilityRole={run.href ? 'link' : undefined}
+                >
+                  {run.text}
+                </Text>
+              ),
+            )}
           </Text>
         ))}
         <Text style={styles.signature}>— {authorName}</Text>
@@ -181,6 +194,13 @@ const styles = StyleSheet.create({
     lineHeight: 25,
     color: theme.colors.text,
     marginBottom: 12,
+  },
+  italic: {
+    fontStyle: 'italic',
+  },
+  link: {
+    color: theme.colors.accent,
+    textDecorationLine: 'underline',
   },
   signature: {
     fontFamily: theme.fonts.serif,

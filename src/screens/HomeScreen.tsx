@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Book, RootStackParamList } from '../types';
 import { BookCard } from '../components/BookCard';
 import { ClubYearCard } from '../components/ClubYearCard';
+import { Byline } from '../components/Byline';
 import { describeLeg, hasLetter, holderId, recentActivity, relativeTime } from '../lib/bookState';
 import { theme } from '../theme';
 
@@ -107,6 +108,7 @@ export function HomeScreen({
       )}
 
       <ClubYearCard books={books} />
+      <Byline />
     </ScrollView>
   );
 }
