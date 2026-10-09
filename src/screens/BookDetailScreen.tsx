@@ -103,7 +103,7 @@ export function BookDetailScreen({
 
       return (
         <Text style={styles.actionNote}>
-          Nobody has signed up yet. It stays with you until someone does.
+          Nobody's waiting yet. It's yours to keep reading until someone asks.
         </Text>
       );
     }
@@ -286,7 +286,7 @@ export function BookDetailScreen({
         <View style={styles.backdrop}>
           <View style={styles.sheet}>
             <Text style={styles.sheetTitle}>
-              {goingHome ? 'Send it home?' : 'Pass this on?'}
+              {goingHome ? 'Send it home?' : 'Send it on its way?'}
             </Text>
             <Text style={styles.sheetBody}>
               {book.title} moves from {friendNameIn(book, holder)} to{' '}
@@ -296,12 +296,12 @@ export function BookDetailScreen({
 
             {/* The letter. Readers who come after see it only once they've
                 finished the book too. */}
-            <Text style={styles.sheetLabel}>How was it?</Text>
+            <Text style={styles.sheetLabel}>Leave a letter in the book</Text>
             <Stars value={rating} size={28} onChange={setRating} />
             <TextInput
               value={note}
               onChangeText={setNote}
-              placeholder={`A note for ${friendNameIn(book, confirmingTo)} (optional)`}
+              placeholder={`Dear ${friendNameIn(book, confirmingTo).split(' ')[0]}, …`}
               placeholderTextColor={theme.colors.faint}
               multiline
               maxLength={500}

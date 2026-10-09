@@ -60,7 +60,8 @@ export function AddBookScreen({ navigation, owner, onAddBook }: AddBookScreenPro
       keyboardShouldPersistTaps="handled"
     >
       <Text style={styles.subtitle}>
-        Start a new traveling copy. Friends sign up for it from its page.
+        Send a copy out into the world. Friends sign up for it, read it, write
+        you a letter, and eventually it comes home a little more loved.
       </Text>
 
       <View style={styles.formCard}>
@@ -94,7 +95,7 @@ export function AddBookScreen({ navigation, owner, onAddBook }: AddBookScreenPro
           onPress={handleSubmit}
           disabled={!ready}
         >
-          <Text style={styles.primaryButtonText}>Add book</Text>
+          <Text style={styles.primaryButtonText}>Start its journey</Text>
         </Pressable>
         {!ready && missing.length > 0 && (
           <Text style={styles.missing}>Add {missing.join(' and ')} to continue.</Text>

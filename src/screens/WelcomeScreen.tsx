@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Friend } from '../types';
 import { theme } from '../theme';
+import { AboutSheet } from '../components/AboutSheet';
 import { invitedByFromUrl } from '../lib/invite';
 import type { NewProfile } from '../lib/useBookClub';
 
@@ -27,6 +28,7 @@ export function WelcomeScreen({ members, onCreate, onPick }: WelcomeScreenProps)
   const [city, setCity] = useState('');
   const [region, setRegion] = useState('');
   const [showMembers, setShowMembers] = useState(false);
+  const [aboutOpen, setAboutOpen] = useState(false);
 
   const invitedBy = invitedByFromUrl();
   const inviter = members.find((person) => person.id === invitedBy);
@@ -46,7 +48,7 @@ export function WelcomeScreen({ members, onCreate, onPick }: WelcomeScreenProps)
       </Text>
 
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>Join the club</Text>
+        <Text style={styles.cardTitle}>Join the Sisterhood</Text>
         <TextInput
           value={name}
           onChangeText={setName}
@@ -100,6 +102,10 @@ export function WelcomeScreen({ members, onCreate, onPick }: WelcomeScreenProps)
           )}
         </View>
       )}
+      <Pressable style={styles.existing} onPress={() => setAboutOpen(true)}>
+        <Text style={styles.link}>What is this? Read the Rules of the Books</Text>
+      </Pressable>
+      <AboutSheet visible={aboutOpen} onClose={() => setAboutOpen(false)} />
     </ScrollView>
   );
 }

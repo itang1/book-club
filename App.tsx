@@ -159,7 +159,7 @@ function HomeStack({ club }: { club: BookClub }) {
       </Stack.Screen>
       {/* Adding a book is occasional, so it lives behind the + on Home rather
           than taking a permanent tab. */}
-      <Stack.Screen name="AddBook" options={{ title: 'Add a book' }}>
+      <Stack.Screen name="AddBook" options={{ title: 'Lend a book' }}>
         {(props) => <AddBookScreen {...props} owner={me} onAddBook={club.addBook} />}
       </Stack.Screen>
     </Stack.Navigator>

@@ -1,8 +1,10 @@
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useState } from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Book, Friend } from '../types';
 import { theme } from '../theme';
+import { AboutSheet } from '../components/AboutSheet';
 import {
   hasFinished,
   hasLetter,
@@ -24,6 +26,7 @@ type ProfileScreenProps = {
  */
 export function ProfileScreen({ books, me, friendCount }: ProfileScreenProps) {
   const insets = useSafeAreaInsets();
+  const [aboutOpen, setAboutOpen] = useState(false);
 
   const withMe = me ? books.filter((book) => holderId(book) === me.id) : [];
   const comingToMe = me ? books.filter((book) => nextInLineId(book) === me.id) : [];
@@ -97,7 +100,7 @@ export function ProfileScreen({ books, me, friendCount }: ProfileScreenProps) {
       <View style={styles.card}>
         <Text style={styles.cardTitle}>On its way to you</Text>
         {comingToMe.length === 0 ? (
-          <Text style={styles.empty}>No books queued for you yet.</Text>
+          <Text style={styles.empty}>Nothing on its way. Join a line and something will find you.</Text>
         ) : (
           comingToMe.map((book) => (
             <View key={book.id} style={styles.bookRow}>
@@ -114,11 +117,25 @@ export function ProfileScreen({ books, me, friendCount }: ProfileScreenProps) {
           ))
         )}
       </View>
+      <Pressable style={styles.aboutLink} onPress={() => setAboutOpen(true)}>
+        <Text style={styles.aboutLinkText}>The Rules of the Books · About</Text>
+      </Pressable>
+      <AboutSheet visible={aboutOpen} onClose={() => setAboutOpen(false)} />
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
+  aboutLink: {
+    alignItems: 'center',
+    paddingVertical: 14,
+    marginTop: 4,
+  },
+  aboutLinkText: {
+    color: theme.colors.accent,
+    fontWeight: '700',
+    fontSize: 14,
+  },
   container: {
     flex: 1,
     backgroundColor: theme.colors.background,

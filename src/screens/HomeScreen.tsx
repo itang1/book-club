@@ -46,17 +46,17 @@ export function HomeScreen({
       }
     >
       <View style={styles.headerWrap}>
-        <View style={styles.headerText}>
-          <Text style={styles.title}>Sisterhood of the Traveling Books</Text>
-          <Text style={styles.subtitle}>Track the books your friends pass around.</Text>
-        </View>
+        <Text style={styles.title}>Sisterhood of the Traveling Books</Text>
+        <Text style={styles.subtitle}>Like the Pants, but with pages.</Text>
+        {/* Labelled rather than a bare +: an icon on its own didn't say what
+            it would add until you tapped it. */}
         <Pressable
           style={styles.addButton}
           onPress={() => navigation.navigate('AddBook')}
           accessibilityRole="button"
-          accessibilityLabel="Add a book"
         >
-          <Ionicons name="add" size={24} color={theme.colors.onAccent} />
+          <Ionicons name="add" size={18} color={theme.colors.onAccent} />
+          <Text style={styles.addButtonText}>Lend a book</Text>
         </Pressable>
       </View>
 
@@ -97,7 +97,7 @@ export function HomeScreen({
 
       {others.length === 0 ? (
         <Text style={styles.empty}>
-          No other copies yet. Tap + to add one you're willing to lend.
+          Nothing travelling yet. Got a book you'd pass around? Lend it.
         </Text>
       ) : (
         others.map((book) => (
@@ -118,13 +118,7 @@ const styles = StyleSheet.create({
     paddingBottom: 32,
   },
   headerWrap: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
     marginBottom: 24,
-  },
-  headerText: {
-    flex: 1,
-    paddingRight: 12,
   },
   title: {
     fontFamily: theme.fonts.serif,
@@ -140,13 +134,21 @@ const styles = StyleSheet.create({
     color: theme.colors.muted,
   },
   addButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: theme.colors.accent,
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 4,
+    alignSelf: 'flex-start',
+    backgroundColor: theme.colors.accent,
+    borderRadius: 999,
+    paddingVertical: 10,
+    paddingLeft: 14,
+    paddingRight: 18,
+    marginTop: 16,
+  },
+  addButtonText: {
+    color: theme.colors.onAccent,
+    fontWeight: '700',
+    fontSize: 15,
+    marginLeft: 6,
   },
   sectionHeader: {
     flexDirection: 'row',
