@@ -68,6 +68,32 @@ asks, because every audience type is another case for every rule below.)
 - **Unfriending.** Changes nothing about books (friendship never opened them).
 - **Rereads, sealed letters, return home.** Unchanged.
 
+## Teaching the rules without a help page
+
+Nobody reads docs, and the app shouldn't grow a "How it works" screen. The
+rules get taught **at the moment they matter, in one sentence, naming the
+actual people and groups involved**. Each line below replaces a paragraph of
+explanation nobody would read.
+
+| Where | What it says | Teaches |
+| --- | --- | --- |
+| Lend a new book | A **Who can borrow it?** picker of your groups, with one line under it that updates: "Only Our Book Club can see it and join the line." | Groups decide who borrows |
+| Book page, under the cover | A small chip: 👥 **Our Book Club**. Tap it: "Only members of Our Book Club can see this copy." | Every book has one circle |
+| Friends tab subtitle | "Friends see what you're reading. To lend to each other, share a group." | Friends are social only |
+| A friend you share no group with | "Not in any of your groups yet. **Invite to a group**" | How to get from friend to borrower |
+| After tapping Add on a suggestion | The button becomes **Requested** | Friendship needs a yes |
+| An incoming request | "Becky wants to be friends · **Accept** · Not now" | Same, from the other side |
+| Unfriending (from ⋯ on a friend) | "Unfriend Becky? She won't be told." | Either side can leave, quietly |
+| A group invite | "Lena invited you to **The Traveling Pants**. Members see each other's books and can join their lines. **Join** · Not now" | Invites need a yes, and what joining means |
+| Books tab with no groups | "Books live in groups. Start one, or ask a friend for an invite." | Where books come from |
+| Welcome screen, under the form | Three short lines: *Lend a book to a group. Friends in it sign up. It travels with a letter at every stop, then comes home.* | The whole idea, once |
+
+And one new entry in the Rules of the Books, so the principle has a
+memorable form too: **"What's lent in the group stays in the group."**
+
+None of these is a new screen. They're labels, chips, button states, and
+empty states the features need anyway.
+
 ## Data model
 
 ```
