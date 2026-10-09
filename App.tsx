@@ -13,6 +13,7 @@ import { RootStackParamList, RootTabParamList } from './src/types';
 import { BookClub, useBookClub } from './src/lib/useBookClub';
 import { friendIdsOf } from './src/lib/friendGraph';
 import { isDevMode } from './src/lib/devMode';
+import { linking } from './src/lib/links';
 import { theme } from './src/theme';
 import { DevBar } from './src/components/DevBar';
 import { TabBar } from './src/components/TabBar';
@@ -139,7 +140,7 @@ function Tabs({ club }: { club: BookClub }) {
   const me = club.members.find((person) => person.id === club.currentUserId) ?? null;
 
   return (
-    <NavigationContainer>
+    <NavigationContainer linking={linking}>
       <Tab.Navigator
         tabBar={(props) => <TabBar {...props} />}
         // Each tab draws its own large serif title.

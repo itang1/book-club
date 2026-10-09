@@ -55,6 +55,7 @@ async function factsFor(row: Row): Promise<{ to: string; facts: EmailFacts } | n
     recipient: recipient.name,
     other: other.name,
     appUrl: APP_URL,
+    bookId: row.book_id ?? undefined,
   };
 
   if (row.book_id) {

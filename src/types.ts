@@ -1,3 +1,5 @@
+import type { NavigatorScreenParams } from '@react-navigation/native';
+
 /**
  * A friendship between two people, stored once per pair (a < b). It starts
  * "pending" from whoever asked and becomes "accepted" when the other says
@@ -105,13 +107,15 @@ export type Book = {
 };
 
 export type RootTabParamList = {
-  Home: undefined;
+  /** The Books tab holds its own stack: the list, a book, and Lend. */
+  Home: NavigatorScreenParams<RootStackParamList> | undefined;
   Friends: undefined;
   Profile: undefined;
 };
 
 export type RootStackParamList = {
   Home: undefined;
-  BookDetail: { bookId: string; bookTitle: string };
+  /** bookTitle is a nicety when navigating in-app; a link carries only the id. */
+  BookDetail: { bookId: string; bookTitle?: string };
   AddBook: undefined;
 };

@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Modal, Pressable, ScrollView, Share, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import { Book, Group, Letter } from '../types';
 import { theme } from '../theme';
 import { JourneyRoute } from '../components/JourneyRoute';
+import { bookLink } from '../lib/links';
 import {
   canReadLetter,
   canReturnHome,
@@ -28,7 +29,7 @@ import {
 } from '../lib/bookState';
 
 type BookDetailScreenProps = {
-  route: { params: { bookId: string; bookTitle: string } };
+  route: { params: { bookId: string; bookTitle?: string } };
   books: Book[];
   groups: Group[];
   currentUserId: string | null;
@@ -53,6 +54,8 @@ export function BookDetailScreen({
   const [confirmingTo, setConfirmingTo] = useState<string | null>(null);
   const [rating, setRating] = useState<number | undefined>(undefined);
   const [note, setNote] = useState('');
+  // Shown when the browser has no share sheet, to copy by hand.
+  const [shownLink, setShownLink] = useState<string | null>(null);
   const book = books.find((item) => item.id === bookId);
 
   if (!book) {
@@ -217,6 +220,28 @@ export function BookDetailScreen({
             </View>
           ) : null}
         </View>
+        {/* This copy's own address: for a message, or an NFC sticker. */}
+        <Pressable
+          style={styles.shareLink}
+          onPress={async () => {
+            const link = bookLink(book.id);
+            try {
+              await Share.share({ message: `${book.title}, on Sisterhood of the Traveling Books: ${link}` });
+            } catch {
+              setShownLink(link);
+            }
+          }}
+          accessibilityRole="button"
+        >
+          <Ionicons name="link-outline" size={14} color={theme.colors.accent} />
+          <Text style={styles.shareLinkText}>Share link</Text>
+        </Pressable>
+        {shownLink && (
+          <Text style={styles.shownLink} selectable>
+            {shownLink}
+          </Text>
+        )}
+
         {/* Whose it is, and the one circle it travels in. */}
         <Text style={styles.ownership}>
           {first(owner)}'s copy
@@ -429,11 +454,31 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: theme.colors.coverInk,
   },
+  shareLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-end',
+    marginTop: -12,
+    marginBottom: 14,
+    paddingVertical: 4,
+  },
+  shareLinkText: {
+    marginLeft: 4,
+    color: theme.colors.accent,
+    fontWeight: '700',
+    fontSize: 13,
+  },
+  shownLink: {
+    fontSize: 12,
+    color: theme.colors.text,
+    textAlign: 'right',
+    marginTop: -10,
+    marginBottom: 12,
+  },
   ownership: {
     fontSize: 12,
     color: theme.colors.muted,
     textAlign: 'center',
-    marginTop: -10,
     marginBottom: 16,
   },
   statusCard: {

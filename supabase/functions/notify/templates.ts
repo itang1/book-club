@@ -21,7 +21,10 @@ export type EmailFacts = {
   cities?: number;
   /** Whether the sender tucked a letter in (book_sent). */
   hasLetter?: boolean;
+  /** The site, ending in a slash; buttons link to pages under it. */
   appUrl: string;
+  /** The book's id, so the button opens that book. */
+  bookId?: string;
 };
 
 export type Email = { subject: string; html: string; text: string };
@@ -116,7 +119,15 @@ function content(facts: EmailFacts): Content {
 
 export function renderEmail(facts: EmailFacts): Email {
   const c = content(facts);
-  const settings = `${facts.appUrl}`;
+  const root = facts.appUrl.endsWith('/') ? facts.appUrl : `${facts.appUrl}/`;
+  // The button opens the thing the email is about; settings live on You.
+  const target =
+    facts.kind === 'friend_request'
+      ? `${root}friends`
+      : facts.bookId
+        ? `${root}b/${encodeURIComponent(facts.bookId)}`
+        : root;
+  const settings = `${root}you`;
   const cover = facts.book
     ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td style="background:${escape(
         facts.book.coverColor,
@@ -150,7 +161,7 @@ export function renderEmail(facts: EmailFacts): Email {
   ${paragraphs}
   ${aside}
   <table role="presentation" cellpadding="0" cellspacing="0" style="margin-top:8px;"><tr><td style="background:#7a5c48;border-radius:12px;">
-    <a href="${escape(facts.appUrl)}" style="display:inline-block;padding:13px 22px;color:#fffdfb;font-weight:bold;font-size:15px;text-decoration:none;">${escape(c.button)}</a>
+    <a href="${escape(target)}" style="display:inline-block;padding:13px 22px;color:#fffdfb;font-weight:bold;font-size:15px;text-decoration:none;">${escape(c.button)}</a>
   </td></tr></table>
 </td></tr>
 <tr><td style="padding:16px 6px 0;font-family:-apple-system,Helvetica,Arial,sans-serif;font-size:12px;line-height:18px;color:#54473f;text-align:center;">
@@ -165,10 +176,10 @@ export function renderEmail(facts: EmailFacts): Email {
     ...c.paragraphs.map((p) => unescape(p.replace(/<[^>]+>/g, ''))),
     ...(c.aside ? ['', c.aside.replace(/&#9993; /, '').replace(/&[a-z]+;/g, '')] : []),
     '',
-    `${c.button}: ${facts.appUrl}`,
+    `${c.button}: ${target}`,
     '',
     c.why,
-    'Choose which emails you get in the app: You → Emails.',
+    `Choose which emails you get: ${settings}`,
   ].join('\n');
 
   return { subject: c.subject, html, text };

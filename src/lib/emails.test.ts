@@ -30,4 +30,12 @@ describe('emails', () => {
     expect(email.subject).toBe('<b>Bad</b> wants to be friends');
     expect(email.text).toContain('<b>Bad</b> asked to be friends');
   });
+
+  it('buttons open the book, or Friends for a request; settings link to You', () => {
+    const sent = renderEmail({ kind: 'book_sent', recipient: 'T', other: 'C', book, bookId: 'sample-room', appUrl });
+    expect(sent.html).toContain('href="https://example.test/b/sample-room"');
+    expect(sent.html).toContain('href="https://example.test/you"');
+    const request = renderEmail({ kind: 'friend_request', recipient: 'T', other: 'C', appUrl });
+    expect(request.text).toContain('https://example.test/friends');
+  });
 });
