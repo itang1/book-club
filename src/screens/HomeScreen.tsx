@@ -135,7 +135,8 @@ export function HomeScreen({
         ))
       )}
 
-      <ClubYearCard books={books} />
+      {/* Real groups only: the sample club would swamp the numbers. */}
+      <ClubYearCard books={books.filter((book) => !isSampleBook(book))} currentUserId={currentUserId} />
       <AboutSheet visible={aboutOpen} onClose={() => setAboutOpen(false)} />
     </ScrollView>
   );

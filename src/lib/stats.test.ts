@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import type { Book } from '../types';
-import { clubYear, finishesByMonth, placesForOwner, routeOf } from './stats';
+import { clubYear, finishesByMonth, placesForOwner, routeOf, yearInReview } from './stats';
 
 const book: Book = {
   id: 'book',
@@ -85,5 +85,22 @@ describe('clubYear', () => {
       booksMoving: 1,
     });
     expect(clubYear([book], 2025).handoffs).toBe(0);
+  });
+});
+
+describe('yearInReview', () => {
+  it('finds the furthest-travelled and best-loved books, and your own year', () => {
+    const review = yearInReview([book], 2026, 'ana');
+    expect(review.mostTravelled).toMatchObject({ legs: 2 });
+    // Only one leg carries a letter, and it has no rating.
+    expect(review.bestLoved).toBeNull();
+    expect(review.placeList.map((p) => p.city)).toEqual(['Austin', 'Boston']);
+    expect(review.mine).toEqual({ finished: 1, lettersWritten: 1, sentTo: ['Bea'] });
+  });
+
+  it('is empty for a year with nothing in it', () => {
+    const review = yearInReview([book], 2020, 'ana');
+    expect(review.mostTravelled).toBeNull();
+    expect(review.handoffs).toBe(0);
   });
 });

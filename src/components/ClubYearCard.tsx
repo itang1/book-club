@@ -1,14 +1,26 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { useState } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Book } from '../types';
 import { theme } from '../theme';
 import { clubYear } from '../lib/stats';
+import { YearInReviewSheet } from './YearInReviewSheet';
 
 /**
- * The club's year so far, as a row of stat tiles. A preview of the year in
- * review: the numbers are live now, and the full look-back opens in December.
+ * The club's year so far, as a row of stat tiles. Tap for the year in
+ * books; in December the card says it's ready.
  */
-export function ClubYearCard({ books, now = new Date() }: { books: Book[]; now?: Date }) {
+export function ClubYearCard({
+  books,
+  currentUserId,
+  now = new Date(),
+}: {
+  /** Your real groups' books only. */
+  books: Book[];
+  currentUserId: string | null;
+  now?: Date;
+}) {
+  const [open, setOpen] = useState(false);
   const year = clubYear(books, now.getFullYear());
   const tiles = [
     { label: 'Handoffs', value: year.handoffs },
@@ -18,7 +30,7 @@ export function ClubYearCard({ books, now = new Date() }: { books: Book[]; now?:
   ];
 
   return (
-    <View style={styles.card}>
+    <Pressable style={styles.card} onPress={() => setOpen(true)} accessibilityRole="button">
       <Text style={styles.title}>The club's {year.year}</Text>
       <View style={styles.tiles}>
         {tiles.map((tile) => (
@@ -29,11 +41,19 @@ export function ClubYearCard({ books, now = new Date() }: { books: Book[]; now?:
         ))}
       </View>
       <Text style={styles.note}>
-        {now.getMonth() === 11
-          ? 'Your year in books is ready.'
-          : 'The full year in books, with who read the most and where it all went, arrives in December.'}
+        {now.getMonth() === 11 ? 'Your year in books is ready. ' : ''}
+        <Text style={styles.link}>
+          {now.getMonth() === 11 ? 'Open it' : 'See the year so far'}
+        </Text>
       </Text>
-    </View>
+      <YearInReviewSheet
+        visible={open}
+        onClose={() => setOpen(false)}
+        books={books}
+        currentUserId={currentUserId}
+        year={year.year}
+      />
+    </Pressable>
   );
 }
 
@@ -69,6 +89,10 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: theme.colors.muted,
     marginTop: 2,
+  },
+  link: {
+    color: theme.colors.accent,
+    fontWeight: '700',
   },
   note: {
     fontSize: 12,

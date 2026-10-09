@@ -228,3 +228,83 @@ export function clubYear(books: Book[], year: number): ClubYear {
   };
 }
 
+
+// ---------------------------------------------------------------------------
+// The year in review
+// ---------------------------------------------------------------------------
+
+export type YearInReview = ClubYear & {
+  /** The copy with the most legs this year. */
+  mostTravelled: { book: Book; legs: number } | null;
+  /** The best-loved book by its letters' stars this year (at least one rating). */
+  bestLoved: { book: Book; average: number; ratings: number } | null;
+  /** Every place a book was read this year, most visits first. */
+  placeList: PlaceVisit[];
+  /** The reader's own year. */
+  mine: { finished: number; lettersWritten: number; sentTo: string[] };
+};
+
+export function yearInReview(books: Book[], year: number, meId: string | null): YearInReview {
+  const legsInYear = (book: Book) =>
+    book.handoffs.filter((leg) => new Date(leg.happenedAt).getFullYear() === year);
+
+  let mostTravelled: YearInReview['mostTravelled'] = null;
+  let bestLoved: YearInReview['bestLoved'] = null;
+  const places = new Map<string, PlaceVisit>();
+  const sentTo = new Set<string>();
+  let finished = 0;
+  let lettersWritten = 0;
+
+  for (const book of books) {
+    const legs = legsInYear(book);
+    if (legs.length > 0 && (!mostTravelled || legs.length > mostTravelled.legs)) {
+      mostTravelled = { book, legs: legs.length };
+    }
+
+    const ratings = legs.map((leg) => leg.rating).filter((r): r is number => Boolean(r));
+    if (ratings.length > 0) {
+      const average = ratings.reduce((sum, r) => sum + r, 0) / ratings.length;
+      if (
+        !bestLoved ||
+        average > bestLoved.average ||
+        (average === bestLoved.average && ratings.length > bestLoved.ratings)
+      ) {
+        bestLoved = { book, average, ratings: ratings.length };
+      }
+    }
+
+    for (const leg of legs) {
+      const place = placeOf(book, leg);
+      const key = placeKey(place);
+      if (place && key) {
+        const existing = places.get(key);
+        if (existing) {
+          existing.visits += 1;
+        } else {
+          places.set(key, { city: place.city, region: place.region, visits: 1 });
+        }
+      }
+
+      if (meId && leg.fromFriend === meId) {
+        finished += 1;
+        if (hasLetter(leg)) {
+          lettersWritten += 1;
+        }
+        const name = book.queue.find((entry) => entry.id === leg.toFriend)?.name;
+        if (name) {
+          sentTo.add(name.split(' ')[0]);
+        }
+      }
+    }
+  }
+
+  return {
+    ...clubYear(books, year),
+    mostTravelled,
+    bestLoved,
+    placeList: [...places.values()].sort(
+      (a, b) => b.visits - a.visits || a.city.localeCompare(b.city),
+    ),
+    mine: { finished, lettersWritten, sentTo: [...sentTo].sort() },
+  };
+}
