@@ -26,3 +26,6 @@ yarn-error.log*
 
 # Full-size originals of cropped images; only the crops are published.
 assets/**/*-original.*
+
+# Written by `deno check`; the Supabase CLI resolves the function's imports itself.
+deno.lock

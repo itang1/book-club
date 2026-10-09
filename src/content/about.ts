@@ -75,7 +75,7 @@ export const pantsRules = [
   'You must never wash the Pants.',
   'You must never double-cuff the Pants. It’s tacky. There will never be a time when this will not be tacky.',
   'You must never say the word “phat” while wearing the Pants. You must also never think “I am fat” while wearing the Pants.',
-  'You must never let a boy [redacted].',
+  '[redacted]',
   'You must not pick your nose while wearing the Pants. You may, however, scratch casually your nostril while really kind of picking.',
   'Upon our reunion, you must follow the proper procedures for documenting your time in the Pants.',
   'You must write to your Sisters throughout the summer, no matter how much fun you are having without them.',
