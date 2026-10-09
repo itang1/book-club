@@ -27,8 +27,7 @@ export function Byline() {
           <View style={[styles.face, styles.facePlaceholder]} />
         )}
         <Text style={styles.text}>
-          Made by {authorName}, who read the Pants in middle school.{' '}
-          <Text style={styles.link}>The story</Text>
+          <Text style={styles.link}>Why this exists</Text> · a note from {authorName}
         </Text>
       </Pressable>
       <AboutSheet visible={open} onClose={() => setOpen(false)} />

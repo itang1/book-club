@@ -34,10 +34,13 @@ export const bio: BioRun[][] = [
   [
     'I read ',
     { text: 'The Sisterhood of the Traveling Pants', italic: true, href: SERIES_URL },
-    ' series by Ann Brashares in middle school (four best friends spend their first summer apart and share a thrift-store pair of jeans that somehow fits every one of them, mailing it back and forth with letters about everything that happens) and wanted, very badly, the life those fictional girls had.',
+    ' series by Ann Brashares in middle school: four best friends spend their first summer apart and share a thrift-store pair of jeans that somehow fit every one of them, mailing them back and forth with letters about everything that happens.',
   ],
   [
-    'I never found that life, or jeans that fit like that, but I did find friends who pass books around (a habit that spawned out of an annual long-distance Secret Santa tradition).',
+    'My twelve-year-old self wanted, very badly, the life those fictional girls had: summers that felt like adventures, friends who stayed close across an ocean, and a reason to write it all down for each other.',
+  ],
+  [
+    'I never found that life, or jeans that fit like that, but I did find friends who pass books around by USPS Media Mail (a ritual that spawned out of an annual long-distance Secret Santa tradition).',
   ],
 ];
 
