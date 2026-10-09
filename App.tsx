@@ -19,6 +19,7 @@ import { FriendsScreen } from './src/screens/FriendsScreen';
 import { AddBookScreen } from './src/screens/AddBookScreen';
 import { ProfileScreen } from './src/screens/ProfileScreen';
 import { BookDetailScreen } from './src/screens/BookDetailScreen';
+import { BookHeaderTitle } from './src/components/BookHeaderTitle';
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -110,7 +111,15 @@ function HomeStack({
           <BookDetailScreen {...props} books={books} onPassOn={onPassOn} />
         )}
         options={({ route }) => ({
-          title: route.params?.bookTitle ?? 'Book Detail',
+          headerTitle: () => (
+            <BookHeaderTitle
+              bookId={route.params?.bookId}
+              fallbackTitle={route.params?.bookTitle}
+              books={books}
+            />
+          ),
+          headerTitleAlign: 'center',
+          headerBackTitleVisible: false,
         })}
       />
     </Stack.Navigator>

@@ -4,7 +4,7 @@ import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-nati
 import { Book } from '../types';
 import { theme } from '../theme';
 import {
-  citiesVisited,
+  placesVisited,
   currentOwnerId,
   daysInCirculation,
   formatDate,
@@ -44,11 +44,11 @@ export function BookDetailScreen({ route, books, onPassOn }: BookDetailScreenPro
   return (
     <>
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+        {/* No cover art in the data model yet, so this is a colour swatch
+            derived from the title. Title and author live in the nav header. */}
         <View style={[styles.cover, { backgroundColor: book.coverColor }]}>
-          <Text style={styles.coverText}>{book.title}</Text>
+          <View style={styles.coverSpine} />
         </View>
-
-        <Text style={styles.author}>{book.author}</Text>
 
         <View style={styles.statRow}>
           <View style={styles.stat}>
@@ -56,8 +56,8 @@ export function BookDetailScreen({ route, books, onPassOn }: BookDetailScreenPro
             <Text style={styles.statLabel}>readers so far</Text>
           </View>
           <View style={styles.stat}>
-            <Text style={styles.statValue}>{citiesVisited(book)}</Text>
-            <Text style={styles.statLabel}>cities visited</Text>
+            <Text style={styles.statValue}>{placesVisited(book)}</Text>
+            <Text style={styles.statLabel}>places visited</Text>
           </View>
           <View style={styles.stat}>
             <Text style={styles.statValue}>{daysInCirculation(book)}</Text>
@@ -198,26 +198,23 @@ const styles = StyleSheet.create({
   },
   cover: {
     width: '100%',
-    height: 180,
+    height: 150,
     borderRadius: 24,
-    justifyContent: 'flex-end',
-    padding: 18,
+    overflow: 'hidden',
     marginBottom: 20,
   },
-  coverText: {
-    color: '#fff',
-    fontSize: 22,
-    fontWeight: '800',
+  coverSpine: {
+    position: 'absolute',
+    left: 18,
+    top: 0,
+    bottom: 0,
+    width: 6,
+    backgroundColor: 'rgba(255, 255, 255, 0.28)',
   },
   title: {
     fontSize: 28,
     fontWeight: '800',
     color: theme.colors.text,
-  },
-  author: {
-    fontSize: 16,
-    color: theme.colors.muted,
-    marginBottom: 18,
   },
   statRow: {
     flexDirection: 'row',

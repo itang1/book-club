@@ -52,14 +52,43 @@ export function friendNameIn(book: Book, friendId: string | null): string {
   return book.queue.find((entry) => entry.id === friendId)?.name ?? 'Unknown';
 }
 
-/** How many distinct cities this copy has visited. */
-export function citiesVisited(book: Book): number {
+/**
+ * How many distinct places this copy has been.
+ *
+ * Keyed on city *and* region, so two readers in the same city count once — the
+ * book didn't travel anywhere new — while two Springfields in different states
+ * stay separate. Deliberately makes no attempt to merge neighbouring towns:
+ * Seattle and Bellevue are two places, and deciding otherwise would need real
+ * coordinates and an arbitrary radius. Simple and explainable beats clever and
+ * surprising here.
+ */
+export function placesVisited(book: Book): number {
   const legs = journey(book);
-  const cities = legs.map(
-    (leg) => book.queue.find((entry) => entry.id === leg.toFriend)?.city,
-  );
+  const places = legs.map((leg) => {
+    const entry = book.queue.find((person) => person.id === leg.toFriend);
+    if (!entry) {
+      return null;
+    }
 
-  return new Set(cities.filter(Boolean)).size;
+    return `${entry.city.trim().toLowerCase()}|${entry.state.trim().toLowerCase()}`;
+  });
+
+  return new Set(places.filter(Boolean)).size;
+}
+
+/** The longest any single reader has held this copy, in days. */
+export function longestHoldDays(book: Book): number {
+  const legs = journey(book);
+  let longest = 0;
+
+  for (let i = 0; i < legs.length; i += 1) {
+    const held = heldForDays(legs, i);
+    if (held !== null && held > longest) {
+      longest = held;
+    }
+  }
+
+  return longest;
 }
 
 export function daysInCirculation(book: Book): number {

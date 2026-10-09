@@ -10,14 +10,13 @@ import {
 
 import { Book, Friend } from '../types';
 import { theme } from '../theme';
+import { coverColorFor } from '../lib/covers';
 
 type AddBookScreenProps = {
   friends: Friend[];
   onAddBook: (book: Book) => void;
   onAddFriend: (friend: Friend) => void;
 };
-
-const coverPalette = ['#d9a77d', '#b4b8a9', '#c7a6b5', '#c89366', '#93a7a5'];
 
 export function AddBookScreen({ friends, onAddBook, onAddFriend }: AddBookScreenProps) {
   const [title, setTitle] = useState('');
@@ -43,7 +42,7 @@ export function AddBookScreen({ friends, onAddBook, onAddFriend }: AddBookScreen
       id: bookId,
       title: title.trim(),
       author: author.trim(),
-      coverColor: coverPalette[Math.floor(Math.random() * coverPalette.length)],
+      coverColor: coverColorFor(title.trim(), author.trim()),
       status: 'reading',
       queue: rotated.map((friend, index) => ({
         ...friend,
