@@ -1,10 +1,25 @@
 import { createClient } from '@supabase/supabase-js';
 
-export const supabaseUrl =
-  process.env.EXPO_PUBLIC_SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL ?? '';
+/**
+ * The EXPO_PUBLIC_ prefix is required, not stylistic: Expo only inlines
+ * variables with that prefix into the client bundle. A differently named
+ * variable is simply absent at runtime, and the app falls back to mock data
+ * with no error — so these names cannot be changed to match other projects.
+ * (three-lines uses NEXT_PUBLIC_ for the same reason, on Next.js's side.)
+ *
+ * Values are trimmed because a key pasted from a dashboard often carries a
+ * trailing newline, which would otherwise end up in an auth header.
+ */
+export const supabaseUrl = (process.env.EXPO_PUBLIC_SUPABASE_URL ?? '').trim();
 
-export const supabaseAnonKey =
-  process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? '';
+/**
+ * Accepts either key format: the current `sb_publishable_...` or a legacy
+ * `anon` JWT (`eyJ...`). The variable keeps the ANON_KEY name to match the
+ * rest of the Supabase ecosystem. Never a `sb_secret_...` or service-role
+ * key — EXPO_PUBLIC_ values are compiled into the bundle and served to every
+ * visitor, and those keys bypass row-level security.
+ */
+export const supabaseAnonKey = (process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '').trim();
 
 export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey);
 
