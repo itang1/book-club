@@ -15,9 +15,9 @@ export const theme = {
     // Text and icons sitting on accent or stamp.
     onAccent: '#fffdfb',
     /**
-     * Library-stamp red, kept for one job: "it's your turn". The browns are
-     * all one family, so nothing in the palette could stand out; this can,
-     * because it appears nowhere else.
+     * Library-stamp red, kept for one job: "this book is in your hands".
+     * The browns are all one family, so nothing in the palette could stand
+     * out; this can, because it appears nowhere else.
      */
     stamp: '#a6463a',
     stampSoft: '#f6e1dc',

@@ -3,6 +3,7 @@ import type { Session } from '@supabase/supabase-js';
 
 import type { Book, Friend, Friendship, Handoff, Letter } from '../types';
 import {
+  agreeToRules,
   createBook,
   createFriend,
   createFriendship,
@@ -183,6 +184,21 @@ export function useBookClub() {
     setCurrentUserId(claim.personId);
   };
 
+  /** "I agree" on the Rules of the Books, once per person. */
+  const handleAgreeToRules = () => {
+    if (!currentUserId) {
+      return;
+    }
+
+    const at = new Date().toISOString();
+    setMembers((current) =>
+      current.map((person) =>
+        person.id === currentUserId ? { ...person, agreedRulesAt: at } : person,
+      ),
+    );
+    track('save that you agreed to the rules', agreeToRules(currentUserId));
+  };
+
   /** Signs out of the account, or in demo mode forgets the local choice. */
   const signOut = () => {
     if (usesAccounts) {
@@ -357,6 +373,7 @@ export function useBookClub() {
     refresh,
     chooseReader,
     claimExisting,
+    agreeToRules: handleAgreeToRules,
     signOut,
     createProfile,
     addFriend,

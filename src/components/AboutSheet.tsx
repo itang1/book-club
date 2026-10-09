@@ -43,63 +43,73 @@ export function AboutSheet({ visible, onClose }: AboutSheetProps) {
         </View>
 
         <ScrollView contentContainerStyle={styles.scroll}>
-          {/* Capped width so lines stay readable on a computer screen. */}
-          <View style={styles.column}>
-            <Text style={styles.heading}>The Rules of the Books</Text>
-            <View style={styles.card}>
-              {rules.map((rule, index) => (
-                <View key={rule} style={[styles.rule, index > 0 && styles.ruleDivider]}>
-                  <Text style={styles.ruleNumber}>{index + 1}</Text>
-                  <Text style={styles.ruleText}>{rule}</Text>
-                </View>
-              ))}
-            </View>
-
-            {/* Where ours came from. */}
-            <TapedNote />
-
-            <Text style={styles.heading}>{noteTitle}</Text>
-            <View style={styles.card}>
-              <View style={styles.polaroid}>
-                {photo ? (
-                  <Image source={photo} style={styles.photo} resizeMode="cover" />
-                ) : (
-                  // A bookplate stands in when there's no photo.
-                  <View style={[styles.photo, styles.photoPlaceholder]}>
-                    <Text style={styles.exLibris}>Ex Libris</Text>
-                    <Text style={styles.exLibrisName}>{authorName}</Text>
-                  </View>
-                )}
-                <Text style={styles.caption}>{photoCaption}</Text>
-                {photo && <Text style={styles.credit}>{photoCredit}</Text>}
-              </View>
-
-              {bio.map((paragraph, index) => (
-                <Text key={index} style={styles.bio}>
-                  {paragraph.map((run, runIndex) =>
-                    typeof run === 'string' ? (
-                      run
-                    ) : (
-                      <Text
-                        key={runIndex}
-                        style={[run.italic && styles.italic, run.href && styles.link]}
-                        onPress={run.href ? () => Linking.openURL(run.href as string) : undefined}
-                        accessibilityRole={run.href ? 'link' : undefined}
-                      >
-                        {run.text}
-                      </Text>
-                    ),
-                  )}
-                </Text>
-              ))}
-              <Text style={styles.signature}>— {authorName}</Text>
-            </View>
-
-            <Text style={styles.homage}>{homage}</Text>
-          </View>
+          <AboutContent />
         </ScrollView>
       </View>
     </Modal>
+  );
+}
+
+/**
+ * The page's body, shared with the one-time agreement screen: the Rules of
+ * the Books, the Rules of the Pants taped beside them, and About.
+ */
+export function AboutContent() {
+  // Capped width so lines stay readable on a computer screen.
+  return (
+    <View style={styles.column}>
+      <Text style={styles.heading}>The Rules of the Books</Text>
+      <View style={styles.card}>
+        {rules.map((rule, index) => (
+          <View key={rule} style={[styles.rule, index > 0 && styles.ruleDivider]}>
+            <Text style={styles.ruleNumber}>{index + 1}</Text>
+            <Text style={styles.ruleText}>{rule}</Text>
+          </View>
+        ))}
+      </View>
+
+      {/* Where ours came from. */}
+      <TapedNote />
+
+      <Text style={styles.heading}>{noteTitle}</Text>
+      <View style={styles.card}>
+        <View style={styles.polaroid}>
+          {photo ? (
+            <Image source={photo} style={styles.photo} resizeMode="cover" />
+          ) : (
+            // A bookplate stands in when there's no photo.
+            <View style={[styles.photo, styles.photoPlaceholder]}>
+              <Text style={styles.exLibris}>Ex Libris</Text>
+              <Text style={styles.exLibrisName}>{authorName}</Text>
+            </View>
+          )}
+          <Text style={styles.caption}>{photoCaption}</Text>
+          {photo && <Text style={styles.credit}>{photoCredit}</Text>}
+        </View>
+
+        {bio.map((paragraph, index) => (
+          <Text key={index} style={styles.bio}>
+            {paragraph.map((run, runIndex) =>
+              typeof run === 'string' ? (
+                run
+              ) : (
+                <Text
+                  key={runIndex}
+                  style={[run.italic && styles.italic, run.href && styles.link]}
+                  onPress={run.href ? () => Linking.openURL(run.href as string) : undefined}
+                  accessibilityRole={run.href ? 'link' : undefined}
+                >
+                  {run.text}
+                </Text>
+              ),
+            )}
+          </Text>
+        ))}
+        <Text style={styles.signature}>— {authorName}</Text>
+      </View>
+
+      <Text style={styles.homage}>{homage}</Text>
+    </View>
   );
 }
 

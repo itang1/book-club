@@ -12,6 +12,8 @@ export type Friend = {
   email?: string;
   /** The Supabase Auth account this person signs in with, once linked. */
   userId?: string;
+  /** When they agreed to the Rules of the Books; unset until they do. */
+  agreedRulesAt?: string;
 };
 
 /**

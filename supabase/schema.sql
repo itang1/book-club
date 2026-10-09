@@ -112,6 +112,11 @@ alter table public.handoffs add column if not exists rating smallint
 alter table public.friends add column if not exists user_id uuid unique
   references auth.users (id) on delete set null;
 
+-- When this person agreed to the Rules of the Books: the one screen everyone
+-- sees once, after joining. Null until they do. Set through "edit your own
+-- profile" below, so only by them.
+alter table public.friends add column if not exists agreed_rules_at timestamptz;
+
 -- Retired: an email-to-profile table that had to be filled in by hand before
 -- anyone could sign in. Claiming is now done in the app.
 drop table if exists public.profile_claims;

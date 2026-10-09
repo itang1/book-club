@@ -199,7 +199,7 @@ export function BookDetailScreen({
         </View>
 
         {iHoldIt && (
-          <Text style={styles.yourTurn}>Your turn · it's with you</Text>
+          <Text style={styles.inHands}>In your hands</Text>
         )}
         <View style={styles.action}>{renderAction()}</View>
 
@@ -531,7 +531,7 @@ const styles = StyleSheet.create({
     textAlign: 'right',
     textTransform: 'capitalize',
   },
-  yourTurn: {
+  inHands: {
     alignSelf: 'center',
     marginTop: 6,
     color: theme.colors.stamp,

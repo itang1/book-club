@@ -79,7 +79,7 @@ export function HomeScreen({
       {mine.length > 0 && (
         <>
           <View style={styles.sectionHeader}>
-            <Text style={[styles.sectionTitle, styles.sectionTitleMine]}>Your turn</Text>
+            <Text style={[styles.sectionTitle, styles.sectionTitleMine]}>In your hands</Text>
           </View>
           {mine.map((book) => (
             <BookCard key={book.id} book={book} currentUserId={currentUserId} onPress={open} />

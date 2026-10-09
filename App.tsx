@@ -23,6 +23,7 @@ import { ProfileScreen } from './src/screens/ProfileScreen';
 import { BookDetailScreen } from './src/screens/BookDetailScreen';
 import { WelcomeScreen } from './src/screens/WelcomeScreen';
 import { SignInScreen } from './src/screens/SignInScreen';
+import { RulesAgreementScreen } from './src/screens/RulesAgreementScreen';
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -159,6 +160,7 @@ function Tabs({ club }: { club: BookClub }) {
 function Root() {
   const club = useBookClub();
   const insets = useSafeAreaInsets();
+  const me = club.members.find((person) => person.id === club.currentUserId);
 
   let body: React.ReactNode;
   if (!club.loaded) {
@@ -181,6 +183,11 @@ function Root() {
         email={club.usesAccounts ? club.email : null}
         onSignOut={club.usesAccounts ? club.signOut : undefined}
       />
+    );
+  } else if (me && !me.agreedRulesAt) {
+    // Once per person, right after joining.
+    body = (
+      <RulesAgreementScreen firstName={me.name.split(' ')[0]} onAgree={club.agreeToRules} />
     );
   } else {
     body = <Tabs club={club} />;

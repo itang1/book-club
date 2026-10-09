@@ -16,6 +16,7 @@ type FriendRow = {
   address: string | null;
   email: string | null;
   user_id: string | null;
+  agreed_rules_at: string | null;
 };
 
 type BookRow = {
@@ -82,6 +83,7 @@ function toFriend(row: FriendRow): Friend {
     address: row.address ?? undefined,
     email: row.email ?? undefined,
     userId: row.user_id ?? undefined,
+    agreedRulesAt: row.agreed_rules_at ?? undefined,
   };
 }
 
@@ -94,6 +96,7 @@ function fromFriend(friend: Friend): FriendRow {
     address: friend.address ?? null,
     email: friend.email ?? null,
     user_id: friend.userId ?? null,
+    agreed_rules_at: friend.agreedRulesAt ?? null,
   };
 }
 
@@ -261,6 +264,29 @@ export async function createFriend(friend: Friend): Promise<SaveError> {
 }
 
 /** Befriend two people, both ways. Stored smaller id first; see schema.sql. */
+/** Record that you agreed to the Rules of the Books, and when. */
+export async function agreeToRules(personId: string): Promise<SaveError> {
+  if (!supabase) {
+    return null;
+  }
+
+  try {
+    const { error } = await supabase
+      .from('friends')
+      .update({ agreed_rules_at: new Date().toISOString() })
+      .eq('id', personId);
+    if (error) {
+      console.warn('Supabase agreeToRules failed:', error.message);
+      return error.message;
+    }
+
+    return null;
+  } catch (error) {
+    console.warn('Agree to rules error:', error);
+    return describe(error);
+  }
+}
+
 export async function createFriendship([a, b]: Friendship): Promise<SaveError> {
   if (!supabase) {
     return null;
