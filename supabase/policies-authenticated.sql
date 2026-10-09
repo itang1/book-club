@@ -65,6 +65,18 @@ create policy "signed-in users can leave the queue while waiting"
   on public.reading_queue for delete to authenticated using (status = 'waiting');
 
 -- ---------------------------------------------------------------
+-- friendships
+-- ---------------------------------------------------------------
+drop policy if exists "friendships are viewable by everyone" on public.friendships;
+drop policy if exists "anyone can add a friendship" on public.friendships;
+
+create policy "signed-in users can read friendships"
+  on public.friendships for select to authenticated using (true);
+
+create policy "signed-in users can add friendships"
+  on public.friendships for insert to authenticated with check (true);
+
+-- ---------------------------------------------------------------
 -- handoffs — still append-only: no update or delete policy is granted,
 -- so travel history cannot be rewritten even by a signed-in user.
 -- ---------------------------------------------------------------
@@ -89,6 +101,7 @@ revoke all on public.friends from anon;
 revoke all on public.books from anon;
 revoke all on public.reading_queue from anon;
 revoke all on public.handoffs from anon;
+revoke all on public.friendships from anon;
 revoke all on public.book_current_location from anon;
 
 -- The authenticated role keeps the grants from schema.sql. handoffs stays

@@ -1,12 +1,12 @@
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Book, Friend } from '../types';
 import { theme } from '../theme';
 import {
   hasFinished,
+  hasLetter,
   holderId,
-  journey,
   lastActivityAt,
   nextInLineId,
   relativeTime,
@@ -14,30 +14,25 @@ import {
 
 type ProfileScreenProps = {
   books: Book[];
-  friends: Friend[];
-  currentUserId: string | null;
-  onChangeUser: (friendId: string) => void;
+  me: Friend | null;
+  friendCount: number;
 };
 
-export function ProfileScreen({
-  books,
-  friends,
-  currentUserId,
-  onChangeUser,
-}: ProfileScreenProps) {
+/**
+ * Just you: who you are, and the books in your life right now. Switching
+ * between people is a development tool and lives in the dev bar, not here.
+ */
+export function ProfileScreen({ books, me, friendCount }: ProfileScreenProps) {
   const insets = useSafeAreaInsets();
-  const me = friends.find((friend) => friend.id === currentUserId) ?? null;
 
-  // There is no auth yet, so "who am I" is a local choice. Every stat below is
-  // scoped to that person rather than the whole group.
   const withMe = me ? books.filter((book) => holderId(book) === me.id) : [];
   const comingToMe = me ? books.filter((book) => nextInLineId(book) === me.id) : [];
   // From the log, so a reread in progress doesn't un-finish the first read.
   const finished = me ? books.filter((book) => hasFinished(book, me.id)) : [];
-  const handoffsMade = me
+  const lettersWritten = me
     ? books.reduce(
         (sum, book) =>
-          sum + journey(book).filter((leg) => leg.fromFriend === me.id).length,
+          sum + book.handoffs.filter((leg) => leg.fromFriend === me.id && hasLetter(leg)).length,
         0,
       )
     : 0;
@@ -47,33 +42,18 @@ export function ProfileScreen({
       style={styles.container}
       contentContainerStyle={[styles.content, { paddingTop: insets.top + 20 }]}
     >
-      <Text style={styles.title}>You</Text>
-      <Text style={styles.subtitle}>
-        {me ? `Reading as ${me.name} — ${me.city}, ${me.state}` : 'Pick who you are in the group.'}
-      </Text>
-
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>I am</Text>
-        <View style={styles.chipRow}>
-          {friends.map((friend) => {
-            const selected = friend.id === currentUserId;
-
-            return (
-              <Pressable
-                key={friend.id}
-                onPress={() => onChangeUser(friend.id)}
-                style={[styles.chip, selected && styles.chipSelected]}
-              >
-                <Text style={[styles.chipText, selected && styles.chipTextSelected]}>
-                  {friend.name}
-                </Text>
-              </Pressable>
-            );
-          })}
+      <View style={styles.header}>
+        <View style={styles.avatar}>
+          <Text style={styles.avatarText}>{me?.name.charAt(0) ?? '?'}</Text>
         </View>
-        <Text style={styles.cardNote}>
-          Stands in for sign-in. Remembered on this device.
-        </Text>
+        <View style={styles.headerText}>
+          <Text style={styles.title}>{me?.name ?? 'You'}</Text>
+          {me && (
+            <Text style={styles.subtitle}>
+              {me.city}, {me.state} · {friendCount} {friendCount === 1 ? 'friend' : 'friends'}
+            </Text>
+          )}
+        </View>
       </View>
 
       <View style={styles.grid}>
@@ -90,8 +70,8 @@ export function ProfileScreen({
           <Text style={styles.statLabel}>Books finished</Text>
         </View>
         <View style={styles.statCard}>
-          <Text style={styles.statValue}>{handoffsMade}</Text>
-          <Text style={styles.statLabel}>Handoffs made</Text>
+          <Text style={styles.statValue}>{lettersWritten}</Text>
+          <Text style={styles.statLabel}>Letters written</Text>
         </View>
       </View>
 
@@ -147,17 +127,40 @@ const styles = StyleSheet.create({
     padding: 20,
     paddingBottom: 32,
   },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  headerText: {
+    flex: 1,
+  },
+  avatar: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: theme.colors.avatar,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 14,
+  },
+  avatarText: {
+    fontFamily: theme.fonts.serif,
+    fontSize: 26,
+    fontWeight: '700',
+    color: theme.colors.text,
+  },
   title: {
     fontFamily: theme.fonts.serif,
-    fontSize: 30,
+    fontSize: 28,
+    lineHeight: 34,
     fontWeight: '700',
-    marginBottom: 6,
     color: theme.colors.text,
   },
   subtitle: {
     color: theme.colors.muted,
-    fontSize: 15,
-    marginBottom: 18,
+    fontSize: 14,
+    marginTop: 2,
   },
   card: {
     backgroundColor: theme.colors.card,
@@ -173,34 +176,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: theme.colors.text,
     marginBottom: 12,
-  },
-  cardNote: {
-    color: theme.colors.muted,
-    fontSize: 11,
-    marginTop: 4,
-  },
-  chipRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-  },
-  chip: {
-    backgroundColor: theme.colors.soft,
-    borderRadius: 999,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    marginRight: 8,
-    marginBottom: 8,
-  },
-  chipSelected: {
-    backgroundColor: theme.colors.accent,
-  },
-  chipText: {
-    color: theme.colors.text,
-    fontWeight: '700',
-    fontSize: 12,
-  },
-  chipTextSelected: {
-    color: theme.colors.onAccent,
   },
   grid: {
     flexDirection: 'row',

@@ -24,3 +24,12 @@ export async function saveReaderId(friendId: string): Promise<void> {
     // Not worth interrupting anyone over.
   }
 }
+
+/** Forget who's reading here, so the next launch shows the welcome screen. */
+export async function clearReaderId(): Promise<void> {
+  try {
+    await AsyncStorage.removeItem(KEY);
+  } catch {
+    // As above.
+  }
+}

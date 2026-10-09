@@ -73,10 +73,24 @@ home in Bethesda.
   circulation. **+** adds a copy.
 - **Book Detail** — join or leave the line, pass it on or send it home, and the
   full travel history with each reader's letter
-- **Friends** — the group, each person's status derived *per book*; add a
-  friend at the bottom
-- **You** — pick who you are (remembered on this device), what's in your hands,
-  what's heading your way
+- **Friends** — your friends and what each is reading, "People you may know"
+  (by mutual friends and shared books), and an invite link for someone new
+- **You** — your profile: what's in your hands, what's heading your way, books
+  finished, letters written
+- **Welcome** — first launch on a device: make your own profile. Opened from an
+  invite link, you start out friends with whoever sent it.
+
+### Dev mode
+
+Under `expo start`, a **DEV MODE** bar sits across the top of the app. Tap it to
+view as anyone in the club, or sign out to see the welcome screen. It's hidden
+in exported builds unless `EXPO_PUBLIC_DEV_MODE=true`.
+
+### Reading it again
+
+A past reader can **Join the line to reread**. Whether someone has read a copy
+comes from the handoff log (did they ever pass it on?), so a second read never
+re-seals letters they've opened.
 
 ### The line is opt-in
 
@@ -151,6 +165,13 @@ npm run web        # browser
 
 Out of the box it runs on fictional seed data — no backend required.
 
+**Which people you see depends on `.env`.** With no Supabase credentials, the
+app shows the fictional demo group (Lena, Tibby, Carmen, Bridget) from
+`src/data/mockData.ts`. With credentials, it shows whatever is in that database
+and never mixes in the demo group. A public demo should be built without your
+`.env`, or pointed at a separate Supabase project seeded from
+`seed.example.sql`.
+
 ### Deploying the web build
 
 ```bash
@@ -172,12 +193,17 @@ src/
 │   ├── BookDetailScreen.tsx   # The line, history, letters, handoff
 │   ├── FriendsScreen.tsx      # The group, add a friend
 │   ├── AddBookScreen.tsx      # Add a copy
+│   ├── WelcomeScreen.tsx      # Make your profile
 │   └── ProfileScreen.tsx      # Your own view
 ├── data/
 │   └── mockData.ts            # Fictional seed group
 ├── lib/
 │   ├── supabase.ts            # Client setup
 │   ├── bookClubService.ts     # Row mappers + fallback to mock data
+│   ├── useBookClub.ts         # All club state and every change to it
+│   ├── friendGraph.ts         # Friends and "people you may know"
+│   ├── invite.ts              # Invite links
+│   ├── devMode.ts             # When the dev bar shows
 │   ├── identity.ts            # Who's reading, remembered on this device
 │   └── bookState.ts           # Derives location/next in line/status/history
 ├── theme.ts
@@ -186,10 +212,11 @@ src/
 
 ## Database
 
-Supabase (Postgres). Four tables:
+Supabase (Postgres). Five tables:
 
 - **books** — title, author, cover color
 - **friends** — the group (name, location, contact)
+- **friendships** — who is friends with whom, one row per pair
 - **reading_queue** — who signed up, in order, plus each reader's progress
 - **handoffs** — the append-only journey log location derives from, with the
   passer's letter

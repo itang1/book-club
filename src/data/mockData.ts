@@ -1,4 +1,4 @@
-import type { Book, Friend } from '../types';
+import type { Book, Friend, Friendship } from '../types';
 
 /**
  * Fictional demo group: the four girls from The Sisterhood of the Traveling
@@ -195,4 +195,16 @@ export const booksSeed: Book[] = [
       },
     ],
   },
+];
+
+/**
+ * Who's friends with whom, one pair each. Deliberately incomplete so the
+ * demo has a suggestion to show: Lena and Bridget aren't friends yet but
+ * share Carmen and Tibby.
+ */
+export const friendshipsSeed: Friendship[] = [
+  ['friend-carmen', 'friend-lena'],
+  ['friend-lena', 'friend-tibby'],
+  ['friend-bridget', 'friend-carmen'],
+  ['friend-bridget', 'friend-tibby'],
 ];

@@ -8,18 +8,15 @@ import { coverColorFor } from '../lib/covers';
 
 type AddBookScreenProps = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'AddBook'>;
-  friends: Friend[];
-  currentUserId: string | null;
+  /** You add your own copies; nobody adds a book on someone else's behalf. */
+  owner: Friend | null;
   onAddBook: (book: Book) => void;
 };
 
-export function AddBookScreen({ navigation, friends, currentUserId, onAddBook }: AddBookScreenProps) {
+export function AddBookScreen({ navigation, owner, onAddBook }: AddBookScreenProps) {
   const [title, setTitle] = useState('');
   const [author, setAuthor] = useState('');
-  // Most often you're adding your own copy, so that's the default.
-  const [ownerId, setOwnerId] = useState<string>(currentUserId ?? friends[0]?.id ?? '');
 
-  const owner = friends.find((friend) => friend.id === ownerId);
   const missing = [!title.trim() && 'a title', !author.trim() && 'an author'].filter(Boolean);
   const ready = missing.length === 0 && Boolean(owner);
 
@@ -85,28 +82,10 @@ export function AddBookScreen({ navigation, friends, currentUserId, onAddBook }:
           style={styles.input}
         />
 
-        <Text style={styles.fieldLabel}>Whose copy is it?</Text>
-        <View style={styles.friendRow}>
-          {friends.map((friend) => {
-            const selected = ownerId === friend.id;
-
-            return (
-              <Pressable
-                key={friend.id}
-                onPress={() => setOwnerId(friend.id)}
-                style={[styles.friendChip, selected && styles.friendChipSelected]}
-              >
-                <Text style={[styles.friendChipText, selected && styles.friendChipTextSelected]}>
-                  {friend.id === currentUserId ? `${friend.name} (you)` : friend.name}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
-
         {owner && (
           <Text style={styles.hint}>
-            Starts with {owner.name} in {owner.city}, and comes back to them at the end.
+            Your copy, starting with you in {owner.city}. It comes back to you once
+            everyone who signs up has read it.
           </Text>
         )}
 
@@ -165,31 +144,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
     marginBottom: 6,
-  },
-  friendRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginTop: 6,
-    marginBottom: 8,
-  },
-  friendChip: {
-    backgroundColor: theme.colors.soft,
-    borderRadius: 999,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    marginRight: 8,
-    marginBottom: 8,
-  },
-  friendChipSelected: {
-    backgroundColor: theme.colors.accent,
-  },
-  friendChipText: {
-    color: theme.colors.text,
-    fontWeight: '700',
-    fontSize: 12,
-  },
-  friendChipTextSelected: {
-    color: theme.colors.onAccent,
   },
   hint: {
     marginTop: 8,

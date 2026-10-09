@@ -103,6 +103,20 @@ alter table public.handoffs add column if not exists note text;
 alter table public.handoffs add column if not exists rating smallint
   check (rating between 1 and 5);
 
+-- ---------------------------------------------------------------
+-- Friendships: who is friends with whom. `friends` is everyone in the club;
+-- this is the graph between them. One row per pair, stored with the smaller
+-- id first so (a, b) and (b, a) can't both exist. Mutual by design: adding a
+-- friend befriends both ways.
+-- ---------------------------------------------------------------
+create table if not exists public.friendships (
+  friend_a text not null references public.friends (id) on delete cascade,
+  friend_b text not null references public.friends (id) on delete cascade,
+  created_at timestamptz not null default now(),
+  primary key (friend_a, friend_b),
+  check (friend_a < friend_b)
+);
+
 create index if not exists reading_queue_book_idx on public.reading_queue (book_id, position);
 create index if not exists handoffs_book_idx on public.handoffs (book_id, happened_at);
 
@@ -148,6 +162,8 @@ grant delete on public.reading_queue to anon, authenticated;
 -- cannot be rewritten even if a policy is added by mistake later.
 grant select, insert on public.handoffs to anon, authenticated;
 
+grant select, insert on public.friendships to anon, authenticated;
+
 grant select on public.book_current_location to anon, authenticated;
 
 -- ---------------------------------------------------------------
@@ -157,6 +173,7 @@ alter table public.friends enable row level security;
 alter table public.books enable row level security;
 alter table public.reading_queue enable row level security;
 alter table public.handoffs enable row level security;
+alter table public.friendships enable row level security;
 
 drop policy if exists "friends are viewable by everyone" on public.friends;
 create policy "friends are viewable by everyone"
@@ -193,6 +210,14 @@ create policy "anyone can update the queue"
 drop policy if exists "waiting readers can leave the queue" on public.reading_queue;
 create policy "waiting readers can leave the queue"
   on public.reading_queue for delete using (status = 'waiting');
+
+drop policy if exists "friendships are viewable by everyone" on public.friendships;
+create policy "friendships are viewable by everyone"
+  on public.friendships for select using (true);
+
+drop policy if exists "anyone can add a friendship" on public.friendships;
+create policy "anyone can add a friendship"
+  on public.friendships for insert with check (true);
 
 drop policy if exists "handoffs are viewable by everyone" on public.handoffs;
 create policy "handoffs are viewable by everyone"

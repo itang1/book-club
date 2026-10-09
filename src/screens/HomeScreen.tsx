@@ -1,4 +1,4 @@
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -12,9 +12,17 @@ type HomeScreenProps = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'Home'>;
   books: Book[];
   currentUserId: string | null;
+  refreshing: boolean;
+  onRefresh: () => void;
 };
 
-export function HomeScreen({ navigation, books, currentUserId }: HomeScreenProps) {
+export function HomeScreen({
+  navigation,
+  books,
+  currentUserId,
+  refreshing,
+  onRefresh,
+}: HomeScreenProps) {
   const insets = useSafeAreaInsets();
   // What's in your hands comes first: that's the one thing you can act on.
   const mine = books.filter((book) => currentUserId !== null && holderId(book) === currentUserId);
@@ -28,6 +36,14 @@ export function HomeScreen({ navigation, books, currentUserId }: HomeScreenProps
     <ScrollView
       style={styles.container}
       contentContainerStyle={[styles.content, { paddingTop: insets.top + 20 }]}
+      // Other people's handoffs only show up on a fetch, so pull to get them.
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+          tintColor={theme.colors.accent}
+        />
+      }
     >
       <View style={styles.headerWrap}>
         <View style={styles.headerText}>

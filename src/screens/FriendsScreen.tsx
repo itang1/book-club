@@ -1,15 +1,19 @@
 import { useState } from 'react';
-import { FlatList, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, ScrollView, Share, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Book, Friend } from '../types';
+import { Book, Friend, Friendship } from '../types';
 import { theme } from '../theme';
 import { holderId, placeInLine } from '../lib/bookState';
+import { friendIdsOf, suggestionsFor } from '../lib/friendGraph';
+import { inviteLink } from '../lib/invite';
 
 type FriendsScreenProps = {
-  friends: Friend[];
+  members: Friend[];
+  friendships: Friendship[];
   books: Book[];
-  onAddFriend: (friend: Friend) => void;
+  currentUserId: string | null;
+  onAddFriend: (personId: string) => void;
 };
 
 /**
@@ -36,110 +40,116 @@ function activityFor(friend: Friend, books: Book[]) {
   return lines.join(' · ') || 'No books in hand';
 }
 
-/** Collapsed until asked for: adding people is rare next to checking on them. */
-function AddFriendForm({ onAddFriend }: { onAddFriend: (friend: Friend) => void }) {
-  const [open, setOpen] = useState(false);
-  const [name, setName] = useState('');
-  const [city, setCity] = useState('');
-  const [region, setRegion] = useState('');
-
-  const ready = Boolean(name.trim() && city.trim());
-
-  if (!open) {
-    return (
-      <Pressable style={styles.secondaryButton} onPress={() => setOpen(true)}>
-        <Text style={styles.secondaryButtonText}>+ Add a friend</Text>
-      </Pressable>
-    );
-  }
-
-  const handleAdd = () => {
-    if (!ready) {
-      return;
-    }
-
-    onAddFriend({
-      id: `friend-${Date.now()}`,
-      name: name.trim(),
-      city: city.trim(),
-      state: region.trim() || '—',
-    });
-    setName('');
-    setCity('');
-    setRegion('');
-    setOpen(false);
-  };
-
+function Avatar({ name }: { name: string }) {
   return (
-    <View style={styles.formCard}>
-      <Text style={styles.formTitle}>Add a friend</Text>
-      <TextInput
-        value={name}
-        onChangeText={setName}
-        placeholder="Name"
-        placeholderTextColor={theme.colors.faint}
-        style={styles.input}
-      />
-      <TextInput
-        value={city}
-        onChangeText={setCity}
-        placeholder="City"
-        placeholderTextColor={theme.colors.faint}
-        style={styles.input}
-      />
-      {/* Free text, not a two-letter code: the group isn't all in the US. */}
-      <TextInput
-        value={region}
-        onChangeText={setRegion}
-        placeholder="State or country (optional)"
-        placeholderTextColor={theme.colors.faint}
-        style={styles.input}
-      />
-
-      <Pressable
-        style={[styles.primaryButton, !ready && styles.primaryButtonDisabled]}
-        onPress={handleAdd}
-        disabled={!ready}
-      >
-        <Text style={styles.primaryButtonText}>Add friend</Text>
-      </Pressable>
-      <Pressable style={styles.cancel} onPress={() => setOpen(false)}>
-        <Text style={styles.cancelText}>Cancel</Text>
-      </Pressable>
+    <View style={styles.avatar}>
+      <Text style={styles.avatarText}>{name.charAt(0)}</Text>
     </View>
   );
 }
 
-export function FriendsScreen({ friends, books, onAddFriend }: FriendsScreenProps) {
-  const insets = useSafeAreaInsets();
+/**
+ * Opens the share sheet with an invite link. On web without the Share API
+ * (most desktop browsers), the link is shown to copy instead.
+ */
+function InviteButton({ inviterId }: { inviterId: string }) {
+  const [shownLink, setShownLink] = useState<string | null>(null);
+  const link = inviteLink(inviterId);
+
+  const invite = async () => {
+    try {
+      await Share.share({
+        message: `Come pass books around with me on Sisterhood of the Traveling Books: ${link}`,
+      });
+    } catch {
+      setShownLink(link);
+    }
+  };
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top + 20 }]}>
+    <View>
+      <Pressable style={styles.primaryButton} onPress={invite}>
+        <Text style={styles.primaryButtonText}>Invite a friend</Text>
+      </Pressable>
+      {shownLink && (
+        <View style={styles.linkBox}>
+          <Text style={styles.linkLabel}>Send them this link:</Text>
+          <Text style={styles.linkText} selectable>
+            {shownLink}
+          </Text>
+        </View>
+      )}
+    </View>
+  );
+}
+
+export function FriendsScreen({
+  members,
+  friendships,
+  books,
+  currentUserId,
+  onAddFriend,
+}: FriendsScreenProps) {
+  const insets = useSafeAreaInsets();
+  const friendIds = friendIdsOf(friendships, currentUserId);
+  const friends = members.filter((person) => friendIds.has(person.id));
+  const suggestions = suggestionsFor(currentUserId, members, friendships, books);
+
+  return (
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={[styles.content, { paddingTop: insets.top + 20 }]}
+    >
       <Text style={styles.title}>Friends</Text>
       <Text style={styles.subtitle}>Who has what, and who's waiting.</Text>
 
-      <FlatList
-        data={friends}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.list}
-        keyboardShouldPersistTaps="handled"
-        ListFooterComponent={<AddFriendForm onAddFriend={onAddFriend} />}
-        renderItem={({ item }) => (
-          <View style={styles.friendCard}>
-            <View style={styles.avatar}>
-              <Text style={styles.avatarText}>{item.name.charAt(0)}</Text>
-            </View>
+      {friends.length === 0 ? (
+        <Text style={styles.empty}>
+          No friends yet. Add someone you know below, or invite them to join.
+        </Text>
+      ) : (
+        friends.map((friend) => (
+          <View key={friend.id} style={styles.friendCard}>
+            <Avatar name={friend.name} />
             <View style={styles.friendInfo}>
-              <Text style={styles.friendName}>{item.name}</Text>
+              <Text style={styles.friendName}>{friend.name}</Text>
               <Text style={styles.friendLocation}>
-                {item.city}, {item.state}
+                {friend.city}, {friend.state}
               </Text>
-              <Text style={styles.friendDetail}>{activityFor(item, books)}</Text>
+              <Text style={styles.friendDetail}>{activityFor(friend, books)}</Text>
             </View>
           </View>
-        )}
-      />
-    </View>
+        ))
+      )}
+
+      {suggestions.length > 0 && (
+        <>
+          <Text style={styles.sectionTitle}>People you may know</Text>
+          {suggestions.map(({ person, reason }) => (
+            <View key={person.id} style={styles.suggestion}>
+              <Avatar name={person.name} />
+              <View style={styles.friendInfo}>
+                <Text style={styles.friendName}>{person.name}</Text>
+                <Text style={styles.friendLocation}>{reason}</Text>
+              </View>
+              <Pressable style={styles.addButton} onPress={() => onAddFriend(person.id)}>
+                <Text style={styles.addButtonText}>Add</Text>
+              </Pressable>
+            </View>
+          ))}
+        </>
+      )}
+
+      {currentUserId && (
+        <>
+          <Text style={styles.sectionTitle}>Someone new?</Text>
+          <Text style={styles.sectionCaption}>
+            They make their own profile, and you start out as friends.
+          </Text>
+          <InviteButton inviterId={currentUserId} />
+        </>
+      )}
+    </ScrollView>
   );
 }
 
@@ -147,7 +157,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: theme.colors.background,
+  },
+  content: {
     paddingHorizontal: 20,
+    paddingBottom: 32,
   },
   title: {
     fontFamily: theme.fonts.serif,
@@ -161,8 +174,25 @@ const styles = StyleSheet.create({
     fontSize: 15,
     marginBottom: 18,
   },
-  list: {
-    paddingBottom: 24,
+  empty: {
+    color: theme.colors.muted,
+    fontSize: 14,
+    lineHeight: 20,
+    marginBottom: 8,
+  },
+  sectionTitle: {
+    fontFamily: theme.fonts.serif,
+    fontSize: 20,
+    fontWeight: '700',
+    color: theme.colors.text,
+    marginTop: 20,
+    marginBottom: 10,
+  },
+  sectionCaption: {
+    color: theme.colors.muted,
+    fontSize: 13,
+    marginTop: -4,
+    marginBottom: 12,
   },
   friendCard: {
     flexDirection: 'row',
@@ -173,6 +203,11 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     borderWidth: 1,
     borderColor: theme.colors.border,
+  },
+  suggestion: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
   },
   avatar: {
     width: 42,
@@ -209,65 +244,43 @@ const styles = StyleSheet.create({
     marginTop: 4,
     lineHeight: 16,
   },
-  formCard: {
-    backgroundColor: theme.colors.card,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    padding: 18,
-    marginTop: 4,
-  },
-  formTitle: {
-    fontFamily: theme.fonts.serif,
-    fontSize: 19,
-    fontWeight: '700',
-    color: theme.colors.text,
-    marginBottom: 12,
-  },
-  input: {
+  addButton: {
     backgroundColor: theme.colors.soft,
-    borderRadius: 12,
-    padding: 12,
-    color: theme.colors.text,
-    fontSize: 15,
-    fontWeight: '600',
-    marginBottom: 8,
+    borderRadius: 999,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
+  addButtonText: {
+    color: theme.colors.accent,
+    fontWeight: '700',
+    fontSize: 13,
   },
   primaryButton: {
-    marginTop: 8,
     backgroundColor: theme.colors.accent,
     borderRadius: 12,
-    paddingVertical: 12,
+    paddingVertical: 13,
     alignItems: 'center',
-  },
-  primaryButtonDisabled: {
-    opacity: 0.45,
   },
   primaryButtonText: {
     color: theme.colors.onAccent,
     fontWeight: '700',
     fontSize: 15,
   },
-  secondaryButton: {
-    marginTop: 4,
-    backgroundColor: theme.colors.soft,
+  linkBox: {
+    marginTop: 10,
+    backgroundColor: theme.colors.card,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
     borderRadius: 12,
-    paddingVertical: 12,
-    alignItems: 'center',
+    padding: 12,
   },
-  secondaryButtonText: {
-    color: theme.colors.text,
-    fontWeight: '700',
-    fontSize: 14,
-  },
-  cancel: {
-    marginTop: 6,
-    paddingVertical: 10,
-    alignItems: 'center',
-  },
-  cancelText: {
+  linkLabel: {
+    fontSize: 12,
     color: theme.colors.muted,
-    fontWeight: '700',
-    fontSize: 14,
+    marginBottom: 4,
+  },
+  linkText: {
+    fontSize: 13,
+    color: theme.colors.text,
   },
 });

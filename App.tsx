@@ -1,42 +1,27 @@
 import * as React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import {
+  SafeAreaInsetsContext,
+  SafeAreaProvider,
+  useSafeAreaInsets,
+} from 'react-native-safe-area-context';
 
-import {
-  Book,
-  Friend,
-  Handoff,
-  Letter,
-  RootStackParamList,
-  RootTabParamList,
-} from './src/types';
-import { booksSeed, friends as friendsSeed } from './src/data/mockData';
-import {
-  createBook,
-  createFriend,
-  fetchBookClubData,
-  joinLine,
-  leaveLine,
-  recordHandoff,
-} from './src/lib/bookClubService';
-import { hasFinished, holderId } from './src/lib/bookState';
-import { loadReaderId, saveReaderId } from './src/lib/identity';
+import { RootStackParamList, RootTabParamList } from './src/types';
+import { BookClub, useBookClub } from './src/lib/useBookClub';
+import { friendIdsOf } from './src/lib/friendGraph';
+import { isDevMode } from './src/lib/devMode';
 import { theme } from './src/theme';
+import { DevBar } from './src/components/DevBar';
 import { HomeScreen } from './src/screens/HomeScreen';
 import { FriendsScreen } from './src/screens/FriendsScreen';
 import { AddBookScreen } from './src/screens/AddBookScreen';
 import { ProfileScreen } from './src/screens/ProfileScreen';
 import { BookDetailScreen } from './src/screens/BookDetailScreen';
-
-type BookActions = {
-  onHandOff: (bookId: string, toFriend: string, letter: Letter) => void;
-  onJoinLine: (bookId: string) => void;
-  onLeaveLine: (bookId: string) => void;
-};
+import { WelcomeScreen } from './src/screens/WelcomeScreen';
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -82,6 +67,7 @@ function TabIcon({
 const tabStyles = StyleSheet.create({
   root: {
     flex: 1,
+    backgroundColor: theme.colors.background,
   },
   banner: {
     position: 'absolute',
@@ -98,6 +84,11 @@ const tabStyles = StyleSheet.create({
     color: theme.colors.card,
     fontSize: 13,
     lineHeight: 18,
+  },
+  loading: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   iconWrap: {
     width: 40,
@@ -126,19 +117,9 @@ const tabStyles = StyleSheet.create({
   },
 });
 
-function HomeStack({
-  books,
-  friends,
-  currentUserId,
-  actions,
-  onAddBook,
-}: {
-  books: Book[];
-  friends: Friend[];
-  currentUserId: string | null;
-  actions: BookActions;
-  onAddBook: (book: Book) => void;
-}) {
+function HomeStack({ club }: { club: BookClub }) {
+  const me = club.members.find((person) => person.id === club.currentUserId) ?? null;
+
   return (
     <Stack.Navigator
       screenOptions={{
@@ -149,7 +130,15 @@ function HomeStack({
       }}
     >
       <Stack.Screen name="Home" options={{ headerShown: false }}>
-        {(props) => <HomeScreen {...props} books={books} currentUserId={currentUserId} />}
+        {(props) => (
+          <HomeScreen
+            {...props}
+            books={club.books}
+            currentUserId={club.currentUserId}
+            refreshing={club.refreshing}
+            onRefresh={club.refresh}
+          />
+        )}
       </Stack.Screen>
       <Stack.Screen
         name="BookDetail"
@@ -160,253 +149,122 @@ function HomeStack({
         {(props) => (
           <BookDetailScreen
             {...props}
-            books={books}
-            currentUserId={currentUserId}
-            {...actions}
+            books={club.books}
+            currentUserId={club.currentUserId}
+            onHandOff={club.handOff}
+            onJoinLine={club.joinLine}
+            onLeaveLine={club.leaveLine}
           />
         )}
       </Stack.Screen>
       {/* Adding a book is occasional, so it lives behind the + on Home rather
           than taking a permanent tab. */}
       <Stack.Screen name="AddBook" options={{ title: 'Add a book' }}>
-        {(props) => (
-          <AddBookScreen
-            {...props}
-            friends={friends}
-            currentUserId={currentUserId}
-            onAddBook={onAddBook}
-          />
-        )}
+        {(props) => <AddBookScreen {...props} owner={me} onAddBook={club.addBook} />}
       </Stack.Screen>
     </Stack.Navigator>
   );
 }
 
-export default function App() {
-  const [books, setBooks] = React.useState<Book[]>(booksSeed);
-  const [friends, setFriends] = React.useState<Friend[]>(friendsSeed);
-  const [currentUserId, setCurrentUserId] = React.useState<string | null>(
-    friendsSeed[0]?.id ?? null,
-  );
-
-  React.useEffect(() => {
-    let active = true;
-
-    loadReaderId().then((saved) => {
-      if (active && saved) {
-        setCurrentUserId(saved);
-      }
-    });
-
-    fetchBookClubData().then((data) => {
-      if (!active) {
-        return;
-      }
-
-      setBooks(data.books);
-      setFriends(data.friends);
-      // Keep the remembered reader only if they're still in the group.
-      setCurrentUserId((previous) =>
-        data.friends.some((friend) => friend.id === previous)
-          ? previous
-          : data.friends[0]?.id ?? null,
-      );
-    });
-
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  const chooseReader = (friendId: string) => {
-    setCurrentUserId(friendId);
-    saveReaderId(friendId);
-  };
-
-  /**
-   * Writes are optimistic. If one doesn't reach the database, say so rather
-   * than let the screen and the stored data quietly disagree.
-   */
-  const [syncFailed, setSyncFailed] = React.useState(false);
-  const track = (write: Promise<boolean>) => {
-    write.then((ok) => {
-      if (!ok) {
-        setSyncFailed(true);
-      }
-    });
-  };
-
-  const updateBook = (bookId: string, change: (book: Book) => Book) => {
-    setBooks((currentBooks) =>
-      currentBooks.map((candidate) => (candidate.id === bookId ? change(candidate) : candidate)),
-    );
-  };
-
-  const handleAddBook = (book: Book) => {
-    setBooks((currentBooks) => [book, ...currentBooks]);
-    track(createBook(book));
-  };
-
-  const handleAddFriend = (friend: Friend) => {
-    setFriends((currentFriends) => [...currentFriends, friend]);
-    track(createFriend(friend));
-  };
-
-  /**
-   * Sign the current reader up for a book, at the back of the line. Someone
-   * who has read it before can sign up again: their queue entry is reused,
-   * back to "waiting" with a fresh position.
-   */
-  const handleJoinLine = (bookId: string) => {
-    const book = books.find((candidate) => candidate.id === bookId);
-    const me = friends.find((friend) => friend.id === currentUserId);
-    if (!book || !me || holderId(book) === me.id) {
-      return;
-    }
-
-    const existing = book.queue.find((entry) => entry.id === me.id);
-    if (existing && existing.status !== 'done') {
-      return;
-    }
-
-    const position = Math.max(-1, ...book.queue.map((entry) => entry.position)) + 1;
-    updateBook(bookId, (candidate) => ({
-      ...candidate,
-      queue: [
-        ...candidate.queue.filter((entry) => entry.id !== me.id),
-        { ...me, position, status: 'waiting' },
-      ],
-    }));
-    track(joinLine({ book_id: bookId, friend_id: me.id, position, status: 'waiting' }));
-  };
-
-  const handleLeaveLine = (bookId: string) => {
-    const book = books.find((candidate) => candidate.id === bookId);
-    if (!book || !currentUserId) {
-      return;
-    }
-
-    const readBefore = hasFinished(book, currentUserId);
-    updateBook(bookId, (candidate) => ({
-      ...candidate,
-      queue: candidate.queue.flatMap((entry) => {
-        if (entry.id !== currentUserId || entry.status !== 'waiting') {
-          return [entry];
-        }
-        return readBefore ? [{ ...entry, status: 'done' as const }] : [];
-      }),
-    }));
-    track(leaveLine(bookId, currentUserId, readBefore));
-  };
-
-  /**
-   * Append a leg to the book's journey: either to whoever is next in line, or
-   * home to its owner. History is never rewritten: the new handoff becomes the
-   * newest entry, and location follows from it.
-   */
-  const handleHandOff = (bookId: string, toFriend: string, letter: Letter) => {
-    const book = books.find((candidate) => candidate.id === bookId);
-    if (!book) {
-      return;
-    }
-
-    const fromFriend = holderId(book);
-    const handoff: Handoff = {
-      id: `handoff-${Date.now()}`,
-      bookId,
-      fromFriend,
-      toFriend,
-      happenedAt: new Date().toISOString(),
-      note: letter.note?.trim() || undefined,
-      rating: letter.rating,
-    };
-
-    updateBook(bookId, (candidate) => ({
-      ...candidate,
-      handoffs: [...candidate.handoffs, handoff],
-      queue: candidate.queue.map((entry) => {
-        if (entry.id === fromFriend) {
-          return { ...entry, status: 'done' as const };
-        }
-        // An owner getting their copy back has already read it.
-        if (entry.id === toFriend && entry.status === 'waiting') {
-          return { ...entry, status: 'reading' as const };
-        }
-        return entry;
-      }),
-    }));
-
-    track(recordHandoff(handoff));
-  };
-
-  const bookActions: BookActions = {
-    onHandOff: handleHandOff,
-    onJoinLine: handleJoinLine,
-    onLeaveLine: handleLeaveLine,
-  };
+function Tabs({ club }: { club: BookClub }) {
+  const me = club.members.find((person) => person.id === club.currentUserId) ?? null;
 
   return (
-    <SafeAreaProvider style={tabStyles.root}>
-      <NavigationContainer>
-        <Tab.Navigator
-          screenOptions={({ route }) => ({
-            tabBarIcon: ({ color, size, focused }) => (
-              <TabIcon
-                routeName={route.name}
-                focused={focused}
-                color={color}
-                size={size}
-              />
-            ),
-            tabBarActiveTintColor: theme.colors.accent,
-            tabBarInactiveTintColor: theme.colors.faint,
-            tabBarStyle: tabStyles.bar,
-            tabBarLabelStyle: tabStyles.label,
-            // Each tab draws its own large serif title.
-            headerShown: false,
-          })}
-        >
-          <Tab.Screen name="Home" options={{ title: 'Books' }}>
-            {() => (
-              <HomeStack
-                books={books}
-                friends={friends}
-                currentUserId={currentUserId}
-                actions={bookActions}
-                onAddBook={handleAddBook}
-              />
-            )}
-          </Tab.Screen>
-          <Tab.Screen name="Friends">
-            {(props) => (
-              <FriendsScreen
-                {...props}
-                friends={friends}
-                books={books}
-                onAddFriend={handleAddFriend}
-              />
-            )}
-          </Tab.Screen>
-          <Tab.Screen name="Profile" options={{ title: 'You' }}>
-            {(props) => (
-              <ProfileScreen
-                {...props}
-                books={books}
-                friends={friends}
-                currentUserId={currentUserId}
-                onChangeUser={chooseReader}
-              />
-            )}
-          </Tab.Screen>
-        </Tab.Navigator>
-      </NavigationContainer>
-      {syncFailed && (
-        <Pressable style={tabStyles.banner} onPress={() => setSyncFailed(false)}>
+    <NavigationContainer>
+      <Tab.Navigator
+        screenOptions={({ route }) => ({
+          tabBarIcon: ({ color, size, focused }) => (
+            <TabIcon routeName={route.name} focused={focused} color={color} size={size} />
+          ),
+          tabBarActiveTintColor: theme.colors.accent,
+          tabBarInactiveTintColor: theme.colors.faint,
+          tabBarStyle: tabStyles.bar,
+          tabBarLabelStyle: tabStyles.label,
+          // Each tab draws its own large serif title.
+          headerShown: false,
+        })}
+      >
+        <Tab.Screen name="Home" options={{ title: 'Books' }}>
+          {() => <HomeStack club={club} />}
+        </Tab.Screen>
+        <Tab.Screen name="Friends">
+          {() => (
+            <FriendsScreen
+              members={club.members}
+              friendships={club.friendships}
+              books={club.books}
+              currentUserId={club.currentUserId}
+              onAddFriend={club.addFriend}
+            />
+          )}
+        </Tab.Screen>
+        <Tab.Screen name="Profile" options={{ title: 'You' }}>
+          {() => (
+            <ProfileScreen
+              books={club.books}
+              me={me}
+              friendCount={friendIdsOf(club.friendships, club.currentUserId).size}
+            />
+          )}
+        </Tab.Screen>
+      </Tab.Navigator>
+    </NavigationContainer>
+  );
+}
+
+function Root() {
+  const club = useBookClub();
+  const insets = useSafeAreaInsets();
+
+  let body: React.ReactNode;
+  if (!club.loaded) {
+    body = (
+      <View style={tabStyles.loading}>
+        <ActivityIndicator color={theme.colors.accent} />
+      </View>
+    );
+  } else if (!club.currentUserId) {
+    body = (
+      <WelcomeScreen
+        members={club.members}
+        onCreate={club.createProfile}
+        onPick={club.chooseReader}
+      />
+    );
+  } else {
+    body = <Tabs club={club} />;
+  }
+
+  return (
+    <View style={tabStyles.root}>
+      {isDevMode && (
+        <DevBar
+          members={club.members}
+          currentUserId={club.currentUserId}
+          onChoose={club.chooseReader}
+          onSignOut={club.signOut}
+        />
+      )}
+      {/* The dev bar already clears the status bar, so screens below it are
+          told the top inset is zero rather than padding for it twice. */}
+      <SafeAreaInsetsContext.Provider value={isDevMode ? { ...insets, top: 0 } : insets}>
+        <View style={tabStyles.root}>{body}</View>
+      </SafeAreaInsetsContext.Provider>
+      {club.syncFailed && (
+        <Pressable style={tabStyles.banner} onPress={club.dismissSyncError}>
           <Text style={tabStyles.bannerText}>
             A change didn't save. It shows here but may be gone next time. Tap to dismiss.
           </Text>
         </Pressable>
       )}
+    </View>
+  );
+}
+
+export default function App() {
+  return (
+    <SafeAreaProvider>
+      <Root />
     </SafeAreaProvider>
   );
 }

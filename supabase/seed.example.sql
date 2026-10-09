@@ -58,3 +58,12 @@ insert into public.handoffs (id, book_id, from_friend, to_friend, happened_at, r
   ('handoff-4c', 'book-4', 'friend-tibby',    'friend-carmen',  now() - interval '59 days', 5, 'The statues. That''s all I''ll say.'),
   ('handoff-4d', 'book-4', 'friend-carmen',   'friend-bridget', now() - interval '20 days', 4, 'Thank you for lending me your copy. It''s a little sandier now.')
 on conflict (id) do nothing;
+
+-- Not everyone is friends yet, so "People you may know" has something to
+-- suggest: Lena and Bridget share two mutual friends.
+insert into public.friendships (friend_a, friend_b) values
+  ('friend-carmen', 'friend-lena'),
+  ('friend-lena',   'friend-tibby'),
+  ('friend-bridget','friend-carmen'),
+  ('friend-bridget','friend-tibby')
+on conflict do nothing;

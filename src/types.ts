@@ -1,3 +1,6 @@
+/** A mutual friendship between two people in the club, by id. */
+export type Friendship = [string, string];
+
 export type FriendStatus = 'waiting' | 'reading' | 'done';
 
 export type Friend = {

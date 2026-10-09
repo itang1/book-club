@@ -1,5 +1,5 @@
-import { booksSeed, friends as mockFriends } from '../data/mockData';
-import type { Book, Friend, FriendStatus, Handoff, ReadingQueueEntry } from '../types';
+import { booksSeed, friends as mockFriends, friendshipsSeed } from '../data/mockData';
+import type { Book, Friend, FriendStatus, Friendship, Handoff, ReadingQueueEntry } from '../types';
 import { supabase } from './supabase';
 
 /**
@@ -41,15 +41,24 @@ type HandoffRow = {
   rating: number | null;
 };
 
+type FriendshipRow = {
+  friend_a: string;
+  friend_b: string;
+};
+
 export type BookClubData = {
   books: Book[];
   friends: Friend[];
+  friendships: Friendship[];
 };
 
-const fallback: BookClubData = {
+export const demoData: BookClubData = {
   books: booksSeed,
   friends: mockFriends,
+  friendships: friendshipsSeed,
 };
+
+const fallback = demoData;
 
 function toFriend(row: FriendRow): Friend {
   return {
@@ -159,11 +168,12 @@ export async function fetchBookClubData(): Promise<BookClubData> {
   }
 
   try {
-    const [booksRes, friendsRes, queueRes, handoffsRes] = await Promise.all([
+    const [booksRes, friendsRes, queueRes, handoffsRes, friendshipsRes] = await Promise.all([
       supabase.from('books').select('*').order('created_at', { ascending: false }),
       supabase.from('friends').select('*').order('name', { ascending: true }),
       supabase.from('reading_queue').select('*'),
       supabase.from('handoffs').select('*').order('happened_at', { ascending: true }),
+      supabase.from('friendships').select('friend_a, friend_b'),
     ]);
 
     const failure = [booksRes, friendsRes, queueRes, handoffsRes].find((res) => res.error);
@@ -174,6 +184,15 @@ export async function fetchBookClubData(): Promise<BookClubData> {
 
     const friendRows = (friendsRes.data ?? []) as FriendRow[];
 
+    // Not fatal: a database from before friendships existed still loads, and
+    // everyone just starts with no friends until schema.sql is re-run.
+    if (friendshipsRes.error) {
+      console.warn('Supabase friendships fetch failed:', friendshipsRes.error.message);
+    }
+    const friendshipRows = friendshipsRes.error
+      ? []
+      : ((friendshipsRes.data ?? []) as FriendshipRow[]);
+
     return {
       books: assembleBooks(
         (booksRes.data ?? []) as BookRow[],
@@ -182,6 +201,7 @@ export async function fetchBookClubData(): Promise<BookClubData> {
         (handoffsRes.data ?? []) as HandoffRow[],
       ),
       friends: friendRows.map(toFriend),
+      friendships: friendshipRows.map((row): Friendship => [row.friend_a, row.friend_b]),
     };
   } catch (error) {
     console.warn('Book club fetch error, using mock data:', error);
@@ -249,6 +269,31 @@ export async function createFriend(friend: Friend): Promise<boolean> {
     return true;
   } catch (error) {
     console.warn('Create friend error:', error);
+    return false;
+  }
+}
+
+/** Befriend two people, both ways. Stored smaller id first; see schema.sql. */
+export async function createFriendship([a, b]: Friendship): Promise<boolean> {
+  if (!supabase) {
+    return true;
+  }
+
+  try {
+    const row: FriendshipRow = a < b ? { friend_a: a, friend_b: b } : { friend_a: b, friend_b: a };
+    const { error } = await supabase
+      .from('friendships')
+      // DO NOTHING on conflict: needs only the insert grant, and befriending
+      // someone twice is harmless.
+      .upsert([row], { ignoreDuplicates: true });
+    if (error) {
+      console.warn('Supabase createFriendship failed:', error.message);
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.warn('Create friendship error:', error);
     return false;
   }
 }
