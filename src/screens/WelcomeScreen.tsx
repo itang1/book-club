@@ -19,16 +19,10 @@ type WelcomeScreenProps = {
   demoMembers?: Friend[];
   onClaim: (personId: string, inviteCode: string | null) => void;
   onCreate: (profile: NewProfile, inviteCode: string | null) => void;
-  /** The signed-in email, with real accounts. */
   email?: string | null;
   onSignOut?: () => void;
 };
 
-/**
- * First time in: either you're already in the club (tap "That's me") or
- * you're new (make your profile). The first choice comes first, so a friend
- * who's already there finds themselves before reaching the form.
- */
 export function WelcomeScreen({
   demoMembers,
   onClaim,
@@ -45,7 +39,6 @@ export function WelcomeScreen({
   const [groupName, setGroupName] = useState<string | null>(null);
   const [invited, setInvited] = useState<ClaimableProfile[]>([]);
 
-  // An invite link names its group and lists who in it hasn't signed in yet.
   useEffect(() => {
     if (!inviteCode) {
       return;

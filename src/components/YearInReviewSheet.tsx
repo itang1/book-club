@@ -15,7 +15,6 @@ type YearInReviewSheetProps = {
   year: number;
 };
 
-/** "Ana", "Ana and Bea", "Ana, Bea and Cat". */
 function listOf(names: string[]): string {
   return names.length <= 1
     ? names.join('')
@@ -39,11 +38,6 @@ function BookLine({ book, detail }: { book: Book; detail: string }) {
   );
 }
 
-/**
- * The year in books: the club's numbers, the book that travelled furthest,
- * the best loved, everywhere a book was read, and your own year. Open any
- * time as "the year so far"; the Books tab invites everyone in December.
- */
 export function YearInReviewSheet({
   visible,
   onClose,
@@ -210,7 +204,6 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
   },
-  // Stat values in the sans, per the figure spec; the serif stays on titles.
   tileValue: {
     fontSize: 26,
     fontWeight: '600',

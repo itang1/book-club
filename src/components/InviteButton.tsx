@@ -6,7 +6,6 @@ import { Group } from '../types';
 import { theme } from '../theme';
 import { inviteLink } from '../lib/invite';
 
-/** Copy text where the platform allows; false if it couldn't. */
 async function copy(text: string): Promise<boolean> {
   try {
     if (Platform.OS === 'web' && typeof navigator !== 'undefined' && navigator.clipboard) {
@@ -19,11 +18,6 @@ async function copy(text: string): Promise<boolean> {
   return false;
 }
 
-/**
- * "Invite to Living Room": opens a card with the group's link, Copy and
- * Share, and what the person will see when they open it, so inviting is
- * one tap and nobody has to explain the app over text.
- */
 export function InviteButton({ group, compact = false }: { group: Group; compact?: boolean }) {
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);

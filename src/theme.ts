@@ -6,22 +6,14 @@ export const theme = {
     card: '#fffdfb',
     text: '#1f1a17',
     muted: '#54473f',
-    // Inactive tab icons and other quiet chrome.
     faint: '#8a7d76',
     accent: '#7a5c48',
     border: '#eaded3',
     soft: '#f0e5dc',
-    // The masthead band on Books: a shade deeper than soft, so the header
-    // reads as its own area.
     masthead: '#e8d9cb',
     avatar: '#e4d2c3',
-    // Text and icons sitting on accent or stamp.
     onAccent: '#fffdfb',
-    /**
-     * Library-stamp red, kept for one job: "this book is in your hands".
-     * The browns are all one family, so nothing in the palette could stand
-     * out; this can, because it appears nowhere else.
-     */
+    // Only for "this book is in your hands", so it stands out from the browns.
     stamp: '#a6463a',
     stampSoft: '#f6e1dc',
     /**
@@ -31,20 +23,12 @@ export const theme = {
     coverInk: '#1f1a17',
   },
   fonts: {
-    /**
-     * Titles are set in a serif, which does more for the bookshop feel than
-     * any colour. These are built-in faces, so no font files ship.
-     */
+    // Built-in faces, so no font files ship.
     serif: Platform.select({
       ios: 'Georgia',
       android: 'serif',
       default: 'Georgia, "Times New Roman", serif',
     }),
-    /**
-     * Handwriting, for the taped-in Rules of the Pants. Faces that ship with
-     * the system (Noteworthy on Apple devices), falling back to the
-     * browser's cursive.
-     */
     hand: Platform.select({
       ios: 'Noteworthy',
       android: 'casual',

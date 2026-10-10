@@ -11,12 +11,6 @@ const ICONS: Record<string, { active: keyof typeof Ionicons.glyphMap; idle: keyo
   Profile: { active: 'person', idle: 'person-outline' },
 };
 
-/**
- * The bottom tabs, drawn by hand so the current one can't be missed. It's
- * marked three ways at once, so no single cue has to carry it: a tinted panel
- * behind it, a filled icon in an accent pill, and a bold dark label. The others stay quiet: outline icons,
- * muted labels, no panel.
- */
 export function TabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
 

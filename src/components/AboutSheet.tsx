@@ -29,11 +29,6 @@ type AboutSheetProps = {
   onClose: () => void;
 };
 
-/**
- * Rules & About: the Rules of the Books, then who made this. Two sections
- * built the same way (heading, then a card) so neither reads as an
- * afterthought. Content lives in content/about.
- */
 export function AboutSheet({ visible, onClose }: AboutSheetProps) {
   const insets = useSafeAreaInsets();
 
@@ -60,21 +55,11 @@ export function AboutSheet({ visible, onClose }: AboutSheetProps) {
   );
 }
 
-/**
- * The page's body, shared with the one-time agreement screen: the Rules of
- * the Books, the Rules of the Pants taped beside them, and About.
- */
-/** Wide enough for the taped Rules of the Pants to sit beside ours. */
 export const SIDE_BY_SIDE_MIN_WIDTH = 900;
 
 /** The page's width when the note sits beside it, so headings above can line up. */
 export const SIDE_BY_SIDE_WIDTH = 560 + 40 + 360;
 
-/**
- * On a phone: one column, the Rules of the Pants taped in under ours. On a
- * computer-sized screen: ours and About on the left, the Pants' rules taped
- * to the side of the page, so neither pushes the other down.
- */
 export function AboutContent() {
   const { width } = useWindowDimensions();
   const sideBySide = width >= SIDE_BY_SIDE_MIN_WIDTH;
@@ -100,7 +85,6 @@ export function AboutContent() {
             {photo ? (
               <Image source={photo} style={styles.photo} resizeMode="cover" />
             ) : (
-              // A bookplate stands in when there's no photo.
               <View style={[styles.photo, styles.photoPlaceholder]}>
                 <Text style={styles.exLibris}>Ex Libris</Text>
                 <Text style={styles.exLibrisName}>{authorName}</Text>
@@ -134,11 +118,9 @@ export function AboutContent() {
   );
 
   if (!sideBySide) {
-    // Capped width so lines stay readable.
     return (
       <View style={styles.column}>
         {rulesOfTheBooks}
-        {/* Where ours came from. */}
         <TapedNote />
         {about}
         <Text style={styles.homage}>{homage}</Text>
@@ -199,7 +181,6 @@ const styles = StyleSheet.create({
     maxWidth: 560,
     alignSelf: 'center',
   },
-  // Main column at the same reading width, plus the note beside it.
   wideColumn: {
     width: '100%',
     maxWidth: SIDE_BY_SIDE_WIDTH,
@@ -217,7 +198,6 @@ const styles = StyleSheet.create({
     width: 360,
     marginLeft: 40,
   },
-  // One heading style for both sections, so they read as equals.
   heading: {
     fontFamily: theme.fonts.serif,
     fontSize: 26,
@@ -265,7 +245,6 @@ const styles = StyleSheet.create({
     borderRadius: 3,
     marginTop: 16,
     marginBottom: 20,
-    // A slight tilt, like a photo taped into a notebook.
     transform: [{ rotate: '-2deg' }],
     shadowColor: theme.colors.text,
     shadowOpacity: 0.14,

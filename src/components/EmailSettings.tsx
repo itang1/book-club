@@ -15,7 +15,6 @@ const OPTIONS: { key: keyof EmailPrefs; label: string; detail: string }[] = [
   { key: 'friendRequest', label: 'Friend requests', detail: 'When someone asks to be friends.' },
 ];
 
-/** Which emails you get, one switch each. All on unless you turn one off. */
 export function EmailSettings({ prefs, onChange }: EmailSettingsProps) {
   return (
     <View>

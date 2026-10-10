@@ -12,11 +12,7 @@ type DevBarProps = {
   onSignOut: () => void;
 };
 
-/**
- * Development only (see lib/devMode). A strip across the top of every screen
- * saying who you're viewing as; tap it to become someone else, or to sign out
- * and see the welcome screen a new person gets.
- */
+/** Development only (see lib/devMode). */
 export function DevBar({ members, currentUserId, onChoose, onSignOut }: DevBarProps) {
   const insets = useSafeAreaInsets();
   const [open, setOpen] = useState(false);

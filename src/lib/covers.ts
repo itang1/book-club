@@ -1,18 +1,6 @@
 /**
- * Placeholder cover colours.
- *
- * There is no real cover art in the data model, so each book gets a colour
- * swatch standing in for one. The colour is derived from the title and author
- * rather than chosen at random, which means:
- *
- *   - the same book always looks the same, on every device and after a
- *     reinstall, even before the value reaches the database
- *   - two different books are unlikely to collide, where random picks from a
- *     five-colour list collided constantly
- *   - the seed data and anything added in the app are coloured by one rule
- *
- * The value is still stored on the book, so a hand-picked colour (or real
- * artwork later) can override it without changing this function.
+ * Placeholder cover colours, derived from title and author so a book looks the
+ * same everywhere. Stored on the book, so a chosen colour can override it.
  */
 
 export const coverPalette = [

@@ -31,13 +31,9 @@ export function HomeScreen({
 }: HomeScreenProps) {
   const insets = useSafeAreaInsets();
   const [aboutOpen, setAboutOpen] = useState(false);
-  // What's in your hands comes first: that's the one thing you can act on.
   const mine = books.filter((book) => currentUserId !== null && holderId(book) === currentUserId);
-  // Sample-club books come after real ones, so your own groups lead.
   const sampleGroupIds = new Set(groups.filter((group) => group.isSample).map((group) => group.id));
   const isSampleBook = (book: Book) => Boolean(book.groupId && sampleGroupIds.has(book.groupId));
-  // Then every other book, under the group it's lent within: your groups
-  // first (alphabetically), the sample club last.
   const others = books.filter((book) => !mine.includes(book));
   const sections = [...groups]
     .sort(
@@ -59,7 +55,6 @@ export function HomeScreen({
 
   const open = (book: Book) =>
     navigation.navigate('BookDetail', { bookId: book.id, bookTitle: book.title });
-  // A group's own page lives on the Friends & Groups tab.
   const openGroup = (groupId: string) =>
     navigation.getParent()?.navigate('Friends', { screen: 'Group', params: { groupId } });
 
@@ -76,16 +71,9 @@ export function HomeScreen({
         />
       }
     >
-      {/* The header sits on its own tinted band, edge to edge and up under
-          the status bar, so it reads as the masthead rather than the first
-          item on the page. */}
       <View style={[styles.headerWrap, { paddingTop: insets.top + 20 }]}>
         <Text style={styles.title}>Sisterhood of the Traveling Books</Text>
         <Text style={styles.subtitle}>{tagline}</Text>
-        {/* Labelled rather than a bare +: an icon on its own didn't say what
-            it would add until you tapped it. Rules & About sits beside it at
-            the same size: the one standing way into the Rules and Irene's
-            About, on the screen everyone lands on. */}
         <View style={styles.actions}>
           <Pressable
             style={styles.addButton}
@@ -104,15 +92,10 @@ export function HomeScreen({
             <Text style={styles.aboutButtonText}>Rules & About</Text>
           </Pressable>
         </View>
-        {/* Small print, on the first screen, so the homage is never in doubt. */}
         <Text style={styles.homage}>{homage}</Text>
       </View>
 
-      {/* Your groups' year at a glance, straight under the header: the first
-          thing you see, before your own books and the shelf. Real groups
-          only: the sample club would swamp the numbers. Until you're in one,
-          a card of zeros up here would only be in the way. Holding a stack of
-          books, it shrinks to one line so they still show on the first screen. */}
+      {/* Real groups only: the sample club would swamp the numbers. */}
       {myGroupNames.length > 0 && (
         <ClubYearCard
           books={books.filter((book) => !isSampleBook(book))}
@@ -147,9 +130,6 @@ export function HomeScreen({
 
       {sections.map(({ group, books: groupBooks }) => (
         <View key={group.id}>
-          {/* A group's heading reads as the start of its own section: a
-              rule above, the people icon, the name, who's in it, and the way
-              to its page. */}
           <Pressable
             style={styles.groupHeader}
             onPress={() => openGroup(group.id)}
@@ -196,7 +176,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: theme.colors.background,
   },
-  // No top padding: the header band reaches the top edge itself.
   content: {
     paddingHorizontal: 20,
     paddingBottom: 32,
@@ -205,12 +184,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     marginTop: 16,
-    // Space between the two buttons, and between rows if a narrow screen
-    // wraps them.
     marginRight: -10,
   },
-  // Same size as Lend a new book, outlined rather than filled so lending
-  // stays the main action.
   aboutButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -230,7 +205,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     fontSize: 15,
   },
-  // Bleeds past the content padding to the screen edges.
   headerWrap: {
     backgroundColor: theme.colors.masthead,
     borderBottomWidth: 1,

@@ -16,17 +16,12 @@ import {
 type BookCardProps = {
   book: Book;
   currentUserId: string | null;
-  /** In the sample club: tagged so it's never mistaken for a real loan. */
   isSample?: boolean;
   /** Shown as a labelled pill when the card isn't already under its group's heading. */
   groupName?: string;
   onPress?: (book: Book) => void;
 };
 
-/**
- * Where the copy is and who's next, said as two short sentences rather than a
- * label/value table. Phrased from the reader's side when it involves them.
- */
 function whereLine(book: Book, currentUserId: string | null): string {
   const holder = holderId(book);
   if (!holder) {
@@ -130,7 +125,6 @@ const styles = StyleSheet.create({
     padding: 10,
     marginRight: 12,
   },
-  // A real cover fills the same slot; the colour shows while it loads.
   coverImage: {
     padding: 0,
   },

@@ -66,14 +66,7 @@ function Avatar({ name }: { name: string }) {
   );
 }
 
-/**
- * One group as a card: who's in it (initials), how many books, what happened
- * last, and Invite right there. Tap anywhere else for its page.
- *
- * The open target is laid under the content rather than wrapped around it,
- * so Invite is a button beside it, not a button inside a button (which the
- * web refuses, and which can fire both).
- */
+/** The open target sits under the content, not around it: a button inside a button breaks on web. */
 function GroupCard({
   group,
   members,
@@ -200,12 +193,9 @@ export function FriendsScreen({
   onOpenGroup,
 }: FriendsScreenProps) {
   const insets = useSafeAreaInsets();
-  // Who's being unfriended, while the confirmation is up.
   const [unfriending, setUnfriending] = useState<Friend | null>(null);
 
   const person = (id: string) => members.find((candidate) => candidate.id === id);
-  // Your groups: real ones alphabetically, then the sample club, marked as
-  // such, in the same list rather than a section of its own.
   const myGroups = groups
     .filter((group) => currentUserId && group.memberIds.includes(currentUserId))
     .sort(

@@ -11,10 +11,6 @@ import {
   waitingList,
 } from './bookState';
 
-/**
- * Numbers behind the visualisations. Everything is derived from the handoff
- * log and the queue, like the rest of the app; nothing here is stored.
- */
 
 // ---------------------------------------------------------------------------
 // One book's route

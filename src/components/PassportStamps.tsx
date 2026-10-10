@@ -3,11 +3,6 @@ import { StyleSheet, Text, View } from 'react-native';
 import { theme } from '../theme';
 import type { PlaceVisit } from '../lib/stats';
 
-/**
- * Every place your copies have been, as passport stamps. Ink-coloured text;
- * the stamp-red border carries the look. Tilts alternate so a row of them
- * reads as stamped by hand rather than laid out by a grid.
- */
 export function PassportStamps({ places }: { places: PlaceVisit[] }) {
   if (places.length === 0) {
     return (
@@ -24,8 +19,6 @@ export function PassportStamps({ places }: { places: PlaceVisit[] }) {
           key={`${place.city}|${place.region}`}
           style={[styles.stamp, { transform: [{ rotate: `${TILTS[index % TILTS.length]}deg` }] }]}
         >
-          {/* Two lines, so "Baja California" reads whole instead of
-              clipping; past that it's truncated. */}
           <Text style={styles.city} numberOfLines={2}>
             {place.city}
           </Text>

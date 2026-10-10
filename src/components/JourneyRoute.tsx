@@ -5,12 +5,7 @@ import { Book } from '../types';
 import { theme } from '../theme';
 import { RouteStop, routeOf } from '../lib/stats';
 
-/**
- * A copy's journey as a line of stops: where it's been (solid), where it is
- * (the stamp-red dot), and who's waiting (a dotted line to hollow dots).
- * There are no coordinates in the data, so this is a route, not a map; it
- * reads left to right in the order the book travelled.
- */
+/** There are no coordinates in the data, so this is a route, not a map. */
 export function JourneyRoute({ book }: { book: Book }) {
   const stops = routeOf(book);
 
@@ -37,10 +32,6 @@ export function JourneyRoute({ book }: { book: Book }) {
 
 type Connection = 'travelled' | 'planned';
 
-/**
- * The line into a stop: solid where it has travelled, dotted where it's
- * still to go, including the leg that's in the post right now.
- */
 function connectionInto(to: RouteStop): Connection {
   return to.kind === 'past' || to.kind === 'current' ? 'travelled' : 'planned';
 }
@@ -155,8 +146,6 @@ const styles = StyleSheet.create({
     borderRadius: 1.5,
     backgroundColor: theme.colors.faint,
   },
-  // Every dot wears a 2px ring in the card colour so it stays distinct where
-  // it meets the line.
   dot: {
     width: 14,
     height: 14,
@@ -173,7 +162,6 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     backgroundColor: theme.colors.stamp,
   },
-  // In the post: an accent ring, not yet filled in.
   dotArriving: {
     backgroundColor: theme.colors.card,
     borderColor: theme.colors.accent,

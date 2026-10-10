@@ -11,11 +11,6 @@ type EditProfileSheetProps = {
   onSave: (changes: Pick<Friend, 'name' | 'city' | 'state'>) => void;
 };
 
-/**
- * Name and city. Moving is the main reason to be here, so the note says what
- * changing your city does: books go to the new place from now on, and the
- * places they've already been stay where they were.
- */
 export function EditProfileSheet({ me, visible, onClose, onSave }: EditProfileSheetProps) {
   const [name, setName] = useState(me.name);
   const [city, setCity] = useState(me.city);

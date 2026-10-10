@@ -164,7 +164,6 @@ export function useBookClub() {
     };
   }, []);
 
-  /** Pull to refresh: other people's handoffs only arrive on a fetch. */
   const refresh = async () => {
     setRefreshing(true);
     applyData(await fetchBookClubData());
@@ -242,7 +241,6 @@ export function useBookClub() {
       return;
     }
 
-    // They can see their club now; load it.
     applyData(await fetchBookClubData());
     setCurrentUserId(claim.personId);
   };
@@ -441,7 +439,6 @@ export function useBookClub() {
     track(`mark ${book.title} as arrived`, markReceived(bookId));
   };
 
-  /** Which emails you get. */
   const handleUpdateEmailPrefs = (prefs: EmailPrefs) => {
     if (!currentUserId) {
       return;
@@ -453,7 +450,6 @@ export function useBookClub() {
     track('save your email settings', updateEmailPrefs(currentUserId, prefs));
   };
 
-  /** Take friend requests from groupmates, or from nobody. */
   const handleUpdateFriendRequestsFrom = (value: 'groups' | 'nobody') => {
     if (!currentUserId) {
       return;
@@ -530,7 +526,6 @@ export function useBookClub() {
     track(`update things with ${nameOf(otherId)}`, removeFriendship(currentUserId, otherId));
   };
 
-  /** Start a group with you in it. */
   const handleCreateGroup = (name: string): string | null => {
     if (!currentUserId || !name.trim()) {
       return null;

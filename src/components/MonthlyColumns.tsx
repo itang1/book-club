@@ -6,11 +6,6 @@ import type { MonthCount } from '../lib/stats';
 
 const PLOT_HEIGHT = 88;
 
-/**
- * Books finished per month, one column each. One series in one hue, so no
- * legend; the card's title names it. Values sit on the caps of non-empty
- * columns only. Tap a column for its month and titles.
- */
 export function MonthlyColumns({ data }: { data: MonthCount[] }) {
   const [selected, setSelected] = useState<number | null>(null);
   const max = Math.max(1, ...data.map((bucket) => bucket.count));
@@ -52,7 +47,6 @@ export function MonthlyColumns({ data }: { data: MonthCount[] }) {
                   ]}
                 />
               ) : (
-                // A recessive stub keeps empty months visible as months.
                 <View style={styles.stub} />
               )}
             </Pressable>
@@ -91,8 +85,6 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
     height: '100%',
   },
-  // At most 24px wide with a 4px rounded cap and a square base, growing from
-  // the baseline.
   column: {
     width: '62%',
     maxWidth: 24,

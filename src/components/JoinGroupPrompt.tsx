@@ -12,11 +12,6 @@ type JoinGroupPromptProps = {
   onJoin: (inviteCode: string) => void;
 };
 
-/**
- * For someone already signed in who opens an invite link: "Join The
- * Traveling Pants?" Joining needs a yes, and says what it means. Nothing
- * shows if they're already in the group or the link doesn't work.
- */
 export function JoinGroupPrompt({ groups, currentUserId, onJoin }: JoinGroupPromptProps) {
   const [invite, setInvite] = useState<{ code: string; id: string; name: string } | null>(null);
 

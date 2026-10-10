@@ -174,14 +174,8 @@ export function friendNameIn(book: Book, friendId: string | null): string {
 }
 
 /**
- * How many distinct places this copy has been.
- *
- * Keyed on city *and* region, so two readers in the same city count once — the
- * book didn't travel anywhere new — while two Springfields in different states
- * stay separate. Deliberately makes no attempt to merge neighbouring towns:
- * Seattle and Bellevue are two places, and deciding otherwise would need real
- * coordinates and an arbitrary radius. Simple and explainable beats clever and
- * surprising here.
+ * How many distinct places this copy has been, keyed on city and region:
+ * same city counts once, two Springfields stay two, neighbouring towns aren't merged.
  */
 export function placesVisited(book: Book): number {
   const places = journey(book).map((leg) => placeKey(placeOf(book, leg)));

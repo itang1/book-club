@@ -28,11 +28,7 @@ import { GroupScreen } from './src/screens/GroupScreen';
 import { SignInScreen } from './src/screens/SignInScreen';
 import { RulesAgreementScreen } from './src/screens/RulesAgreementScreen';
 
-/**
- * The one-time "Welcome, Lena. Before your first book, here are the rules"
- * screen with I agree. Off for now; set to true to bring it back (agreements
- * already given are still remembered).
- */
+/** The one-time rules agreement after joining. Agreements already given are still remembered. */
 const ASK_TO_AGREE_TO_RULES = false;
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
@@ -48,7 +44,6 @@ const tabStyles = StyleSheet.create({
     position: 'absolute',
     left: 16,
     right: 16,
-    // Sits just above the tab bar.
     bottom: 104,
     backgroundColor: theme.colors.text,
     borderRadius: 12,
@@ -81,7 +76,6 @@ const tabStyles = StyleSheet.create({
 
 function HomeStack({ club }: { club: BookClub }) {
   const me = club.members.find((person) => person.id === club.currentUserId) ?? null;
-  // Groups you can lend into: yours, and never the sample club.
   const myGroups = club.groups.filter(
     (group) =>
       !group.isSample && club.currentUserId && group.memberIds.includes(club.currentUserId),
@@ -128,8 +122,6 @@ function HomeStack({ club }: { club: BookClub }) {
           />
         )}
       </Stack.Screen>
-      {/* Adding a book is occasional, so it lives behind the + on Home rather
-          than taking a permanent tab. */}
       <Stack.Screen name="AddBook" options={{ title: 'Lend a new book' }}>
         {(props) => (
           <AddBookScreen
@@ -146,10 +138,6 @@ function HomeStack({ club }: { club: BookClub }) {
   );
 }
 
-/**
- * Friends & Groups: the list of your groups and friends, and each group's
- * own page (members, stats, books, history).
- */
 function FriendsStack({ club }: { club: BookClub }) {
   return (
     <FriendsNav.Navigator
@@ -203,7 +191,6 @@ function Tabs({ club }: { club: BookClub }) {
     <NavigationContainer linking={linking}>
       <Tab.Navigator
         tabBar={(props) => <TabBar {...props} />}
-        // Each tab draws its own large serif title.
         screenOptions={{ headerShown: false }}
       >
         <Tab.Screen name="Home" options={{ title: 'Books' }}>
@@ -256,7 +243,6 @@ function Root() {
       />
     );
   } else if (ASK_TO_AGREE_TO_RULES && me && !me.agreedRulesAt) {
-    // Once per person, right after joining.
     body = (
       <RulesAgreementScreen firstName={me.name.split(' ')[0]} onAgree={club.agreeToRules} />
     );
@@ -264,7 +250,6 @@ function Root() {
     body = (
       <>
         <Tabs club={club} />
-        {/* Someone signed in who opened an invite link: join, or not now. */}
         <JoinGroupPrompt
           groups={club.groups}
           currentUserId={club.currentUserId}

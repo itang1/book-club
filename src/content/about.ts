@@ -1,9 +1,5 @@
 import type { ImageSourcePropType } from 'react-native';
 
-/**
- * Words for the About page. Kept here, apart from layout, so they're easy to
- * edit without touching any components.
- */
 
 /**
  * Middle-school me, reading in a tree. Cropped to the polaroid's 200:230
@@ -44,17 +40,12 @@ export const bio: BioRun[][] = [
   ],
 ];
 
-/**
- * Ours, in the spirit of the Pants' rules: the "You must" voice, specific
- * and a little silly, a time limit, and a last line about the friendship.
- * Written fresh, not borrowed.
- */
 // In the same order as the Rules of the Pants below, each one answering
 // its counterpart: looking after it, taste, self-talk, a line not to cross,
 // the silly one, documenting, writing to each other, passing it on,
 // logistics, and love.
 export const rules = [
-  'You must give it a safe ride: a sleeve, a scarf, anywhere but loose in a bag with your keys.',
+  'You must keep it in one piece. Coffee rings are character; missing pages are a crime.',
   'You must never apologize for what you underlined.',
   'You must never say "I\'m not a reader" while it\'s in your hands.',
   'You must never spoil the ending.',

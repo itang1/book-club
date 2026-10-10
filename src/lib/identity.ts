@@ -1,10 +1,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 /**
- * Who is using the app on this device. There is no sign-in yet, so this stands
- * in for it: a friend id remembered locally. AsyncStorage maps to localStorage
- * on web. Failures are swallowed, since forgetting the choice only means
- * picking again.
+ * Demo mode: who is using the app on this device, remembered locally.
+ * Failures are swallowed, since forgetting the choice only means picking again.
  */
 
 const KEY = 'book-club:reader-id';

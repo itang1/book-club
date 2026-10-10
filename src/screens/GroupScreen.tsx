@@ -26,10 +26,6 @@ type GroupScreenProps = {
   onLeft: () => void;
 };
 
-/**
- * One group: who's in it, what it has done (all time), its books, and the
- * full history of every pass, newest first. Invite and leave live here too.
- */
 export function GroupScreen({
   route,
   groups,

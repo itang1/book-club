@@ -13,15 +13,8 @@ type RulesAgreementScreenProps = {
   onAgree: () => void;
 };
 
-/**
- * Shown once per person, right after they join: the Rules of the Books (and
- * About), with "I agree" pinned at the bottom. Like the Sisterhood settling
- * its rules before the Pants leave, minus the oath. After this, the Rules &
- * about button on Books is the way back.
- */
 export function RulesAgreementScreen({ firstName, onAgree }: RulesAgreementScreenProps) {
   const insets = useSafeAreaInsets();
-  // Line the welcome up with the page below, whichever layout it's using.
   const wide = useWindowDimensions().width >= SIDE_BY_SIDE_MIN_WIDTH;
 
   return (
@@ -73,7 +66,6 @@ const styles = StyleSheet.create({
     color: theme.colors.muted,
     marginTop: 6,
   },
-  // Pinned, so the button is always in reach however far down you've read.
   footer: {
     borderTopWidth: 1,
     borderTopColor: theme.colors.border,

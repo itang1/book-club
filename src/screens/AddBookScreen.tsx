@@ -11,7 +11,6 @@ type AddBookScreenProps = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'AddBook'>;
   /** You add your own copies; nobody adds a book on someone else's behalf. */
   owner: Friend | null;
-  /** Everyone in the club, to suggest who a gift was from. */
   members: Friend[];
   /** Your groups: every book is lent within one. */
   groups: Group[];
@@ -30,13 +29,11 @@ export function AddBookScreen({
 }: AddBookScreenProps) {
   const [title, setTitle] = useState('');
   const [author, setAuthor] = useState('');
-  // Your only group is picked for you; with several, you choose.
   const [groupId, setGroupId] = useState<string | null>(groups.length === 1 ? groups[0].id : null);
   const [newGroupName, setNewGroupName] = useState('');
   const group = groups.find((candidate) => candidate.id === groupId);
   const [isGift, setIsGift] = useState(false);
   const [giftedBy, setGiftedBy] = useState('');
-  // Quick picks for who it was from; anyone else can be typed in.
   const giverSuggestions = members
     .filter((person) => person.id !== owner?.id)
     .map((person) => person.name.split(' ')[0]);
@@ -73,7 +70,6 @@ export function AddBookScreen({
           fromFriend: null,
           toFriend: owner.id,
           happenedAt: new Date().toISOString(),
-          // You have it already; nothing to wait for in the post.
           receivedAt: new Date().toISOString(),
           placeCity: owner.city,
           placeRegion: owner.state,
@@ -82,8 +78,7 @@ export function AddBookScreen({
     };
 
     onAddBook(newBook);
-    // Land on the new book, where people can start signing up. Replacing the
-    // form means Back goes home rather than to an emptied form.
+    // Replace, so Back goes home rather than to an emptied form.
     navigation.replace('BookDetail', { bookId, bookTitle: newBook.title });
   };
 
@@ -117,7 +112,6 @@ export function AddBookScreen({
           style={styles.input}
         />
 
-        {/* Who can borrow it is the group, said in so many words. */}
         <Text style={styles.fieldLabel}>Who can borrow it?</Text>
         {groups.length === 0 ? (
           <View>
@@ -164,7 +158,6 @@ export function AddBookScreen({
           <Text style={styles.hint}>Shared with {group.name}: they can see it and join the line.</Text>
         )}
 
-        {/* A gift stays yours to lend; the book page credits the giver. */}
         <Pressable
           style={styles.giftToggle}
           onPress={() => setIsGift((on) => !on)}

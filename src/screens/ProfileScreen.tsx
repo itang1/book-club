@@ -25,7 +25,6 @@ type ProfileScreenProps = {
   books: Book[];
   me: Friend | null;
   friendCount: number;
-  /** With real accounts: who's signed in, and the way out. */
   email?: string | null;
   onSignOut?: () => void;
   onUpdateProfile: (changes: Pick<Friend, 'name' | 'city' | 'state'>) => void;
@@ -33,10 +32,6 @@ type ProfileScreenProps = {
   onUpdateFriendRequestsFrom: (value: 'groups' | 'nobody') => void;
 };
 
-/**
- * Just you: who you are, and the books in your life right now. Switching
- * between people is a development tool and lives in the dev bar, not here.
- */
 export function ProfileScreen({
   books,
   me,
@@ -152,9 +147,6 @@ export function ProfileScreen({
               <View style={styles.bookInfo}>
                 <Text style={styles.bookTitle}>{book.title}</Text>
                 <Text style={styles.bookMeta}>
-                  {/* In the post counts as coming to you only when it's
-                      addressed to you; in the post to someone else, you're
-                      next after them. */}
                   {isInTransit(book) && holderId(book) === me?.id
                     ? `In the post from ${friendNameIn(book, senderId(book)).split(' ')[0]}`
                     : isInTransit(book)
@@ -331,7 +323,6 @@ const styles = StyleSheet.create({
     padding: 18,
     marginBottom: 14,
   },
-  // Stat values in the sans, per the figure spec; the serif stays on titles.
   statValue: {
     fontSize: 26,
     fontWeight: '600',

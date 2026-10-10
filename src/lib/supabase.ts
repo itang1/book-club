@@ -7,7 +7,6 @@ import { createClient } from '@supabase/supabase-js';
  * variables with that prefix into the client bundle. A differently named
  * variable is simply absent at runtime, and the app falls back to mock data
  * with no error — so these names cannot be changed to match other projects.
- * (three-lines uses NEXT_PUBLIC_ for the same reason, on Next.js's side.)
  *
  * Values are trimmed because a key pasted from a dashboard often carries a
  * trailing newline, which would otherwise end up in an auth header.

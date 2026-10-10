@@ -101,7 +101,6 @@ export function BookDetailScreen({
   const myPlace = placeInLine(book, currentUserId);
   const goingHome = confirmingTo !== null && confirmingTo === owner && confirmingTo !== nextId;
 
-  /** One line saying where the copy is, from the reader's side when it's theirs. */
   const whereItIs = (() => {
     if (comingToMe) {
       return `On its way to you from ${first(sender)}`;
@@ -121,10 +120,6 @@ export function BookDetailScreen({
     return isBackHome(book) ? `Back home with ${first(holder)}${where}` : `With ${first(holder)}${where}`;
   })();
 
-  /**
-   * The one thing this reader can do with the copy right now: receive it,
-   * pass it on (or send it home), or sign up and step back.
-   */
   const renderAction = () => {
     if (isSample) {
       return (
@@ -219,8 +214,6 @@ export function BookDetailScreen({
   return (
     <>
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-        {/* Stands in for cover art: a colour swatch derived from the title,
-            carrying title and author the way a real jacket would. */}
         <View
           style={[styles.cover, { backgroundColor: book.coverColor }, book.coverUrl && styles.coverWithImage]}
         >
@@ -244,7 +237,6 @@ export function BookDetailScreen({
             ) : null}
           </View>
         </View>
-        {/* This copy's own address: for a message, or an NFC sticker. */}
         <Pressable
           style={styles.shareLink}
           onPress={async () => {
@@ -260,7 +252,6 @@ export function BookDetailScreen({
           <Ionicons name="link-outline" size={14} color={theme.colors.accent} />
           <Text style={styles.shareLinkText}>Share link</Text>
         </Pressable>
-        {/* The owner can fetch a cover, or go back to the colour if it's wrong. */}
         {currentUserId !== null && currentUserId === owner && !isSample && (
           <Pressable
             style={styles.coverAction}
@@ -277,7 +268,6 @@ export function BookDetailScreen({
           </Text>
         )}
 
-        {/* Whose it is, and the one circle it travels in. */}
         <Text style={styles.ownership}>
           {first(owner)}'s copy
           {isSample
@@ -287,8 +277,6 @@ export function BookDetailScreen({
               : ''}
         </Text>
 
-        {/* Where it is and what you can do about it, together, before
-            anything else. This is what people open the page for. */}
         <View style={styles.statusCard}>
           <Text style={[styles.whereItIs, (iHoldIt || comingToMe) && styles.whereItIsMine]}>
             {whereItIs}
@@ -311,8 +299,6 @@ export function BookDetailScreen({
           </View>
         </View>
 
-        {/* The route doubles as the line: who's had it, who has it, who's
-            waiting, and home. */}
         <View style={[styles.box, styles.routeBox]}>
           <Text style={styles.boxTitle}>The route</Text>
           <Text style={styles.boxCaption}>Where this copy has been, and who's waiting.</Text>
@@ -554,7 +540,6 @@ const styles = StyleSheet.create({
     color: theme.colors.text,
     textAlign: 'center',
   },
-  // The stamp red, kept for books that are yours right now.
   whereItIsMine: {
     color: theme.colors.stamp,
   },
@@ -671,7 +656,6 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
   },
-  // Stat values in the sans, per the figure spec; the serif stays on titles.
   statValue: {
     fontSize: 22,
     fontWeight: '600',

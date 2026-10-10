@@ -9,17 +9,13 @@ import { emailSignInLink } from '../lib/auth';
 import { groupPreview } from '../lib/bookClubService';
 import { inviteCodeFromUrl } from '../lib/invite';
 
-/**
- * Sign in with an emailed link. The same screen covers first-timers: a new
- * email simply gets an account, and the welcome screen follows.
- */
+/** A new email simply gets an account, so this covers first-timers too. */
 export function SignInScreen() {
   const insets = useSafeAreaInsets();
   const [email, setEmail] = useState('');
   const [sending, setSending] = useState(false);
   const [sentTo, setSentTo] = useState<string | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
-  // Arrived from an invite link: say which group, before they sign in.
   const [invitedTo, setInvitedTo] = useState<{ name: string; members: number } | null>(null);
   useEffect(() => {
     const code = inviteCodeFromUrl();

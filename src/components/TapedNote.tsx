@@ -3,11 +3,6 @@ import { Linking, StyleSheet, Text, View } from 'react-native';
 import { theme } from '../theme';
 import { pantsCredit, pantsPreamble, pantsRules } from '../content/about';
 
-/**
- * The Rules of the Pants as a page torn from a notebook and taped in beside
- * ours: tilted, two strips of tape across the top corners, handwritten.
- * Credited underneath.
- */
 export function TapedNote({ beside = false }: { beside?: boolean }) {
   return (
     <View style={[styles.wrap, beside && styles.wrapBeside]}>
@@ -40,8 +35,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 28,
   },
-  // Beside the main column on a wide screen: start level with the first
-  // card (below its heading), and fill the side column.
   wrapBeside: {
     marginTop: 72,
   },
@@ -51,8 +44,6 @@ const styles = StyleSheet.create({
   paper: {
     width: '88%',
     maxWidth: 380,
-    // Notebook paper: warmer than the cards, with a faint shadow so it
-    // sits on top of the page rather than in it.
     backgroundColor: '#fdf8ec',
     paddingTop: 26,
     paddingBottom: 20,
@@ -64,7 +55,6 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 3 },
     elevation: 2,
   },
-  // Translucent strips, like matte tape, angled across each top corner.
   tape: {
     position: 'absolute',
     top: -8,
@@ -104,7 +94,6 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     color: theme.colors.text,
   },
-  // Its own column, so wrapped lines hang under the text, not the number.
   number: {
     width: 24,
   },

@@ -6,15 +6,7 @@ import { theme } from '../theme';
 import { clubYear, type ClubYear } from '../lib/stats';
 import { YearInReviewSheet } from './YearInReviewSheet';
 
-/**
- * The club's year so far, as a row of stat tiles. Tap for the year in
- * books; in December the card says it's ready.
- *
- * Early in a year (a few handoffs at most) it says what's moving in a
- * sentence instead of tiles of small numbers. The words stay upbeat: it's a
- * start, never a shortfall. `slim` is a single line, for when your own books need the
- * room at the top of the screen.
- */
+/** `slim` is a single line, for when your own books need the room. */
 export function ClubYearCard({
   books,
   groupNames,
@@ -24,7 +16,6 @@ export function ClubYearCard({
 }: {
   /** Your real groups' books only. */
   books: Book[];
-  /** The groups those are, to say so. At least one. */
   groupNames: string[];
   currentUserId: string | null;
   slim?: boolean;
@@ -102,7 +93,6 @@ export function ClubYearCard({
 /** Below this many handoffs, a sentence says it better than tiles. */
 const EARLY_BELOW = 4;
 
-/** "2 books on the move and 1 letter", or "a fresh year" before any. */
 function earlyLine(year: ClubYear): string {
   if (year.handoffs === 0) {
     return 'a fresh year, ready for its first book';
@@ -151,7 +141,6 @@ const styles = StyleSheet.create({
   tile: {
     flex: 1,
   },
-  // Stat values in the sans, per the figure spec; the serif stays on titles.
   value: {
     fontSize: 24,
     fontWeight: '600',
