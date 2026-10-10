@@ -14,6 +14,11 @@ const OPTIONS: { key: keyof EmailPrefs; label: string; detail: string }[] = [
   { key: 'bookArrived', label: 'A book you sent arrived', detail: 'When they tap Got it.' },
   { key: 'nextInLine', label: "You're next in line", detail: 'When the person before you gets it.' },
   { key: 'friendRequest', label: 'Friend requests', detail: 'When someone asks to be friends.' },
+  {
+    key: 'reminders',
+    label: 'Gentle reminders',
+    detail: 'At most one a month: a book to tap Got it on, or one a friend is waiting for.',
+  },
 ];
 
 export function EmailSettings({ prefs, onChange }: EmailSettingsProps) {

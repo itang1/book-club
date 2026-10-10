@@ -924,6 +924,8 @@ begin
     when 'next_in_line' then email_next_in_line
     when 'friend_request' then email_friend_request
     when 'new_book' then email_new_book
+    when 'arrival_check' then email_reminders
+    when 'still_reading' then email_reminders
   end into wants
   from public.friends
   where id = p_person and user_id is not null and not is_character;
@@ -1141,6 +1143,93 @@ revoke all on function public.email_action_preview(text), public.redeem_email_ac
   from public;
 grant execute on function public.email_action_preview(text), public.redeem_email_action(text)
   to anon, authenticated;
+
+-- ---------------------------------------------------------------
+-- Reminders, queued once a day. Kept rare: one reminder per person per
+-- 30 days at most, "did it arrive?" once per trip, and "how's it going?"
+-- once per stay, only when someone is waiting for it.
+-- ---------------------------------------------------------------
+alter table public.friends
+  add column if not exists email_reminders boolean not null default true;
+alter table public.notifications drop constraint if exists notifications_kind_check;
+alter table public.notifications add constraint notifications_kind_check
+  check (kind in ('book_sent', 'book_arrived', 'next_in_line', 'friend_request', 'new_book',
+                  'arrival_check', 'still_reading'));
+
+create or replace function public.queue_reminders() returns void
+language plpgsql security definer set search_path = public
+as $$
+declare
+  r record;
+begin
+  for r in
+    with latest as (
+      select distinct on (h.book_id) h.*
+      from public.handoffs h
+      join public.books b on b.id = h.book_id
+      where b.archived_at is null and not public.is_sample_book(h.book_id)
+      order by h.book_id, h.happened_at desc
+    ),
+    owners as (
+      select distinct on (book_id) book_id, to_friend as owner
+      from public.handoffs
+      order by book_id, happened_at asc
+    ),
+    candidates as (
+      select l.to_friend as person, 'arrival_check' as kind, l.book_id, l.from_friend as about
+      from latest l
+      where l.from_friend is not null and l.received_at is null
+        and l.happened_at < now() - interval '5 days'
+        and not exists (
+          select 1 from public.notifications n
+          where n.person_id = l.to_friend and n.book_id = l.book_id
+            and n.kind = 'arrival_check' and n.created_at > l.happened_at
+        )
+      union all
+      select l.to_friend, 'still_reading', l.book_id, q.friend_id
+      from latest l
+      join owners o on o.book_id = l.book_id
+      join lateral (
+        select friend_id from public.reading_queue
+        where book_id = l.book_id and status = 'waiting' and friend_id <> l.to_friend
+        order by position limit 1
+      ) q on true
+      where l.to_friend <> o.owner
+        and l.received_at < now() - interval '28 days'
+        and not exists (
+          select 1 from public.notifications n
+          where n.person_id = l.to_friend and n.book_id = l.book_id
+            and n.kind = 'still_reading' and n.created_at > l.happened_at
+        )
+    )
+    select distinct on (c.person) c.*
+    from candidates c
+    where not exists (
+      select 1 from public.notifications n
+      where n.person_id = c.person and n.kind in ('arrival_check', 'still_reading')
+        and n.created_at > now() - interval '30 days'
+    )
+    order by c.person, c.kind, c.book_id
+  loop
+    perform public.notify(r.person, r.kind, r.book_id, r.about);
+  end loop;
+end;
+$$;
+revoke all on function public.queue_reminders() from public, anon, authenticated;
+
+-- Daily at 17:00 UTC (morning in the US). Local test databases lack pg_cron.
+do $$
+begin
+  if exists (select 1 from pg_available_extensions where name = 'pg_cron') then
+    create extension if not exists pg_cron;
+    perform cron.schedule('queue-reminders', '0 17 * * *', 'select public.queue_reminders()');
+  else
+    raise notice 'pg_cron is unavailable, so reminders are left unscheduled';
+  end if;
+exception when others then
+  -- A scheduling hiccup shouldn't stop the rest of the deploy.
+  raise warning 'Reminders left unscheduled: %', sqlerrm;
+end $$;
 
 -- ---------------------------------------------------------------
 -- Tell the API about any new tables or columns straight away, rather than

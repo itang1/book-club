@@ -29,6 +29,7 @@ type FriendRow = {
   email_book_arrived?: boolean;
   email_next_in_line?: boolean;
   email_friend_request?: boolean;
+  email_reminders?: boolean;
   friend_requests_from?: 'groups' | 'nobody';
 };
 
@@ -125,6 +126,7 @@ function toFriend(row: FriendRow): Friend {
       bookArrived: row.email_book_arrived ?? true,
       nextInLine: row.email_next_in_line ?? true,
       friendRequest: row.email_friend_request ?? true,
+      reminders: row.email_reminders ?? true,
     },
     friendRequestsFrom: row.friend_requests_from ?? 'groups',
   };
@@ -374,6 +376,7 @@ export const updateEmailPrefs = (personId: string, prefs: EmailPrefs) =>
         email_book_arrived: prefs.bookArrived,
         email_next_in_line: prefs.nextInLine,
         email_friend_request: prefs.friendRequest,
+        email_reminders: prefs.reminders,
       })
       .eq('id', personId),
   );

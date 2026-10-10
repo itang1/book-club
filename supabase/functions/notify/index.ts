@@ -38,6 +38,7 @@ const ACTIONS: Partial<Record<EmailKind, 'got_it' | 'accept_friend' | 'join_line
   book_sent: 'got_it',
   friend_request: 'accept_friend',
   new_book: 'join_line',
+  arrival_check: 'got_it',
 };
 
 const hex = (bytes: ArrayBuffer | Uint8Array) =>

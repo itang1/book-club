@@ -62,4 +62,37 @@ do $$ begin
 exception when insufficient_privilege then raise notice 'ok  Nobody can read the outbox';
 end $$;
 reset role;
+
+-- Reminders: rare, and only when they help.
+select queue_reminders();
+select test.expect('A fresh read gets no nudge', (select count(*) from notifications where kind = 'still_reading'), 0);
+update handoffs set happened_at = now() - interval '50 days' where id = 'n-leg-1';
+update handoffs set happened_at = now() - interval '40 days', received_at = now() - interval '35 days' where id = 'n-leg-2';
+select queue_reminders();
+select test.expect('Five weeks in, with Pip waiting, Oli gets one nudge',
+  (select count(*) from notifications where person_id = 'n-oli' and kind = 'still_reading' and about_person = 'n-pip'), 1);
+select queue_reminders();
+select test.expect('Once per stay', (select count(*) from notifications where kind = 'still_reading'), 1);
+
+set role authenticated;
+select test.as_user('00000000-0000-0000-0000-0000000000c1');
+select lend_book('n-book2', 'Persuasion', 'Jane Austen', '#000', 'n2-leg-1', null, 'g-n');
+select lend_book('n-book3', 'Sanditon', 'Jane Austen', '#000', 'n3-leg-1', null, 'g-n');
+select test.as_user('00000000-0000-0000-0000-0000000000c3');
+insert into reading_queue (book_id, friend_id, position, status) values ('n-book2', 'n-pip', 1, 'waiting');
+select test.as_user('00000000-0000-0000-0000-0000000000c2');
+insert into reading_queue (book_id, friend_id, position, status) values ('n-book3', 'n-oli', 1, 'waiting');
+select test.as_user('00000000-0000-0000-0000-0000000000c1');
+select pass_on('n2-leg-2', 'n-book2', 'n-pip', null, null);
+select pass_on('n3-leg-2', 'n-book3', 'n-oli', null, null);
+reset role;
+update handoffs set happened_at = now() - interval '10 days' where id in ('n2-leg-1', 'n3-leg-1');
+update handoffs set happened_at = now() - interval '6 days' where id in ('n2-leg-2', 'n3-leg-2');
+select queue_reminders();
+select queue_reminders();
+select test.expect('Got it untapped for six days: Pip is asked once',
+  (select count(*) from notifications where person_id = 'n-pip' and kind = 'arrival_check'), 1);
+select test.expect('Oli had a reminder this month, so he waits',
+  (select count(*) from notifications where person_id = 'n-oli' and kind = 'arrival_check'), 0);
+
 select 'ALL NOTIFICATION TESTS PASSED';

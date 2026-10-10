@@ -67,6 +67,12 @@ People get an email when a book is sent to them, when one they sent
 arrives, when they're next in line, and when someone asks to be friends.
 Each can be turned off under **You → Emails**.
 
+Reminders stay rare: at most one per person per 30 days. "Has it reached
+you?" goes once per trip, when Got it is untapped after 5 days; "How's it
+going?" goes once per stay, after 4 weeks, when a friend is waiting. They're
+queued daily at 17:00 UTC by `queue_reminders()` (pg_cron) and share one
+switch, Gentle reminders.
+
 How it works: the database queues an email in `notifications` whenever one
 of those happens (and the person wants it); the `notify` Edge Function
 (`supabase/functions/notify`) sends what's queued over SMTP from your own

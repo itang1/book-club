@@ -59,4 +59,16 @@ describe('emails', () => {
     expect(email.text).toContain('Lena just added Circe by Madeline Miller to The Traveling Pants.');
     expect(email.text).toContain('Join the line: u');
   });
+
+  it('reminders: a one-tap Got it, and a gentle check-in naming who is next', () => {
+    const arrival = renderEmail({
+      kind: 'arrival_check', recipient: 'T', other: 'Carmen Lowell', book, bookId: 'b1', appUrl, actionUrl: 'u',
+    });
+    expect(arrival.subject).toBe('Has Circe reached you?');
+    expect(arrival.text).toContain("Got it, it's here: u");
+    const reading = renderEmail({ kind: 'still_reading', recipient: 'T', other: 'Lena Kaligaris', book, bookId: 'b1', appUrl });
+    expect(reading.subject).toBe("How's Circe going?");
+    expect(reading.text).toContain('Lena is next in line');
+    expect(reading.text).toContain('once a month at most');
+  });
 });

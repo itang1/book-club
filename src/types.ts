@@ -51,6 +51,7 @@ export type EmailPrefs = {
   bookArrived: boolean;
   nextInLine: boolean;
   friendRequest: boolean;
+  reminders: boolean;
 };
 
 /**

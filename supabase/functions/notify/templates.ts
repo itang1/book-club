@@ -5,13 +5,20 @@
  * that's what mail apps reliably render.
  */
 
-export type EmailKind = 'book_sent' | 'book_arrived' | 'next_in_line' | 'friend_request' | 'new_book';
+export type EmailKind =
+  | 'book_sent'
+  | 'book_arrived'
+  | 'next_in_line'
+  | 'friend_request'
+  | 'new_book'
+  | 'arrival_check'
+  | 'still_reading';
 
 export type EmailFacts = {
   kind: EmailKind;
   /** The person receiving the email. */
   recipient: string;
-  /** The other person: who sent it, who got it, who has it, who asked. */
+  /** The other person: who sent it, who got it, who has it, who asked, who's next. */
   other: string;
   book?: { title: string; author: string; coverColor: string };
   group?: string;
@@ -134,6 +141,31 @@ function content(facts: EmailFacts): Content {
         why: `You're getting this because you're in ${group}.`,
       };
     }
+    case 'arrival_check':
+      return {
+        subject: `Has ${titleText} reached you?`,
+        preheader: `One tap tells ${otherText} it made it.`,
+        heading: `Has ${titleText} reached you?`,
+        paragraphs: [
+          `${other} sent it to you a few days ago. If it's in your hands, one tap lets ${other} know it made it.`,
+          "If it's still in the post, sit tight: it's on its way.",
+        ],
+        button: `Open ${titleText}`,
+        action: "Got it, it's here",
+        why: `You're getting this because ${otherText} sent you ${titleText}. Reminders come once a month at most.`,
+      };
+    case 'still_reading':
+      return {
+        subject: `How's ${titleText} going?`,
+        preheader: `${otherText} is next in line, whenever you're ready.`,
+        heading: `How's ${titleText} going?`,
+        paragraphs: [
+          `It's been with you a few weeks, and ${other} is next in line for it.`,
+          `Take the time the book deserves. When you're done, send it on in the app so ${other} knows it's coming.`,
+        ],
+        button: `Open ${titleText}`,
+        why: `You're getting this because ${titleText} is with you and ${otherText} is waiting. Reminders come once a month at most.`,
+      };
   }
 }
 

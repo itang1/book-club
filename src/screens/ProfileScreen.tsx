@@ -179,6 +179,7 @@ export function ProfileScreen({
                 bookArrived: true,
                 nextInLine: true,
                 friendRequest: true,
+                reminders: true,
               }
             }
             onChange={onUpdateEmailPrefs}
