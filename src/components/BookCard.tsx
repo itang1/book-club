@@ -17,6 +17,8 @@ type BookCardProps = {
   currentUserId: string | null;
   /** In the sample club: tagged so it's never mistaken for a real loan. */
   isSample?: boolean;
+  /** Shown after the author when the card isn't already under its group's heading. */
+  groupName?: string;
   onPress?: (book: Book) => void;
 };
 
@@ -55,7 +57,7 @@ function nextLine(book: Book, currentUserId: string | null): string {
   return nextId ? `${friendNameIn(book, nextId)} is next` : 'Nobody in line yet';
 }
 
-export function BookCard({ book, currentUserId, isSample, onPress }: BookCardProps) {
+export function BookCard({ book, currentUserId, isSample, groupName, onPress }: BookCardProps) {
   const withMe = currentUserId !== null && holderId(book) === currentUserId;
 
   return (
@@ -77,7 +79,10 @@ export function BookCard({ book, currentUserId, isSample, onPress }: BookCardPro
 
       <View style={styles.details}>
         <Text style={styles.title}>{book.title}</Text>
-        <Text style={styles.author}>{book.author}</Text>
+        <Text style={styles.author} numberOfLines={1}>
+          {book.author}
+          {groupName ? ` · ${groupName}` : ''}
+        </Text>
 
         <Text style={[styles.line, withMe && styles.lineMine]}>{whereLine(book, currentUserId)}</Text>
         <Text style={styles.lineQuiet}>{nextLine(book, currentUserId)}</Text>

@@ -9,7 +9,7 @@ import { BookCard } from '../components/BookCard';
 import { ClubYearCard } from '../components/ClubYearCard';
 import { AboutSheet } from '../components/AboutSheet';
 import { tagline } from '../content/about';
-import { describeLeg, hasLetter, holderId, recentActivity, relativeTime } from '../lib/bookState';
+import { holderId } from '../lib/bookState';
 import { theme } from '../theme';
 
 type HomeScreenProps = {
@@ -36,13 +36,28 @@ export function HomeScreen({
   // Sample-club books come after real ones, so your own groups lead.
   const sampleGroupIds = new Set(groups.filter((group) => group.isSample).map((group) => group.id));
   const isSampleBook = (book: Book) => Boolean(book.groupId && sampleGroupIds.has(book.groupId));
-  const others = books
-    .filter((book) => !mine.includes(book))
-    .sort((a, b) => Number(isSampleBook(a)) - Number(isSampleBook(b)));
-  const recent = recentActivity(books, 4);
+  // Then every other book, under the group it's lent within: your groups
+  // first (alphabetically), the sample club last.
+  const others = books.filter((book) => !mine.includes(book));
+  const sections = [...groups]
+    .sort(
+      (a, b) =>
+        Number(Boolean(a.isSample)) - Number(Boolean(b.isSample)) || a.name.localeCompare(b.name),
+    )
+    .map((group) => ({ group, books: others.filter((book) => book.groupId === group.id) }))
+    .filter((section) => section.books.length > 0);
+  const groupName = (book: Book) => groups.find((group) => group.id === book.groupId)?.name;
+  // Visible without being in one of your groups (say, you're in line for it
+  // but left its group): still listed, just not under a group.
+  const ungrouped = others.filter(
+    (book) => !sections.some((section) => section.books.includes(book)),
+  );
 
   const open = (book: Book) =>
     navigation.navigate('BookDetail', { bookId: book.id, bookTitle: book.title });
+  // A group's own page lives on the Friends & Groups tab.
+  const openGroup = (groupId: string) =>
+    navigation.getParent()?.navigate('Friends', { screen: 'Group', params: { groupId } });
 
   return (
     <ScrollView
@@ -90,53 +105,56 @@ export function HomeScreen({
             <Text style={[styles.sectionTitle, styles.sectionTitleMine]}>In your hands</Text>
           </View>
           {mine.map((book) => (
-            <BookCard key={book.id} book={book} currentUserId={currentUserId} onPress={open} />
+            <BookCard
+              key={book.id}
+              book={book}
+              currentUserId={currentUserId}
+              groupName={groupName(book)}
+              onPress={open}
+            />
           ))}
         </>
       )}
 
-      {/* Derived entirely from the handoff log; there's no separate feed. */}
-      {recent.length > 0 && (
-        <View style={styles.feed}>
-          <Text style={styles.feedTitle}>Recently</Text>
-          {recent.map(({ book, leg }) => (
-            <Pressable key={leg.id} style={styles.feedRow} onPress={() => open(book)}>
-              <View style={[styles.feedSwatch, { backgroundColor: book.coverColor }]} />
-              <Text style={styles.feedText} numberOfLines={2}>
-                {describeLeg(book, leg)}
-                {hasLetter(leg) ? ' · left a letter' : ''}
-              </Text>
-              <Text style={styles.feedTime}>{relativeTime(leg.happenedAt)}</Text>
-            </Pressable>
+      {sections.length === 0 && mine.length === 0 && ungrouped.length === 0 && (
+        <Text style={styles.empty}>
+          Nothing travelling yet. Got a book you'd pass around? Lend it.
+        </Text>
+      )}
+
+      {sections.map(({ group, books: groupBooks }) => (
+        <View key={group.id}>
+          <Pressable style={styles.sectionHeader} onPress={() => openGroup(group.id)}>
+            <Text style={styles.sectionTitle}>
+              {group.name}
+              {group.isSample ? <Text style={styles.sampleTag}>  Sample</Text> : null}
+            </Text>
+            <Text style={styles.sectionMeta}>
+              {groupBooks.length} {groupBooks.length === 1 ? 'book' : 'books'} ›
+            </Text>
+          </Pressable>
+          {groupBooks.map((book) => (
+            <BookCard key={book.id} book={book} currentUserId={currentUserId} onPress={open} />
+          ))}
+        </View>
+      ))}
+
+      {ungrouped.length > 0 && (
+        <View>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Other books</Text>
+          </View>
+          {ungrouped.map((book) => (
+            <BookCard key={book.id} book={book} currentUserId={currentUserId} onPress={open} />
           ))}
         </View>
       )}
 
-      <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>In circulation</Text>
-        <Text style={styles.sectionMeta}>
-          {others.length} {others.length === 1 ? 'book' : 'books'}
-        </Text>
-      </View>
-
-      {others.length === 0 ? (
-        <Text style={styles.empty}>
-          Nothing travelling yet. Got a book you'd pass around? Lend it.
-        </Text>
-      ) : (
-        others.map((book) => (
-          <BookCard
-            key={book.id}
-            book={book}
-            currentUserId={currentUserId}
-            isSample={isSampleBook(book)}
-            onPress={open}
-          />
-        ))
-      )}
-
       {/* Real groups only: the sample club would swamp the numbers. */}
-      <ClubYearCard books={books.filter((book) => !isSampleBook(book))} currentUserId={currentUserId} />
+      <ClubYearCard
+        books={books.filter((book) => !isSampleBook(book))}
+        currentUserId={currentUserId}
+      />
       <AboutSheet visible={aboutOpen} onClose={() => setAboutOpen(false)} />
     </ScrollView>
   );
@@ -230,50 +248,15 @@ const styles = StyleSheet.create({
   sectionTitleMine: {
     color: theme.colors.stamp,
   },
+  sampleTag: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: theme.colors.muted,
+  },
   sectionMeta: {
     fontSize: 12,
     color: theme.colors.accent,
     fontWeight: '600',
-  },
-  feed: {
-    backgroundColor: theme.colors.card,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    borderRadius: 16,
-    paddingHorizontal: 14,
-    paddingTop: 12,
-    paddingBottom: 4,
-    marginBottom: 20,
-  },
-  feedTitle: {
-    fontSize: 12,
-    color: theme.colors.muted,
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
-    fontWeight: '700',
-    marginBottom: 8,
-  },
-  feedRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 8,
-  },
-  feedSwatch: {
-    width: 10,
-    height: 14,
-    borderRadius: 2,
-    marginRight: 10,
-  },
-  feedText: {
-    flex: 1,
-    fontSize: 13,
-    lineHeight: 18,
-    color: theme.colors.text,
-  },
-  feedTime: {
-    fontSize: 11,
-    color: theme.colors.muted,
-    marginLeft: 8,
   },
   empty: {
     color: theme.colors.muted,

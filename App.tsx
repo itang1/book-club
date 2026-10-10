@@ -9,7 +9,7 @@ import {
   useSafeAreaInsets,
 } from 'react-native-safe-area-context';
 
-import { RootStackParamList, RootTabParamList } from './src/types';
+import { FriendsStackParamList, RootStackParamList, RootTabParamList } from './src/types';
 import { BookClub, useBookClub } from './src/lib/useBookClub';
 import { friendIdsOf } from './src/lib/friendGraph';
 import { isDevMode } from './src/lib/devMode';
@@ -24,11 +24,13 @@ import { AddBookScreen } from './src/screens/AddBookScreen';
 import { ProfileScreen } from './src/screens/ProfileScreen';
 import { BookDetailScreen } from './src/screens/BookDetailScreen';
 import { WelcomeScreen } from './src/screens/WelcomeScreen';
+import { GroupScreen } from './src/screens/GroupScreen';
 import { SignInScreen } from './src/screens/SignInScreen';
 import { RulesAgreementScreen } from './src/screens/RulesAgreementScreen';
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
 const Stack = createNativeStackNavigator<RootStackParamList>();
+const FriendsNav = createNativeStackNavigator<FriendsStackParamList>();
 
 const tabStyles = StyleSheet.create({
   root: {
@@ -137,6 +139,56 @@ function HomeStack({ club }: { club: BookClub }) {
   );
 }
 
+/**
+ * Friends & Groups: the list of your groups and friends, and each group's
+ * own page (members, stats, books, history).
+ */
+function FriendsStack({ club }: { club: BookClub }) {
+  return (
+    <FriendsNav.Navigator
+      screenOptions={{
+        headerStyle: { backgroundColor: theme.colors.background },
+        headerTintColor: theme.colors.accent,
+        headerTitleStyle: { color: theme.colors.text, fontFamily: theme.fonts.serif },
+        headerShadowVisible: false,
+      }}
+    >
+      <FriendsNav.Screen name="FriendsHome" options={{ headerShown: false }}>
+        {({ navigation }) => (
+          <FriendsScreen
+            members={club.members}
+            friendships={club.friendships}
+            groups={club.groups}
+            books={club.books}
+            currentUserId={club.currentUserId}
+            onRequestFriend={club.requestFriend}
+            onAcceptFriend={club.acceptFriend}
+            onRemoveFriend={club.removeFriend}
+            onCreateGroup={club.createGroup}
+            onOpenGroup={(groupId) => navigation.navigate('Group', { groupId })}
+          />
+        )}
+      </FriendsNav.Screen>
+      <FriendsNav.Screen name="Group" options={{ title: '' }}>
+        {({ navigation, route }) => (
+          <GroupScreen
+            route={route}
+            groups={club.groups}
+            members={club.members}
+            books={club.books}
+            currentUserId={club.currentUserId}
+            onOpenBook={(bookId) =>
+              navigation.getParent()?.navigate('Home', { screen: 'BookDetail', params: { bookId } })
+            }
+            onLeave={club.leaveGroup}
+            onLeft={() => navigation.navigate('FriendsHome')}
+          />
+        )}
+      </FriendsNav.Screen>
+    </FriendsNav.Navigator>
+  );
+}
+
 function Tabs({ club }: { club: BookClub }) {
   const me = club.members.find((person) => person.id === club.currentUserId) ?? null;
 
@@ -150,21 +202,8 @@ function Tabs({ club }: { club: BookClub }) {
         <Tab.Screen name="Home" options={{ title: 'Books' }}>
           {() => <HomeStack club={club} />}
         </Tab.Screen>
-        <Tab.Screen name="Friends">
-          {() => (
-            <FriendsScreen
-              members={club.members}
-              friendships={club.friendships}
-              groups={club.groups}
-              books={club.books}
-              currentUserId={club.currentUserId}
-              onRequestFriend={club.requestFriend}
-              onAcceptFriend={club.acceptFriend}
-              onRemoveFriend={club.removeFriend}
-              onCreateGroup={club.createGroup}
-              onLeaveGroup={club.leaveGroup}
-            />
-          )}
+        <Tab.Screen name="Friends" options={{ title: 'Friends & Groups' }}>
+          {() => <FriendsStack club={club} />}
         </Tab.Screen>
         <Tab.Screen name="Profile" options={{ title: 'You' }}>
           {() => (

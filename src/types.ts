@@ -113,8 +113,14 @@ export type Book = {
 export type RootTabParamList = {
   /** The Books tab holds its own stack: the list, a book, and Lend. */
   Home: NavigatorScreenParams<RootStackParamList> | undefined;
-  Friends: undefined;
+  /** Friends & Groups: the list, and a group's own page. */
+  Friends: NavigatorScreenParams<FriendsStackParamList> | undefined;
   Profile: undefined;
+};
+
+export type FriendsStackParamList = {
+  FriendsHome: undefined;
+  Group: { groupId: string };
 };
 
 export type RootStackParamList = {

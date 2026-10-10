@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import type { Book } from '../types';
-import { clubYear, finishesByMonth, placesForOwner, routeOf, yearInReview } from './stats';
+import { clubYear, finishesByMonth, groupTotals, placesForOwner, routeOf, yearInReview } from './stats';
 
 const book: Book = {
   id: 'book',
@@ -102,5 +102,12 @@ describe('yearInReview', () => {
     const review = yearInReview([book], 2020, 'ana');
     expect(review.mostTravelled).toBeNull();
     expect(review.handoffs).toBe(0);
+  });
+});
+
+describe('groupTotals', () => {
+  it('counts passes (not the first leg), letters, readers and places', () => {
+    expect(groupTotals([book])).toEqual({ books: 1, handoffs: 1, letters: 1, readers: 2, places: 2 });
+    expect(groupTotals([])).toEqual({ books: 0, handoffs: 0, letters: 0, readers: 0, places: 0 });
   });
 });

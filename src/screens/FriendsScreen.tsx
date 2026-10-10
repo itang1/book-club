@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Modal, Pressable, ScrollView, Share, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -13,7 +13,6 @@ import {
   outgoingRequests,
   suggestionsFor,
 } from '../lib/friendGraph';
-import { inviteLink } from '../lib/invite';
 
 type FriendsScreenProps = {
   members: Friend[];
@@ -25,7 +24,7 @@ type FriendsScreenProps = {
   onAcceptFriend: (personId: string) => void;
   onRemoveFriend: (personId: string) => void;
   onCreateGroup: (name: string) => void;
-  onLeaveGroup: (groupId: string) => void;
+  onOpenGroup: (groupId: string) => void;
 };
 
 /**
@@ -59,67 +58,19 @@ function Avatar({ name }: { name: string }) {
   );
 }
 
-/**
- * Opens the share sheet with the group's invite link. On web without the
- * Share API (most desktop browsers), the link is shown to copy instead.
- */
-function InviteButton({ group }: { group: Group }) {
-  const [shownLink, setShownLink] = useState<string | null>(null);
-
-  if (!group.inviteCode) {
-    return <Text style={styles.muted}>The invite link appears in a moment.</Text>;
-  }
-
-  const link = inviteLink(group.inviteCode);
-  const invite = async () => {
-    try {
-      await Share.share({
-        message: `Join ${group.name} on Sisterhood of the Traveling Books: ${link}`,
-      });
-    } catch {
-      setShownLink(link);
-    }
-  };
-
-  return (
-    <View>
-      <Pressable style={styles.inviteButton} onPress={invite}>
-        <Ionicons name="person-add-outline" size={15} color={theme.colors.onAccent} />
-        <Text style={styles.inviteButtonText}>Invite to {group.name}</Text>
-      </Pressable>
-      {shownLink && (
-        <View style={styles.linkBox}>
-          <Text style={styles.linkLabel}>Send them this link:</Text>
-          <Text style={styles.linkText} selectable>
-            {shownLink}
-          </Text>
-        </View>
-      )}
-    </View>
-  );
-}
-
-/** One group: name and size, opening to its members, invite, and leave. */
-function GroupCard({
+/** One group as a row: name, size and books. Tap for its page. */
+function GroupRow({
   group,
-  members,
-  currentUserId,
-  onLeave,
+  bookCount,
+  onOpen,
 }: {
   group: Group;
-  members: Friend[];
-  currentUserId: string | null;
-  onLeave: () => void;
+  bookCount: number;
+  onOpen: () => void;
 }) {
-  const [open, setOpen] = useState(false);
-  const [confirmLeave, setConfirmLeave] = useState(false);
-  const people = group.memberIds
-    .map((id) => members.find((person) => person.id === id))
-    .filter((person): person is Friend => Boolean(person));
-
   return (
-    <View style={styles.card}>
-      <Pressable style={styles.groupHeader} onPress={() => setOpen((value) => !value)}>
+    <Pressable style={styles.card} onPress={onOpen} accessibilityRole="button">
+      <View style={styles.groupHeader}>
         <Ionicons name="people-outline" size={18} color={theme.colors.accent} />
         <View style={styles.groupTitle}>
           <Text style={styles.groupName}>
@@ -127,59 +78,13 @@ function GroupCard({
             {group.isSample ? <Text style={styles.sampleTag}>  Sample</Text> : null}
           </Text>
           <Text style={styles.muted}>
-            {group.memberIds.length} {group.memberIds.length === 1 ? 'member' : 'members'}
+            {group.memberIds.length} {group.memberIds.length === 1 ? 'member' : 'members'} ·{' '}
+            {bookCount} {bookCount === 1 ? 'book' : 'books'}
           </Text>
         </View>
-        <Ionicons
-          name={open ? 'chevron-up' : 'chevron-down'}
-          size={18}
-          color={theme.colors.muted}
-        />
-      </Pressable>
-
-      {open && (
-        <View style={styles.groupBody}>
-          <Text style={styles.memberList}>
-            {people.map((person) => (person.id === currentUserId ? 'You' : person.name)).join(', ')}
-          </Text>
-          {group.isSample ? (
-            <Text style={styles.note}>
-              A sample club, so you can see what a group with some history looks like.
-              Everyone's in it to look around; nobody can lend or sign up here, and you
-              won't see the other real people in it.
-            </Text>
-          ) : (
-            <>
-              <Text style={styles.note}>
-                Members see each other's books and can join their lines. Nobody outside the
-                group can.
-              </Text>
-              <InviteButton group={group} />
-            </>
-          )}
-          {group.isSample ? null : confirmLeave ? (
-            <View style={styles.confirmRow}>
-              <Text style={styles.note}>
-                Leave {group.name}? You'll stop seeing its books, and come off any lines
-                you're waiting in.
-              </Text>
-              <View style={styles.row}>
-                <Pressable style={styles.dangerButton} onPress={onLeave}>
-                  <Text style={styles.dangerButtonText}>Leave</Text>
-                </Pressable>
-                <Pressable style={styles.plainButton} onPress={() => setConfirmLeave(false)}>
-                  <Text style={styles.plainButtonText}>Stay</Text>
-                </Pressable>
-              </View>
-            </View>
-          ) : (
-            <Pressable style={styles.leaveLink} onPress={() => setConfirmLeave(true)}>
-              <Text style={styles.leaveText}>Leave group</Text>
-            </Pressable>
-          )}
-        </View>
-      )}
-    </View>
+        <Ionicons name="chevron-forward" size={18} color={theme.colors.muted} />
+      </View>
+    </Pressable>
   );
 }
 
@@ -235,7 +140,7 @@ export function FriendsScreen({
   onAcceptFriend,
   onRemoveFriend,
   onCreateGroup,
-  onLeaveGroup,
+  onOpenGroup,
 }: FriendsScreenProps) {
   const insets = useSafeAreaInsets();
   // Who's being unfriended, while the confirmation is up.
@@ -262,7 +167,7 @@ export function FriendsScreen({
       contentContainerStyle={[styles.content, { paddingTop: insets.top + 20 }]}
       keyboardShouldPersistTaps="handled"
     >
-      <Text style={styles.title}>Friends</Text>
+      <Text style={styles.title}>Friends and Groups</Text>
       <Text style={styles.subtitle}>
         Friends see what you're reading. To lend to each other, share a group.
       </Text>
@@ -274,12 +179,11 @@ export function FriendsScreen({
         </Text>
       )}
       {myGroups.map((group) => (
-        <GroupCard
+        <GroupRow
           key={group.id}
           group={group}
-          members={members}
-          currentUserId={currentUserId}
-          onLeave={() => onLeaveGroup(group.id)}
+          bookCount={books.filter((book) => book.groupId === group.id).length}
+          onOpen={() => onOpenGroup(group.id)}
         />
       ))}
       <StartGroup onCreate={onCreateGroup} />
@@ -477,21 +381,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: theme.colors.muted,
   },
-  groupBody: {
-    marginTop: 12,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: theme.colors.border,
-  },
-  memberList: {
-    fontSize: 14,
-    lineHeight: 20,
-    color: theme.colors.text,
-    marginBottom: 8,
-  },
-  confirmRow: {
-    marginTop: 12,
-  },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -543,45 +432,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
     marginBottom: 10,
-  },
-  inviteButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    backgroundColor: theme.colors.accent,
-    borderRadius: 999,
-    paddingVertical: 9,
-    paddingHorizontal: 14,
-  },
-  inviteButtonText: {
-    marginLeft: 6,
-    color: theme.colors.onAccent,
-    fontWeight: '700',
-    fontSize: 14,
-  },
-  linkBox: {
-    marginTop: 10,
-    backgroundColor: theme.colors.background,
-    borderRadius: 10,
-    padding: 10,
-  },
-  linkLabel: {
-    fontSize: 12,
-    color: theme.colors.muted,
-    marginBottom: 4,
-  },
-  linkText: {
-    fontSize: 13,
-    color: theme.colors.text,
-  },
-  leaveLink: {
-    marginTop: 14,
-    alignSelf: 'flex-start',
-  },
-  leaveText: {
-    color: theme.colors.muted,
-    fontSize: 13,
-    fontWeight: '700',
   },
   addButton: {
     backgroundColor: theme.colors.soft,
@@ -639,13 +489,6 @@ const styles = StyleSheet.create({
     color: theme.colors.text,
     fontWeight: '700',
     fontSize: 14,
-  },
-  dangerButton: {
-    borderWidth: 1.5,
-    borderColor: theme.colors.text,
-    borderRadius: 999,
-    paddingHorizontal: 16,
-    paddingVertical: 7,
   },
   dangerButtonText: {
     color: theme.colors.text,

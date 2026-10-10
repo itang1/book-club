@@ -308,3 +308,32 @@ export function yearInReview(books: Book[], year: number, meId: string | null): 
     mine: { finished, lettersWritten, sentTo: [...sentTo].sort() },
   };
 }
+
+// ---------------------------------------------------------------------------
+// One group, all time
+// ---------------------------------------------------------------------------
+
+export type GroupTotals = {
+  books: number;
+  handoffs: number;
+  letters: number;
+  readers: number;
+  places: number;
+};
+
+/** Everything a group's books have done since they started travelling. */
+export function groupTotals(books: Book[]): GroupTotals {
+  const legs = books.flatMap((book) => book.handoffs.map((leg) => ({ book, leg })));
+  const places = new Set(
+    legs.map(({ book, leg }) => placeKey(placeOf(book, leg))).filter((key): key is string => Boolean(key)),
+  );
+
+  return {
+    books: books.length,
+    // Passes between people; putting a book into circulation isn't one.
+    handoffs: legs.filter(({ leg }) => leg.fromFriend).length,
+    letters: legs.filter(({ leg }) => hasLetter(leg)).length,
+    readers: new Set(legs.map(({ leg }) => leg.toFriend)).size,
+    places: places.size,
+  };
+}

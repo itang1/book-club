@@ -32,7 +32,13 @@ export const linking: LinkingOptions<RootTabParamList> = {
           AddBook: 'lend',
         },
       },
-      Friends: 'friends',
+      Friends: {
+        initialRouteName: 'FriendsHome',
+        screens: {
+          FriendsHome: 'friends',
+          Group: 'groups/:groupId',
+        },
+      },
       Profile: 'you',
     },
   },

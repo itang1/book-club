@@ -107,7 +107,7 @@ The repo is public, so real names live only in Supabase and in gitignored
 
 ```
 App.tsx                 navigation, sign-in gate
-src/screens/            Books, book detail, Lend, Friends, You, Sign in, Welcome
+src/screens/            Books, book, Lend, Friends & Groups, a group, You, Sign in, Welcome
 src/components/         cards, route, charts, tab bar, About
 src/lib/useBookClub.ts  all club state and every change to it
 src/lib/bookState.ts    holder, line, status: derived from the log
