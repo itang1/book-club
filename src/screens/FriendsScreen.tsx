@@ -69,6 +69,10 @@ function Avatar({ name }: { name: string }) {
 /**
  * One group as a card: who's in it (initials), how many books, what happened
  * last, and Invite right there. Tap anywhere else for its page.
+ *
+ * The open target is laid under the content rather than wrapped around it,
+ * so Invite is a button beside it, not a button inside a button (which the
+ * web refuses, and which can fire both).
  */
 function GroupCard({
   group,
@@ -92,9 +96,16 @@ function GroupCard({
   const shown = people.slice(0, 5);
 
   return (
-    <Pressable style={styles.card} onPress={onOpen} accessibilityRole="button">
-      <View style={styles.groupHeader}>
-        <View style={styles.groupTitle}>
+    <View style={styles.card}>
+      <Pressable
+        style={StyleSheet.absoluteFill}
+        onPress={onOpen}
+        accessibilityRole="button"
+        accessibilityLabel={`${group.name} group`}
+      />
+      <View style={styles.groupHeader} pointerEvents="box-none">
+        <View style={styles.groupTitle} pointerEvents="none">
+          {group.isSample && <Text style={styles.sampleTag}>SAMPLE GROUP</Text>}
           <Text style={styles.groupName}>{group.name}</Text>
           <Text style={styles.muted}>
             {group.memberIds.length} {group.memberIds.length === 1 ? 'member' : 'members'} ·{' '}
@@ -107,10 +118,11 @@ function GroupCard({
           size={18}
           color={theme.colors.muted}
           style={styles.chevron}
+          pointerEvents="none"
         />
       </View>
 
-      <View style={styles.faces}>
+      <View style={styles.faces} pointerEvents="none">
         {shown.map((person, index) => (
           <View key={person.id} style={[styles.face, index > 0 && styles.faceOverlap]}>
             <Text style={styles.faceText}>{person.name.charAt(0)}</Text>
@@ -122,12 +134,14 @@ function GroupCard({
         </Text>
       </View>
 
-      <Text style={styles.latest} numberOfLines={2}>
-        {latest
-          ? `${describeLeg(latest.book, latest.leg)} · ${relativeTime(latest.leg.happenedAt)}`
-          : 'Nothing has moved yet. Lend a book to start.'}
+      <Text style={styles.latest} numberOfLines={2} pointerEvents="none">
+        {group.isSample
+          ? 'A pretend group with some history, so you can see how it all works.'
+          : latest
+            ? `${describeLeg(latest.book, latest.leg)} · ${relativeTime(latest.leg.happenedAt)}`
+            : 'Nothing has moved yet. Lend a book to start.'}
       </Text>
-    </Pressable>
+    </View>
   );
 }
 
@@ -190,12 +204,15 @@ export function FriendsScreen({
   const [unfriending, setUnfriending] = useState<Friend | null>(null);
 
   const person = (id: string) => members.find((candidate) => candidate.id === id);
-  // Your real groups, alphabetically; the sample club gets its own section.
+  // Your groups: real ones alphabetically, then the sample club, marked as
+  // such, in the same list rather than a section of its own.
   const myGroups = groups
     .filter((group) => currentUserId && group.memberIds.includes(currentUserId))
-    .sort((a, b) => a.name.localeCompare(b.name));
-  const realGroups = myGroups.filter((group) => !group.isSample);
-  const sampleGroups = myGroups.filter((group) => group.isSample);
+    .sort(
+      (a, b) =>
+        Number(Boolean(a.isSample)) - Number(Boolean(b.isSample)) || a.name.localeCompare(b.name),
+    );
+  const hasRealGroup = myGroups.some((group) => !group.isSample);
   const friendIds = friendIdsOf(friendships, currentUserId);
   const friends = members.filter((candidate) => friendIds.has(candidate.id));
   const requests = incomingRequests(friendships, currentUserId)
@@ -239,13 +256,13 @@ export function FriendsScreen({
       )}
 
       <Text style={styles.sectionTitle}>Your groups</Text>
-      {realGroups.length === 0 && (
+      {!hasRealGroup && (
         <Text style={styles.empty}>
           Books are lent within groups. Start one for the friends you pass books to, or ask a
           friend for their group's invite link.
         </Text>
       )}
-      {realGroups.map((group) => (
+      {myGroups.map((group) => (
         <GroupCard
           key={group.id}
           group={group}
@@ -256,25 +273,6 @@ export function FriendsScreen({
         />
       ))}
       <StartGroup onCreate={onCreateGroup} />
-
-      {sampleGroups.length > 0 && (
-        <>
-          <Text style={styles.sectionTitle}>Look around</Text>
-          <Text style={styles.sectionNote}>
-            A pretend group with some history, so you can see how it all works.
-          </Text>
-          {sampleGroups.map((group) => (
-            <GroupCard
-              key={group.id}
-              group={group}
-              members={members}
-              books={books}
-              currentUserId={currentUserId}
-              onOpen={() => onOpenGroup(group.id)}
-            />
-          ))}
-        </>
-      )}
 
       <Text style={styles.sectionTitle}>Friends</Text>
       {friends.length === 0 ? (
@@ -430,13 +428,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: theme.colors.border,
   },
-  sectionNote: {
-    color: theme.colors.muted,
-    fontSize: 13,
-    lineHeight: 18,
-    marginTop: -4,
-    marginBottom: 10,
-  },
   chevron: {
     marginLeft: 8,
   },
@@ -495,7 +486,9 @@ const styles = StyleSheet.create({
   sampleTag: {
     fontSize: 11,
     fontWeight: '700',
+    letterSpacing: 0.8,
     color: theme.colors.muted,
+    marginBottom: 1,
   },
   row: {
     flexDirection: 'row',
