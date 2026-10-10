@@ -10,8 +10,9 @@ import { YearInReviewSheet } from './YearInReviewSheet';
  * The club's year so far, as a row of stat tiles. Tap for the year in
  * books; in December the card says it's ready.
  *
- * A quiet year (a few handoffs at most) gets a sentence instead of tiles of
- * ones and zeros. `slim` is a single line, for when your own books need the
+ * Early in a year (a few handoffs at most) it says what's moving in a
+ * sentence instead of tiles of small numbers. The words stay upbeat: it's a
+ * start, never a shortfall. `slim` is a single line, for when your own books need the
  * room at the top of the screen.
  */
 export function ClubYearCard({
@@ -32,7 +33,7 @@ export function ClubYearCard({
   const [open, setOpen] = useState(false);
   const year = clubYear(books, now.getFullYear());
   const december = now.getMonth() === 11;
-  const quiet = year.handoffs < QUIET_BELOW;
+  const early = year.handoffs < EARLY_BELOW;
   const tiles = [
     { label: 'Handoffs', value: year.handoffs },
     { label: 'Letters', value: year.letters },
@@ -59,8 +60,8 @@ export function ClubYearCard({
       >
         <Text style={styles.slimTitle}>{year.year}</Text>
         <Text style={styles.slimStats} numberOfLines={1}>
-          {quiet
-            ? quietLine(year)
+          {early
+            ? earlyLine(year)
             : `${count(year.handoffs, 'handoff')} · ${count(year.letters, 'letter')} · ${count(year.places, 'place')}`}
         </Text>
         <Text style={styles.link}>›</Text>
@@ -73,11 +74,11 @@ export function ClubYearCard({
     <Pressable style={styles.card} onPress={() => setOpen(true)} accessibilityRole="button">
       <Text style={styles.title}>Your groups in {year.year}</Text>
       <Text style={styles.scope}>{listOf(groupNames)}, so far this year.</Text>
-      {quiet ? (
-        <Text style={styles.quiet}>
+      {early ? (
+        <Text style={styles.early}>
           {year.handoffs === 0
-            ? 'Nothing has moved yet this year. Lend a book and this fills in.'
-            : `Quiet so far: ${quietLine(year)}.`}
+            ? 'A fresh year of books begins with the first one you lend.'
+            : `Off to a good start: ${earlyLine(year)}.`}
         </Text>
       ) : (
         <View style={styles.tiles}>
@@ -98,14 +99,16 @@ export function ClubYearCard({
   );
 }
 
-/** Fewer handoffs than this and the tiles would be mostly zeros. */
-const QUIET_BELOW = 4;
+/** Below this many handoffs, a sentence says it better than tiles. */
+const EARLY_BELOW = 4;
 
-/** "2 books on the move, 1 letter". */
-function quietLine(year: ClubYear): string {
-  return year.handoffs === 0
-    ? 'nothing has moved yet'
-    : `${count(year.booksMoving, 'book')} on the move, ${count(year.letters, 'letter')}`;
+/** "2 books on the move and 1 letter", or "a fresh year" before any. */
+function earlyLine(year: ClubYear): string {
+  if (year.handoffs === 0) {
+    return 'a fresh year, ready for its first book';
+  }
+  const moving = `${count(year.booksMoving, 'book')} on the move`;
+  return year.letters > 0 ? `${moving} and ${count(year.letters, 'letter')}` : moving;
 }
 
 function count(n: number, noun: string): string {
@@ -159,7 +162,7 @@ const styles = StyleSheet.create({
     color: theme.colors.muted,
     marginTop: 2,
   },
-  quiet: {
+  early: {
     fontSize: 14,
     lineHeight: 20,
     color: theme.colors.text,
