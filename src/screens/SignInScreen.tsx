@@ -1,10 +1,13 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { Ionicons } from '@expo/vector-icons';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { theme } from '../theme';
 import { tagline } from '../content/about';
 import { emailSignInLink } from '../lib/auth';
+import { groupPreview } from '../lib/bookClubService';
+import { inviteCodeFromUrl } from '../lib/invite';
 
 /**
  * Sign in with an emailed link. The same screen covers first-timers: a new
@@ -16,6 +19,14 @@ export function SignInScreen() {
   const [sending, setSending] = useState(false);
   const [sentTo, setSentTo] = useState<string | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
+  // Arrived from an invite link: say which group, before they sign in.
+  const [invitedTo, setInvitedTo] = useState<{ name: string; members: number } | null>(null);
+  useEffect(() => {
+    const code = inviteCodeFromUrl();
+    if (code) {
+      groupPreview(code).then((group) => group && setInvitedTo(group));
+    }
+  }, []);
 
   const valid = /\S+@\S+\.\S+/.test(email.trim());
 
@@ -45,6 +56,19 @@ export function SignInScreen() {
       <Text style={styles.subtitle}>
         {tagline}
       </Text>
+
+      {invitedTo && (
+        <View style={styles.invite}>
+          <Ionicons name="people" size={18} color={theme.colors.accent} />
+          <Text style={styles.inviteText}>
+            You're invited to <Text style={styles.inviteName}>{invitedTo.name}</Text>
+            {invitedTo.members > 0
+              ? ` (${invitedTo.members} ${invitedTo.members === 1 ? 'member' : 'members'})`
+              : ''}
+            . Sign in below to join.
+          </Text>
+        </View>
+      )}
 
       <View style={styles.card}>
         {sentTo ? (
@@ -115,6 +139,24 @@ const styles = StyleSheet.create({
     lineHeight: 24,
     color: theme.colors.muted,
     marginBottom: 24,
+  },
+  invite: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: theme.colors.soft,
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 16,
+  },
+  inviteText: {
+    flex: 1,
+    marginLeft: 10,
+    fontSize: 15,
+    lineHeight: 21,
+    color: theme.colors.text,
+  },
+  inviteName: {
+    fontWeight: '700',
   },
   card: {
     backgroundColor: theme.colors.card,

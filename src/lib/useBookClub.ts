@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { AppState, Platform } from 'react-native';
 import type { Session } from '@supabase/supabase-js';
 
 import type { Book, EmailPrefs, Friend, Friendship, Group, Handoff, Letter } from '../types';
@@ -169,6 +170,54 @@ export function useBookClub() {
     applyData(await fetchBookClubData());
     setRefreshing(false);
   };
+
+  /**
+   * Keep what's on screen current without anyone having to reload: fetch
+   * again whenever the app comes back into view (switching back to the tab
+   * or app), and every minute while it's open. Other people's handoffs,
+   * new members and new groups only arrive on a fetch. Quiet: no spinner.
+   */
+  const signedInRef = React.useRef(false);
+  signedInRef.current = usesAccounts ? session !== null && currentUserId !== null : false;
+  React.useEffect(() => {
+    if (!usesAccounts) {
+      return;
+    }
+
+    const quietRefresh = () => {
+      if (signedInRef.current) {
+        fetchBookClubData().then((data) => {
+          // A failed background fetch shouldn't blank the screen or nag.
+          if (!data.error) {
+            applyData(data);
+          }
+        });
+      }
+    };
+
+    const interval = setInterval(quietRefresh, 60_000);
+    const appState = AppState.addEventListener('change', (state) => {
+      if (state === 'active') {
+        quietRefresh();
+      }
+    });
+    const onVisible = () => {
+      if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+        quietRefresh();
+      }
+    };
+    if (Platform.OS === 'web' && typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', onVisible);
+    }
+
+    return () => {
+      clearInterval(interval);
+      appState.remove();
+      if (Platform.OS === 'web' && typeof document !== 'undefined') {
+        document.removeEventListener('visibilitychange', onVisible);
+      }
+    };
+  }, []);
 
   /** Demo mode only: become someone else (the dev bar). */
   const chooseReader = (personId: string) => {

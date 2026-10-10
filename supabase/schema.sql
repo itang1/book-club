@@ -809,6 +809,11 @@ grant execute on function public.me(), public.is_member(text), public.can_see_bo
   public.mark_received(text)
   to authenticated;
 
+-- Someone opening an invite link isn't signed in yet, so the sign-in screen
+-- can say "You're invited to Living Room". Only by invite code, and only the
+-- name and member count; nothing else is open to anonymous visitors.
+grant execute on function public.group_preview(text) to anon;
+
 -- ---------------------------------------------------------------
 -- Email. Which emails each person wants (all on by default; they change
 -- them under You → Emails), and an outbox the database fills when

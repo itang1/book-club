@@ -10,7 +10,9 @@ import { Platform } from 'react-native';
 const APP_URL = process.env.EXPO_PUBLIC_APP_URL?.trim() || 'https://itang1.github.io/book-club';
 
 export function inviteLink(inviteCode: string): string {
-  return `${APP_URL}?join=${encodeURIComponent(inviteCode)}`;
+  // With the trailing slash: GitHub Pages redirects /book-club to
+  // /book-club/, and the invite shouldn't depend on a redirect keeping it.
+  return `${APP_URL.replace(/\/+$/, '')}/?join=${encodeURIComponent(inviteCode)}`;
 }
 
 export function inviteCodeFromUrl(): string | null {

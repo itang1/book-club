@@ -22,8 +22,8 @@ exception when others then
   if sqlerrm like 'FAIL%' then raise; end if;
   return 'ok  ' || label;
 end $$;
-grant usage on schema test to authenticated;
-grant execute on all functions in schema test to authenticated;
+grant usage on schema test to authenticated, anon;
+grant execute on all functions in schema test to authenticated, anon;
 
 -- Accounts. Irene runs two real groups: "Real club" with Juhyae, and
 -- "Living room" with Becky. Eve has only just signed up.
@@ -133,6 +133,17 @@ select test.refused('Wrong code cannot claim Albert', $$select claim_profile('p-
 select test.expect('Albert sees himself in the Living room list', (select count(*) from unclaimed_in_group(:'room_code') where id = 'p-albert'), 1);
 select test.expect('Albert claims his profile', (select count(*) from (select claim_profile('p-albert', :'room_code')) c), 1);
 select test.expect('Albert now sees the Living room book', (select count(*) from books where id = 'b-room'), 1);
+
+-- Signed out: an invite code shows its group's name, and nothing else is open.
+set role anon;
+select test.expect('Signed out, an invite code names its group', (select count(*) from group_preview(:'room_code')), 1);
+select test.expect('Signed out, a wrong code names nothing', (select count(*) from group_preview('wrong')), 0);
+do $$ begin
+  perform 1 from groups;
+  raise exception 'FAIL: anonymous visitors can list groups';
+exception when insufficient_privilege then raise notice 'ok  Signed out, groups stay closed';
+end $$;
+set role authenticated;
 
 -- Leaving.
 select test.as_user('00000000-0000-0000-0000-0000000000a3');
