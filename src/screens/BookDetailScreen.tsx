@@ -292,7 +292,7 @@ export function BookDetailScreen({
                 <Text style={styles.ownerActionText}>Edit title & author</Text>
               </Pressable>
             )}
-            {!book.archivedAt && onRetireBook && (
+            {!book.archivedAt && iHoldIt && onRetireBook && (
               <Pressable
                 style={styles.ownerAction}
                 onPress={() => setConfirmingRetire(true)}

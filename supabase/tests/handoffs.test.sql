@@ -70,5 +70,20 @@ select test.check('Got it marks it received', exists (select 1 from handoffs whe
 select test.refused('Direct inserts into the log are refused',
   $$insert into handoffs (id, book_id, to_friend) values ('h-z', 'h-book', 'h-bea')$$);
 
+-- Editing details and resting the copy: the owner's, and only once it's home.
+select test.as_user('00000000-0000-0000-0000-0000000000b3');
+select test.refused('Cat cannot edit Ana''s book', $$select update_book('h-book', 'X', 'Y')$$);
+select test.as_user('00000000-0000-0000-0000-0000000000b1');
+select update_book('h-book', ' Middlemarch: A Study ', 'George Eliot');
+select test.check('Ana fixes the title', exists (select 1 from books where id = 'h-book' and title = 'Middlemarch: A Study'));
+select test.refused('Ana cannot rest it while Bea has it', $$select retire_book('h-book')$$);
+select test.as_user('00000000-0000-0000-0000-0000000000b2');
+select pass_on('h-leg-3', 'h-book', 'h-ana', null, null);
+select test.as_user('00000000-0000-0000-0000-0000000000b1');
+select test.refused('Ana cannot rest it while it''s in the post home', $$select retire_book('h-book')$$);
+select mark_received('h-book');
+select retire_book('h-book');
+select test.check('Home again, Ana rests it', exists (select 1 from books where id = 'h-book' and archived_at is not null));
+
 reset role;
 select 'ALL HANDOFF TESTS PASSED';

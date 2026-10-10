@@ -747,6 +747,17 @@ begin
   ) then
     raise exception 'Only the book''s owner can rest this copy';
   end if;
+  -- Resting hides the book's actions, so a reader still holding it couldn't send it home.
+  if not exists (
+    select 1 from (
+      select to_friend, from_friend, received_at from public.handoffs
+      where book_id = p_book_id order by happened_at desc limit 1
+    ) latest
+    where latest.to_friend = public.me()
+      and (latest.from_friend is null or latest.received_at is not null)
+  ) then
+    raise exception 'Rest this copy once it''s back home with you';
+  end if;
 
   update public.books set archived_at = now() where id = p_book_id;
 end;

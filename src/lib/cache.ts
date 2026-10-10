@@ -32,3 +32,11 @@ export async function loadCachedClubData(): Promise<BookClubData | null> {
   }
 }
 
+/** On sign-out: the club's names and books shouldn't stay on a shared device. */
+export async function clearCachedClubData(): Promise<void> {
+  try {
+    await AsyncStorage.removeItem(CACHE_KEY);
+  } catch {
+    // Non-critical storage failure.
+  }
+}

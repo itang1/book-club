@@ -29,7 +29,7 @@ import {
 } from './bookClubService';
 import type { BookClubData } from './bookClubService';
 import { claimProfile, onSessionChange, signOutEverywhere } from './auth';
-import { loadCachedClubData, saveCachedClubData } from './cache';
+import { clearCachedClubData, loadCachedClubData, saveCachedClubData } from './cache';
 import { findCoverUrl } from './covers';
 import { hasFinished, holderId } from './bookState';
 import { isDevMode } from './devMode';
@@ -163,6 +163,7 @@ export function useBookClub() {
       setSession(next);
 
       if (!next) {
+        clearCachedClubData();
         applyData({ books: [], friends: [], friendships: [], groups: [] });
         setCurrentUserId(null);
         setLoaded(true);
