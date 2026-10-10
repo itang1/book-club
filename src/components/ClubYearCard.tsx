@@ -12,11 +12,14 @@ import { YearInReviewSheet } from './YearInReviewSheet';
  */
 export function ClubYearCard({
   books,
+  groupNames,
   currentUserId,
   now = new Date(),
 }: {
   /** Your real groups' books only. */
   books: Book[];
+  /** The groups those are, to say so. */
+  groupNames: string[];
   currentUserId: string | null;
   now?: Date;
 }) {
@@ -31,7 +34,12 @@ export function ClubYearCard({
 
   return (
     <Pressable style={styles.card} onPress={() => setOpen(true)} accessibilityRole="button">
-      <Text style={styles.title}>The club's {year.year}</Text>
+      <Text style={styles.title}>Your groups in {year.year}</Text>
+      <Text style={styles.scope}>
+        {groupNames.length === 0
+          ? 'Once you join a group, its year shows up here.'
+          : `${listOf(groupNames)}, so far this year.`}
+      </Text>
       <View style={styles.tiles}>
         {tiles.map((tile) => (
           <View key={tile.label} style={styles.tile}>
@@ -57,7 +65,20 @@ export function ClubYearCard({
   );
 }
 
+/** "A", "A and B", "A, B and C". */
+function listOf(names: string[]): string {
+  return names.length <= 1
+    ? names.join('')
+    : `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`;
+}
+
 const styles = StyleSheet.create({
+  scope: {
+    fontSize: 12,
+    color: theme.colors.muted,
+    marginTop: -8,
+    marginBottom: 12,
+  },
   card: {
     backgroundColor: theme.colors.card,
     borderWidth: 1,

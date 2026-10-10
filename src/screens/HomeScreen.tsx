@@ -124,14 +124,27 @@ export function HomeScreen({
 
       {sections.map(({ group, books: groupBooks }) => (
         <View key={group.id}>
-          <Pressable style={styles.sectionHeader} onPress={() => openGroup(group.id)}>
-            <Text style={styles.sectionTitle}>
-              {group.name}
-              {group.isSample ? <Text style={styles.sampleTag}>  Sample</Text> : null}
-            </Text>
-            <Text style={styles.sectionMeta}>
-              {groupBooks.length} {groupBooks.length === 1 ? 'book' : 'books'} ›
-            </Text>
+          {/* A group's heading reads as the start of its own section: a
+              rule above, the people icon, the name, who's in it, and the way
+              to its page. */}
+          <Pressable
+            style={styles.groupHeader}
+            onPress={() => openGroup(group.id)}
+            accessibilityRole="button"
+            accessibilityLabel={`${group.name} group`}
+          >
+            <View style={styles.groupIcon}>
+              <Ionicons name="people" size={16} color={theme.colors.accent} />
+            </View>
+            <View style={styles.groupHeaderText}>
+              <Text style={styles.groupKicker}>{group.isSample ? 'Sample group' : 'Group'}</Text>
+              <Text style={styles.sectionTitle}>{group.name}</Text>
+              <Text style={styles.groupMeta}>
+                {group.memberIds.length} {group.memberIds.length === 1 ? 'member' : 'members'} ·{' '}
+                {groupBooks.length} {groupBooks.length === 1 ? 'book' : 'books'}
+              </Text>
+            </View>
+            <Text style={styles.seeGroup}>See group ›</Text>
           </Pressable>
           {groupBooks.map((book) => (
             <BookCard key={book.id} book={book} currentUserId={currentUserId} onPress={open} />
@@ -153,6 +166,10 @@ export function HomeScreen({
       {/* Real groups only: the sample club would swamp the numbers. */}
       <ClubYearCard
         books={books.filter((book) => !isSampleBook(book))}
+        groupNames={groups
+          .filter((group) => !group.isSample && currentUserId && group.memberIds.includes(currentUserId))
+          .map((group) => group.name)
+          .sort()}
         currentUserId={currentUserId}
       />
       <AboutSheet visible={aboutOpen} onClose={() => setAboutOpen(false)} />
@@ -248,10 +265,45 @@ const styles = StyleSheet.create({
   sectionTitleMine: {
     color: theme.colors.stamp,
   },
-  sampleTag: {
-    fontSize: 12,
+  groupHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.border,
+    paddingTop: 18,
+    marginTop: 10,
+    marginBottom: 14,
+  },
+  groupIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: theme.colors.soft,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  groupHeaderText: {
+    flex: 1,
+  },
+  groupKicker: {
+    fontSize: 11,
     fontWeight: '700',
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
     color: theme.colors.muted,
+    marginBottom: 1,
+  },
+  groupMeta: {
+    fontSize: 12,
+    color: theme.colors.muted,
+    marginTop: 2,
+  },
+  seeGroup: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: theme.colors.accent,
+    marginLeft: 8,
   },
   sectionMeta: {
     fontSize: 12,

@@ -1,4 +1,5 @@
 import { Image, StyleSheet, Text, View, Pressable } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { Book } from '../types';
 import { theme } from '../theme';
 import {
@@ -17,7 +18,7 @@ type BookCardProps = {
   currentUserId: string | null;
   /** In the sample club: tagged so it's never mistaken for a real loan. */
   isSample?: boolean;
-  /** Shown after the author when the card isn't already under its group's heading. */
+  /** Shown as a labelled pill when the card isn't already under its group's heading. */
   groupName?: string;
   onPress?: (book: Book) => void;
 };
@@ -78,10 +79,17 @@ export function BookCard({ book, currentUserId, isSample, groupName, onPress }: 
       )}
 
       <View style={styles.details}>
+        {groupName ? (
+          <View style={styles.groupPill}>
+            <Ionicons name="people" size={11} color={theme.colors.accent} />
+            <Text style={styles.groupPillText} numberOfLines={1}>
+              {groupName}
+            </Text>
+          </View>
+        ) : null}
         <Text style={styles.title}>{book.title}</Text>
         <Text style={styles.author} numberOfLines={1}>
           {book.author}
-          {groupName ? ` · ${groupName}` : ''}
         </Text>
 
         <Text style={[styles.line, withMe && styles.lineMine]}>{whereLine(book, currentUserId)}</Text>
@@ -177,6 +185,23 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: theme.colors.accent,
     overflow: 'hidden',
+  },
+  groupPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    backgroundColor: theme.colors.soft,
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    marginBottom: 6,
+    maxWidth: '100%',
+  },
+  groupPillText: {
+    marginLeft: 4,
+    fontSize: 11,
+    fontWeight: '700',
+    color: theme.colors.accent,
   },
   tags: {
     flexDirection: 'row',
