@@ -671,10 +671,10 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
   },
+  // Stat values in the sans, per the figure spec; the serif stays on titles.
   statValue: {
-    fontFamily: theme.fonts.serif,
     fontSize: 22,
-    fontWeight: '700',
+    fontWeight: '600',
     color: theme.colors.text,
   },
   statLabel: {

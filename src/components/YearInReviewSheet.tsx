@@ -57,7 +57,7 @@ export function YearInReviewSheet({
     { label: 'Handoffs', value: review.handoffs },
     { label: 'Letters', value: review.letters },
     { label: 'Readers', value: review.readers },
-    { label: 'Cities', value: review.places },
+    { label: 'Places', value: review.places },
   ];
 
   return (

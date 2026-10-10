@@ -331,10 +331,10 @@ const styles = StyleSheet.create({
     padding: 18,
     marginBottom: 14,
   },
+  // Stat values in the sans, per the figure spec; the serif stays on titles.
   statValue: {
-    fontFamily: theme.fonts.serif,
     fontSize: 26,
-    fontWeight: '700',
+    fontWeight: '600',
     color: theme.colors.text,
   },
   statLabel: {

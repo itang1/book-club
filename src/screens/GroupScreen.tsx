@@ -63,7 +63,7 @@ export function GroupScreen({
     { label: 'Books', value: totals.books },
     { label: 'Handoffs', value: totals.handoffs },
     { label: 'Letters', value: totals.letters },
-    { label: 'Cities', value: totals.places },
+    { label: 'Places', value: totals.places },
   ];
 
   return (

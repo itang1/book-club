@@ -24,7 +24,9 @@ export function PassportStamps({ places }: { places: PlaceVisit[] }) {
           key={`${place.city}|${place.region}`}
           style={[styles.stamp, { transform: [{ rotate: `${TILTS[index % TILTS.length]}deg` }] }]}
         >
-          <Text style={styles.city} numberOfLines={1}>
+          {/* Two lines, so "Baja California" reads whole instead of
+              clipping; past that it's truncated. */}
+          <Text style={styles.city} numberOfLines={2}>
             {place.city}
           </Text>
           <Text style={styles.region}>
@@ -53,7 +55,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     margin: 5,
     alignItems: 'center',
-    maxWidth: 150,
+    maxWidth: 170,
   },
   city: {
     fontFamily: theme.fonts.serif,
@@ -62,6 +64,7 @@ const styles = StyleSheet.create({
     color: theme.colors.text,
     textTransform: 'uppercase',
     letterSpacing: 0.6,
+    textAlign: 'center',
   },
   region: {
     fontSize: 10,
