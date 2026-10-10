@@ -3,66 +3,113 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Book } from '../types';
 import { theme } from '../theme';
-import { clubYear } from '../lib/stats';
+import { clubYear, type ClubYear } from '../lib/stats';
 import { YearInReviewSheet } from './YearInReviewSheet';
 
 /**
  * The club's year so far, as a row of stat tiles. Tap for the year in
  * books; in December the card says it's ready.
+ *
+ * A quiet year (a few handoffs at most) gets a sentence instead of tiles of
+ * ones and zeros. `slim` is a single line, for when your own books need the
+ * room at the top of the screen.
  */
 export function ClubYearCard({
   books,
   groupNames,
   currentUserId,
+  slim = false,
   now = new Date(),
 }: {
   /** Your real groups' books only. */
   books: Book[];
-  /** The groups those are, to say so. */
+  /** The groups those are, to say so. At least one. */
   groupNames: string[];
   currentUserId: string | null;
+  slim?: boolean;
   now?: Date;
 }) {
   const [open, setOpen] = useState(false);
   const year = clubYear(books, now.getFullYear());
+  const december = now.getMonth() === 11;
+  const quiet = year.handoffs < QUIET_BELOW;
   const tiles = [
     { label: 'Handoffs', value: year.handoffs },
     { label: 'Letters', value: year.letters },
     { label: 'Readers', value: year.readers },
     { label: 'Places', value: year.places },
   ];
+  const sheet = (
+    <YearInReviewSheet
+      visible={open}
+      onClose={() => setOpen(false)}
+      books={books}
+      currentUserId={currentUserId}
+      year={year.year}
+    />
+  );
+
+  if (slim) {
+    return (
+      <Pressable
+        style={[styles.card, styles.slimCard]}
+        onPress={() => setOpen(true)}
+        accessibilityRole="button"
+        accessibilityLabel={`Your groups in ${year.year}`}
+      >
+        <Text style={styles.slimTitle}>{year.year}</Text>
+        <Text style={styles.slimStats} numberOfLines={1}>
+          {quiet
+            ? quietLine(year)
+            : `${count(year.handoffs, 'handoff')} · ${count(year.letters, 'letter')} · ${count(year.places, 'place')}`}
+        </Text>
+        <Text style={styles.link}>›</Text>
+        {sheet}
+      </Pressable>
+    );
+  }
 
   return (
     <Pressable style={styles.card} onPress={() => setOpen(true)} accessibilityRole="button">
       <Text style={styles.title}>Your groups in {year.year}</Text>
-      <Text style={styles.scope}>
-        {groupNames.length === 0
-          ? 'Once you join a group, its year shows up here.'
-          : `${listOf(groupNames)}, so far this year.`}
-      </Text>
-      <View style={styles.tiles}>
-        {tiles.map((tile) => (
-          <View key={tile.label} style={styles.tile}>
-            <Text style={styles.value}>{tile.value}</Text>
-            <Text style={styles.label}>{tile.label}</Text>
-          </View>
-        ))}
-      </View>
-      <Text style={styles.note}>
-        {now.getMonth() === 11 ? 'Your year in books is ready. ' : ''}
-        <Text style={styles.link}>
-          {now.getMonth() === 11 ? 'Open it' : 'See the year so far'}
+      <Text style={styles.scope}>{listOf(groupNames)}, so far this year.</Text>
+      {quiet ? (
+        <Text style={styles.quiet}>
+          {year.handoffs === 0
+            ? 'Nothing has moved yet this year. Lend a book and this fills in.'
+            : `Quiet so far: ${quietLine(year)}.`}
         </Text>
+      ) : (
+        <View style={styles.tiles}>
+          {tiles.map((tile) => (
+            <View key={tile.label} style={styles.tile}>
+              <Text style={styles.value}>{tile.value}</Text>
+              <Text style={styles.label}>{tile.label}</Text>
+            </View>
+          ))}
+        </View>
+      )}
+      <Text style={styles.note}>
+        {december ? 'Your year in books is ready. ' : ''}
+        <Text style={styles.link}>{december ? 'Open it' : 'See the year so far'}</Text>
       </Text>
-      <YearInReviewSheet
-        visible={open}
-        onClose={() => setOpen(false)}
-        books={books}
-        currentUserId={currentUserId}
-        year={year.year}
-      />
+      {sheet}
     </Pressable>
   );
+}
+
+/** Fewer handoffs than this and the tiles would be mostly zeros. */
+const QUIET_BELOW = 4;
+
+/** "2 books on the move, 1 letter". */
+function quietLine(year: ClubYear): string {
+  return year.handoffs === 0
+    ? 'nothing has moved yet'
+    : `${count(year.booksMoving, 'book')} on the move, ${count(year.letters, 'letter')}`;
+}
+
+function count(n: number, noun: string): string {
+  return `${n} ${noun}${n === 1 ? '' : 's'}`;
 }
 
 /** "A", "A and B", "A, B and C". */
@@ -85,7 +132,8 @@ const styles = StyleSheet.create({
     borderColor: theme.colors.border,
     borderRadius: 16,
     padding: 16,
-    marginTop: 8,
+    marginTop: 4,
+    marginBottom: 20,
   },
   title: {
     fontFamily: theme.fonts.serif,
@@ -110,6 +158,28 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: theme.colors.muted,
     marginTop: 2,
+  },
+  quiet: {
+    fontSize: 14,
+    lineHeight: 20,
+    color: theme.colors.text,
+  },
+  slimCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+  },
+  slimTitle: {
+    fontFamily: theme.fonts.serif,
+    fontSize: 16,
+    fontWeight: '700',
+    color: theme.colors.text,
+    marginRight: 10,
+  },
+  slimStats: {
+    flex: 1,
+    fontSize: 13,
+    color: theme.colors.muted,
   },
   link: {
     color: theme.colors.accent,

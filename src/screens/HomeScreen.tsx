@@ -46,6 +46,10 @@ export function HomeScreen({
     )
     .map((group) => ({ group, books: others.filter((book) => book.groupId === group.id) }))
     .filter((section) => section.books.length > 0);
+  const myGroupNames = groups
+    .filter((group) => !group.isSample && currentUserId && group.memberIds.includes(currentUserId))
+    .map((group) => group.name)
+    .sort();
   const groupName = (book: Book) => groups.find((group) => group.id === book.groupId)?.name;
   // Visible without being in one of your groups (say, you're in line for it
   // but left its group): still listed, just not under a group.
@@ -98,6 +102,20 @@ export function HomeScreen({
           </Pressable>
         </View>
       </View>
+
+      {/* Your groups' year at a glance, straight under the header: the first
+          thing you see, before your own books and the shelf. Real groups
+          only: the sample club would swamp the numbers. Until you're in one,
+          a card of zeros up here would only be in the way. Holding a stack of
+          books, it shrinks to one line so they still show on the first screen. */}
+      {myGroupNames.length > 0 && (
+        <ClubYearCard
+          books={books.filter((book) => !isSampleBook(book))}
+          groupNames={myGroupNames}
+          currentUserId={currentUserId}
+          slim={mine.length >= 3}
+        />
+      )}
 
       {mine.length > 0 && (
         <>
@@ -163,15 +181,6 @@ export function HomeScreen({
         </View>
       )}
 
-      {/* Real groups only: the sample club would swamp the numbers. */}
-      <ClubYearCard
-        books={books.filter((book) => !isSampleBook(book))}
-        groupNames={groups
-          .filter((group) => !group.isSample && currentUserId && group.memberIds.includes(currentUserId))
-          .map((group) => group.name)
-          .sort()}
-        currentUserId={currentUserId}
-      />
       <AboutSheet visible={aboutOpen} onClose={() => setAboutOpen(false)} />
     </ScrollView>
   );
