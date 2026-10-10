@@ -13,9 +13,8 @@ const ICONS: Record<string, { active: keyof typeof Ionicons.glyphMap; idle: keyo
 
 /**
  * The bottom tabs, drawn by hand so the current one can't be missed. It's
- * marked four ways at once, so no single cue has to carry it: a ribbon along
- * its top edge like a bookmark, a tinted panel behind it, a filled icon in an
- * accent pill, and a bold dark label. The others stay quiet: outline icons,
+ * marked three ways at once, so no single cue has to carry it: a tinted panel
+ * behind it, a filled icon in an accent pill, and a bold dark label. The others stay quiet: outline icons,
  * muted labels, no panel.
  */
 export function TabBar({ state, descriptors, navigation }: BottomTabBarProps) {
@@ -49,7 +48,6 @@ export function TabBar({ state, descriptors, navigation }: BottomTabBarProps) {
             accessibilityState={{ selected: focused }}
             accessibilityLabel={label}
           >
-            <View style={[styles.ribbon, focused && styles.ribbonActive]} />
             <View style={[styles.iconWrap, focused && styles.iconWrapActive]}>
               <Ionicons
                 name={focused ? icons.active : icons.idle}
@@ -76,6 +74,7 @@ const styles = StyleSheet.create({
   item: {
     flex: 1,
     alignItems: 'center',
+    paddingTop: 12,
     paddingBottom: 6,
     marginHorizontal: 4,
     borderBottomLeftRadius: 14,
@@ -83,17 +82,6 @@ const styles = StyleSheet.create({
   },
   itemActive: {
     backgroundColor: theme.colors.soft,
-  },
-  // A bookmark ribbon hanging from the top edge of the current tab.
-  ribbon: {
-    width: 36,
-    height: 4,
-    borderBottomLeftRadius: 3,
-    borderBottomRightRadius: 3,
-    marginBottom: 8,
-  },
-  ribbonActive: {
-    backgroundColor: theme.colors.accent,
   },
   iconWrap: {
     width: 44,
