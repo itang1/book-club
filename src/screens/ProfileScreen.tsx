@@ -173,7 +173,13 @@ export function ProfileScreen({
           <Text style={styles.cardTitle}>Emails</Text>
           <EmailSettings
             prefs={
-              me.emails ?? { bookSent: true, bookArrived: true, nextInLine: true, friendRequest: true }
+              me.emails ?? {
+                newBook: true,
+                bookSent: true,
+                bookArrived: true,
+                nextInLine: true,
+                friendRequest: true,
+              }
             }
             onChange={onUpdateEmailPrefs}
           />

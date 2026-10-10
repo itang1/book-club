@@ -34,6 +34,33 @@ type Row = {
 
 type Person = { id: string; name: string; user_id: string | null };
 
+const ACTIONS: Partial<Record<EmailKind, 'got_it' | 'accept_friend' | 'join_line'>> = {
+  book_sent: 'got_it',
+  friend_request: 'accept_friend',
+  new_book: 'join_line',
+};
+
+const hex = (bytes: ArrayBuffer | Uint8Array) =>
+  Array.from(new Uint8Array(bytes), (b) => b.toString(16).padStart(2, '0')).join('');
+
+/** A single-use link for this email's button. Only the token's hash is stored. */
+async function actionUrl(row: Row): Promise<string | undefined> {
+  const action = ACTIONS[row.kind];
+  if (!action) return undefined;
+  const token = hex(crypto.getRandomValues(new Uint8Array(32)));
+  const hash = hex(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(token)));
+  const { error } = await db.from('email_actions').insert({
+    token_hash: hash,
+    person_id: row.person_id,
+    action,
+    book_id: row.book_id,
+    about_person: row.about_person,
+  });
+  if (error) return undefined;
+  const root = APP_URL.endsWith('/') ? APP_URL : `${APP_URL}/`;
+  return `${root}?do=${token}`;
+}
+
 async function person(id: string | null): Promise<Person | null> {
   if (!id) return null;
   const { data } = await db.from('friends').select('id, name, user_id').eq('id', id).maybeSingle();
@@ -56,6 +83,7 @@ async function factsFor(row: Row): Promise<{ to: string; facts: EmailFacts } | n
     other: other.name,
     appUrl: APP_URL,
     bookId: row.book_id ?? undefined,
+    actionUrl: await actionUrl(row),
   };
 
   if (row.book_id) {

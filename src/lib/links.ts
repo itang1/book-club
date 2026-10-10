@@ -62,3 +62,23 @@ export function bookLink(bookId: string): string {
       : APP_URL;
   return `${root}/b/${encodeURIComponent(bookId)}`;
 }
+
+/** The token from a one-tap email link (?do=…), on web. */
+export function emailActionTokenFromUrl(): string | null {
+  if (Platform.OS !== 'web' || typeof window === 'undefined') {
+    return null;
+  }
+
+  return new URLSearchParams(window.location.search).get('do');
+}
+
+/** Single use, so it comes out of the address bar (and history) once read. */
+export function clearEmailActionFromUrl(): void {
+  if (Platform.OS !== 'web' || typeof window === 'undefined') {
+    return;
+  }
+
+  const url = new URL(window.location.href);
+  url.searchParams.delete('do');
+  window.history.replaceState(null, '', url.toString());
+}

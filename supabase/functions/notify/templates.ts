@@ -1,11 +1,11 @@
 /**
- * The four emails, as plain functions from facts to subject, HTML and text.
+ * The emails, as plain functions from facts to subject, HTML and text.
  * No imports, so the Edge Function (Deno) and the app's tests (Node) can
  * both use this file. Email HTML is tables and inline styles on purpose:
  * that's what mail apps reliably render.
  */
 
-export type EmailKind = 'book_sent' | 'book_arrived' | 'next_in_line' | 'friend_request';
+export type EmailKind = 'book_sent' | 'book_arrived' | 'next_in_line' | 'friend_request' | 'new_book';
 
 export type EmailFacts = {
   kind: EmailKind;
@@ -25,6 +25,8 @@ export type EmailFacts = {
   appUrl: string;
   /** The book's id, so the button opens that book. */
   bookId?: string;
+  /** A one-tap link (Got it, Accept, Join the line); the main button when there is one. */
+  actionUrl?: string;
 };
 
 export type Email = { subject: string; html: string; text: string };
@@ -45,6 +47,8 @@ type Content = {
   /** Shown in a dashed box, e.g. the sealed-letter note. */
   aside?: string;
   button: string;
+  /** The main button's words when the email carries a one-tap link. */
+  action?: string;
   why: string;
 };
 
@@ -68,13 +72,14 @@ function content(facts: EmailFacts): Content {
         preheader: "It's in the post. Tap Got it when it arrives.",
         heading: `${titleText} is on its way to you`,
         paragraphs: [
-          `${other} put it in the post. When it arrives, open the app and tap <b>Got it</b> so ${other} knows it made it.`,
+          `${other} put it in the post. When it arrives, tap <b>Got it</b> so ${other} knows it made it.`,
           "Take your time with it. Someone's next after you, so send it on when you're done.",
         ],
         aside: facts.hasLetter
           ? `&#9993; ${other} tucked a letter inside. It opens once you've finished the book.`
           : undefined,
         button: `Open ${titleText}`,
+        action: "Got it, it's here",
         why: `You're getting this because you're in line for ${titleText} in ${group}.`,
       };
     case 'book_arrived': {
@@ -112,8 +117,23 @@ function content(facts: EmailFacts): Content {
           `${other} asked to be friends on Sisterhood of the Traveling Books. Friends see what each other is reading.`,
         ],
         button: 'Answer in the app',
+        action: 'Accept',
         why: `You're getting this because ${otherText} sent you a friend request.`,
       };
+    case 'new_book': {
+      const author = facts.book ? ` by ${escape(facts.book.author)}` : '';
+      return {
+        subject: `New in ${group}: ${titleText}`,
+        preheader: `${otherText} is lending it. Join the line to read it next.`,
+        heading: `${otherText} is lending ${titleText}`,
+        paragraphs: [
+          `${other} just added <i>${title}</i>${author} to ${escape(group)}. Join the line and it comes to you in turn.`,
+        ],
+        button: `Open ${titleText}`,
+        action: 'Join the line',
+        why: `You're getting this because you're in ${group}.`,
+      };
+    }
   }
 }
 
@@ -128,6 +148,7 @@ export function renderEmail(facts: EmailFacts): Email {
         ? `${root}b/${encodeURIComponent(facts.bookId)}`
         : root;
   const settings = `${root}you`;
+  const action = c.action && facts.actionUrl ? { label: c.action, url: facts.actionUrl } : null;
   const cover = facts.book
     ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td style="background:${escape(
         facts.book.coverColor,
@@ -161,8 +182,13 @@ export function renderEmail(facts: EmailFacts): Email {
   ${paragraphs}
   ${aside}
   <table role="presentation" cellpadding="0" cellspacing="0" style="margin-top:8px;"><tr><td style="background:#7a5c48;border-radius:12px;">
-    <a href="${escape(target)}" style="display:inline-block;padding:13px 22px;color:#fffdfb;font-weight:bold;font-size:15px;text-decoration:none;">${escape(c.button)}</a>
+    <a href="${escape(action ? action.url : target)}" style="display:inline-block;padding:13px 22px;color:#fffdfb;font-weight:bold;font-size:15px;text-decoration:none;">${escape(action ? action.label : c.button)}</a>
   </td></tr></table>
+  ${
+    action
+      ? `<p style="margin:14px 0 0;font-size:14px;"><a href="${escape(target)}" style="color:#7a5c48;font-weight:bold;">${escape(c.button)}</a></p>`
+      : ''
+  }
 </td></tr>
 <tr><td style="padding:16px 6px 0;font-family:-apple-system,Helvetica,Arial,sans-serif;font-size:12px;line-height:18px;color:#54473f;text-align:center;">
   ${escape(c.why)}<br><i style="font-family:Georgia,serif;">Read it. Write in it. Pass it on.</i><br>
@@ -176,6 +202,7 @@ export function renderEmail(facts: EmailFacts): Email {
     ...c.paragraphs.map((p) => unescape(p.replace(/<[^>]+>/g, ''))),
     ...(c.aside ? ['', c.aside.replace(/&#9993; /, '').replace(/&[a-z]+;/g, '')] : []),
     '',
+    ...(action ? [`${action.label}: ${action.url}`] : []),
     `${c.button}: ${target}`,
     '',
     c.why,

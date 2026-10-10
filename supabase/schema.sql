@@ -855,6 +855,7 @@ begin
     when 'book_arrived' then email_book_arrived
     when 'next_in_line' then email_next_in_line
     when 'friend_request' then email_friend_request
+    when 'new_book' then email_new_book
   end into wants
   from public.friends
   where id = p_person and user_id is not null and not is_character;
@@ -924,6 +925,154 @@ $$;
 drop trigger if exists notify_friend_request on public.friendships;
 create trigger notify_friend_request after insert on public.friendships
   for each row execute function public.on_friend_request();
+
+-- A new book in your group: tell the other members, so they can join the line.
+alter table public.friends
+  add column if not exists email_new_book boolean not null default true;
+alter table public.notifications drop constraint if exists notifications_kind_check;
+alter table public.notifications add constraint notifications_kind_check
+  check (kind in ('book_sent', 'book_arrived', 'next_in_line', 'friend_request', 'new_book'));
+
+create or replace function public.on_book_lent() returns trigger
+language plpgsql security definer set search_path = public
+as $$
+declare
+  member text;
+begin
+  if new.from_friend is null then
+    for member in
+      select gm.person_id from public.books b
+      join public.group_members gm on gm.group_id = b.group_id
+      where b.id = new.book_id and gm.person_id <> new.to_friend
+        and not public.is_sample_group(b.group_id)
+    loop
+      perform public.notify(member, 'new_book', new.book_id, new.to_friend);
+    end loop;
+  end if;
+  return new;
+end;
+$$;
+drop trigger if exists notify_book_lent on public.handoffs;
+create trigger notify_book_lent after insert on public.handoffs
+  for each row execute function public.on_book_lent();
+
+-- ---------------------------------------------------------------
+-- One-tap email buttons: Got it, Accept, Join the line. The sender
+-- (supabase/functions/notify) stores a hash of a random token per button;
+-- the link opens a page that confirms before redeeming, because mail
+-- scanners open links on their own. Single use, 30 days, and only ever
+-- the one action for the one person it was sent to.
+-- ---------------------------------------------------------------
+create table if not exists public.email_actions (
+  token_hash text primary key,
+  person_id text not null references public.friends (id) on delete cascade,
+  action text not null check (action in ('got_it', 'accept_friend', 'join_line')),
+  book_id text references public.books (id) on delete cascade,
+  about_person text references public.friends (id) on delete cascade,
+  created_at timestamptz not null default now(),
+  used_at timestamptz
+);
+alter table public.email_actions enable row level security;
+revoke all on public.email_actions from anon, authenticated;
+
+create or replace function public.email_action_hash(p_token text) returns text
+language sql immutable
+as $$ select encode(sha256(convert_to(p_token, 'UTF8')), 'hex') $$;
+
+-- What a link is for, so the page can ask before doing it. Whoever holds
+-- the link sees the book title and a first name, nothing more.
+create or replace function public.email_action_preview(p_token text) returns jsonb
+language plpgsql stable security definer set search_path = public
+as $$
+declare
+  a public.email_actions;
+begin
+  select * into a from public.email_actions where token_hash = public.email_action_hash(p_token);
+  if a.token_hash is null then
+    return jsonb_build_object('state', 'unknown');
+  end if;
+  return jsonb_build_object(
+    'state', case
+      when a.used_at is not null then 'used'
+      when a.created_at < now() - interval '30 days' then 'expired'
+      else 'ready' end,
+    'action', a.action,
+    'bookId', a.book_id,
+    'title', (select title from public.books where id = a.book_id),
+    'about', (select split_part(name, ' ', 1) from public.friends where id = a.about_person)
+  );
+end;
+$$;
+
+-- Do it, as the person the email went to. 'done' when it happened now,
+-- 'already' when there was nothing left to do (it arrived, they're in line).
+create or replace function public.redeem_email_action(p_token text) returns text
+language plpgsql security definer set search_path = public
+as $$
+declare
+  a public.email_actions;
+  reader public.friends;
+  latest public.handoffs;
+  b public.books;
+  changed boolean := false;
+begin
+  select * into a from public.email_actions
+  where token_hash = public.email_action_hash(p_token) for update;
+  if a.token_hash is null then
+    return 'unknown';
+  end if;
+  if a.used_at is not null then
+    return 'already';
+  end if;
+  if a.created_at < now() - interval '30 days' then
+    return 'expired';
+  end if;
+
+  if a.action = 'got_it' then
+    select * into reader from public.friends where id = a.person_id;
+    select * into latest from public.handoffs
+    where book_id = a.book_id order by happened_at desc limit 1;
+    if latest.to_friend = reader.id and latest.received_at is null then
+      update public.handoffs
+      set received_at = now(), place_city = reader.city, place_region = reader.state
+      where id = latest.id;
+      changed := true;
+    end if;
+
+  elsif a.action = 'accept_friend' then
+    update public.friendships set status = 'accepted'
+    where friend_a = least(a.person_id, a.about_person)
+      and friend_b = greatest(a.person_id, a.about_person)
+      and requested_by = a.about_person and status = 'pending';
+    changed := found;
+
+  elsif a.action = 'join_line' then
+    select * into b from public.books where id = a.book_id;
+    select * into latest from public.handoffs
+    where book_id = a.book_id order by happened_at desc limit 1;
+    if exists (select 1 from public.group_members where group_id = b.group_id and person_id = a.person_id)
+       and not public.is_sample_group(b.group_id)
+       and latest.to_friend is distinct from a.person_id then
+      insert into public.reading_queue (book_id, friend_id, position, status)
+      values (a.book_id, a.person_id,
+              (select coalesce(max(position), -1) + 1 from public.reading_queue where book_id = a.book_id),
+              'waiting')
+      on conflict (book_id, friend_id) do update
+        set status = 'waiting', position = excluded.position
+        where public.reading_queue.status = 'done';
+      changed := found;
+    end if;
+  end if;
+
+  update public.email_actions set used_at = now() where token_hash = a.token_hash;
+  return case when changed then 'done' else 'already' end;
+end;
+$$;
+
+revoke all on function public.email_action_preview(text), public.redeem_email_action(text)
+  from public;
+grant execute on function public.email_action_preview(text), public.redeem_email_action(text)
+  to anon, authenticated;
 
 -- ---------------------------------------------------------------
 -- Tell the API about any new tables or columns straight away, rather than

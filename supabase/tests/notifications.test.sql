@@ -51,7 +51,7 @@ reset role;
 select test.expect('Lending queues nothing', (select count(*) from notifications where book_id = 'n-book' and kind = 'book_sent' and person_id = 'n-nia'), 0);
 select test.expect('Oli is told it was sent to him', (select count(*) from notifications where person_id = 'n-oli' and kind = 'book_sent' and about_person = 'n-nia'), 1);
 select test.expect('Nia is told it arrived', (select count(*) from notifications where person_id = 'n-nia' and kind = 'book_arrived' and about_person = 'n-oli'), 1);
-select test.expect('Pip turned off next-in-line emails, so none', (select count(*) from notifications where person_id = 'n-pip'), 0);
+select test.expect('Pip turned off next-in-line emails, so none', (select count(*) from notifications where person_id = 'n-pip' and kind = 'next_in_line'), 0);
 select test.expect('Nia is told Oli asked to be friends', (select count(*) from notifications where person_id = 'n-nia' and kind = 'friend_request'), 1);
 
 set role authenticated;

@@ -13,7 +13,7 @@ import { FriendsStackParamList, RootStackParamList, RootTabParamList } from './s
 import { BookClub, useBookClub } from './src/lib/useBookClub';
 import { friendIdsOf } from './src/lib/friendGraph';
 import { isDevMode } from './src/lib/devMode';
-import { linking } from './src/lib/links';
+import { clearEmailActionFromUrl, emailActionTokenFromUrl, linking } from './src/lib/links';
 import { theme } from './src/theme';
 import { DevBar } from './src/components/DevBar';
 import { TabBar } from './src/components/TabBar';
@@ -27,6 +27,7 @@ import { WelcomeScreen } from './src/screens/WelcomeScreen';
 import { GroupScreen } from './src/screens/GroupScreen';
 import { SignInScreen } from './src/screens/SignInScreen';
 import { RulesAgreementScreen } from './src/screens/RulesAgreementScreen';
+import { EmailActionScreen } from './src/screens/EmailActionScreen';
 
 /** The one-time rules agreement after joining. Agreements already given are still remembered. */
 const ASK_TO_AGREE_TO_RULES = false;
@@ -220,11 +221,19 @@ function Tabs({ club }: { club: BookClub }) {
 
 function Root() {
   const club = useBookClub();
+  const [emailToken, setEmailToken] = React.useState(emailActionTokenFromUrl);
+  React.useEffect(() => {
+    if (emailToken) {
+      clearEmailActionFromUrl();
+    }
+  }, [emailToken]);
   const insets = useSafeAreaInsets();
   const me = club.members.find((person) => person.id === club.currentUserId);
 
   let body: React.ReactNode;
-  if (!club.loaded) {
+  if (emailToken) {
+    body = <EmailActionScreen token={emailToken} onClose={() => setEmailToken(null)} />;
+  } else if (!club.loaded) {
     body = (
       <View style={tabStyles.loading}>
         <ActivityIndicator color={theme.colors.accent} />

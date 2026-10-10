@@ -38,4 +38,25 @@ describe('emails', () => {
     const request = renderEmail({ kind: 'friend_request', recipient: 'T', other: 'C', appUrl });
     expect(request.text).toContain('https://example.test/friends');
   });
+
+  it('a one-tap link becomes the main button, with the book still a tap away', () => {
+    const sent = renderEmail({
+      kind: 'book_sent', recipient: 'T', other: 'C', book, bookId: 'b1', appUrl, actionUrl: 'https://example.test/?do=abc',
+    });
+    expect(sent.html).toContain('href="https://example.test/?do=abc"');
+    expect(sent.html).toContain("Got it, it's here");
+    expect(sent.html).toContain('href="https://example.test/b/b1"');
+    expect(sent.text).toContain("Got it, it's here: https://example.test/?do=abc");
+    const plain = renderEmail({ kind: 'book_arrived', recipient: 'T', other: 'C', book, bookId: 'b1', appUrl, actionUrl: 'x' });
+    expect(plain.html).not.toContain('href="x"');
+  });
+
+  it('new book: names who is lending it and invites a join', () => {
+    const email = renderEmail({
+      kind: 'new_book', recipient: 'T', other: 'Lena Kaligaris', book, group: 'The Traveling Pants', appUrl, actionUrl: 'u',
+    });
+    expect(email.subject).toBe('New in The Traveling Pants: Circe');
+    expect(email.text).toContain('Lena just added Circe by Madeline Miller to The Traveling Pants.');
+    expect(email.text).toContain('Join the line: u');
+  });
 });

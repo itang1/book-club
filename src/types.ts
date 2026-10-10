@@ -46,6 +46,7 @@ export type Friend = {
 };
 
 export type EmailPrefs = {
+  newBook: boolean;
   bookSent: boolean;
   bookArrived: boolean;
   nextInLine: boolean;

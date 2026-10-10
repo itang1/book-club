@@ -24,6 +24,7 @@ type FriendRow = {
   state: string;
   user_id: string | null;
   agreed_rules_at: string | null;
+  email_new_book?: boolean;
   email_book_sent?: boolean;
   email_book_arrived?: boolean;
   email_next_in_line?: boolean;
@@ -118,6 +119,7 @@ function toFriend(row: FriendRow): Friend {
     userId: row.user_id ?? undefined,
     agreedRulesAt: row.agreed_rules_at ?? undefined,
     emails: {
+      newBook: row.email_new_book ?? true,
       bookSent: row.email_book_sent ?? true,
       bookArrived: row.email_book_arrived ?? true,
       nextInLine: row.email_next_in_line ?? true,
@@ -365,6 +367,7 @@ export const updateEmailPrefs = (personId: string, prefs: EmailPrefs) =>
     db
       .from('friends')
       .update({
+        email_new_book: prefs.newBook,
         email_book_sent: prefs.bookSent,
         email_book_arrived: prefs.bookArrived,
         email_next_in_line: prefs.nextInLine,
@@ -422,6 +425,38 @@ export async function groupPreview(
 
   const { data } = await supabase.rpc('group_preview', { p_invite_code: inviteCode });
   return (data as { id: string; name: string; members: number }[] | null)?.[0] ?? null;
+}
+
+export type EmailAction = {
+  state: 'ready' | 'used' | 'expired' | 'unknown';
+  action?: 'got_it' | 'accept_friend' | 'join_line';
+  bookId?: string;
+  title?: string;
+  about?: string;
+};
+
+/** What a one-tap email link is for. Demo data has no real links, so any token shows a sample. */
+export async function previewEmailAction(token: string): Promise<EmailAction> {
+  if (!supabase) {
+    const book = booksSeed[0];
+    return { state: 'ready', action: 'join_line', bookId: book.id, title: book.title, about: 'Lena' };
+  }
+
+  const { data, error } = await supabase.rpc('email_action_preview', { p_token: token });
+  return error || !data ? { state: 'unknown' } : (data as EmailAction);
+}
+
+/** Do what the link is for: 'done', 'already' (nothing left to do), 'expired' or 'unknown'. */
+export async function redeemEmailAction(token: string): Promise<string> {
+  if (!supabase) {
+    return 'done';
+  }
+
+  const { data, error } = await supabase.rpc('redeem_email_action', { p_token: token });
+  if (error) {
+    throw new Error(error.message);
+  }
+  return data as string;
 }
 
 /** People in the invited group who haven't signed in yet: "That's me". */

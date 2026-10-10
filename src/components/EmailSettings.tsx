@@ -9,6 +9,7 @@ type EmailSettingsProps = {
 };
 
 const OPTIONS: { key: keyof EmailPrefs; label: string; detail: string }[] = [
+  { key: 'newBook', label: 'New books in your groups', detail: 'With a button to join the line.' },
   { key: 'bookSent', label: 'A book is on its way to you', detail: 'When someone sends you a copy.' },
   { key: 'bookArrived', label: 'A book you sent arrived', detail: 'When they tap Got it.' },
   { key: 'nextInLine', label: "You're next in line", detail: 'When the person before you gets it.' },
