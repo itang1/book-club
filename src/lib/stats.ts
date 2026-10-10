@@ -236,7 +236,10 @@ export function clubYear(books: Book[], year: number): ClubYear {
 export type YearInReview = ClubYear & {
   /** The copy with the most legs this year. */
   mostTravelled: { book: Book; legs: number } | null;
-  /** The best-loved book by its letters' stars this year (at least one rating). */
+  /**
+   * The best-loved book by its letters' stars this year. Needs two ratings:
+   * one five-star letter is one reader's opinion, not the club's.
+   */
   bestLoved: { book: Book; average: number; ratings: number } | null;
   /** Every place a book was read this year, most visits first. */
   placeList: PlaceVisit[];
@@ -262,7 +265,7 @@ export function yearInReview(books: Book[], year: number, meId: string | null): 
     }
 
     const ratings = legs.map((leg) => leg.rating).filter((r): r is number => Boolean(r));
-    if (ratings.length > 0) {
+    if (ratings.length >= 2) {
       const average = ratings.reduce((sum, r) => sum + r, 0) / ratings.length;
       if (
         !bestLoved ||

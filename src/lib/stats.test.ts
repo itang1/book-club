@@ -98,6 +98,23 @@ describe('yearInReview', () => {
     expect(review.mine).toEqual({ finished: 1, lettersWritten: 1, sentTo: ['Bea'] });
   });
 
+  it('only calls a book best loved once two letters have rated it', () => {
+    const rated = (id: string, rating: number, to: string) => ({
+      id,
+      bookId: 'book',
+      fromFriend: 'ana',
+      toFriend: to,
+      happenedAt: '2026-02-01T12:00:00Z',
+      receivedAt: '2026-02-01T12:00:00Z',
+      note: 'Loved it',
+      rating,
+    });
+    const once: Book = { ...book, handoffs: [...book.handoffs, rated('c', 5, 'cat')] };
+    expect(yearInReview([once], 2026, 'ana').bestLoved).toBeNull();
+    const twice: Book = { ...once, handoffs: [...once.handoffs, rated('d', 4, 'bea')] };
+    expect(yearInReview([twice], 2026, 'ana').bestLoved).toMatchObject({ average: 4.5, ratings: 2 });
+  });
+
   it('is empty for a year with nothing in it', () => {
     const review = yearInReview([book], 2020, 'ana');
     expect(review.mostTravelled).toBeNull();
