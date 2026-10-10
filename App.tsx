@@ -121,6 +121,7 @@ function HomeStack({ club }: { club: BookClub }) {
             onChangeCover={club.changeCover}
             onUpdateBookDetails={club.updateBookDetails}
             onRetireBook={club.retireBook}
+            onUnretireBook={club.unretireBook}
             onJoinLine={club.joinLine}
             onLeaveLine={club.leaveLine}
           />

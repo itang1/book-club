@@ -48,6 +48,7 @@ type BookDetailScreenProps = {
   onChangeCover: (bookId: string, mode: 'find' | 'clear') => void;
   onUpdateBookDetails?: (bookId: string, title: string, author: string) => void;
   onRetireBook?: (bookId: string) => void;
+  onUnretireBook?: (bookId: string) => void;
   onJoinLine: (bookId: string) => void;
   onLeaveLine: (bookId: string) => void;
 };
@@ -62,6 +63,7 @@ export function BookDetailScreen({
   onChangeCover,
   onUpdateBookDetails,
   onRetireBook,
+  onUnretireBook,
   onJoinLine,
   onLeaveLine,
 }: BookDetailScreenProps) {
@@ -299,6 +301,15 @@ export function BookDetailScreen({
                 accessibilityRole="button"
               >
                 <Text style={styles.ownerActionText}>Rest this copy</Text>
+              </Pressable>
+            )}
+            {book.archivedAt && onUnretireBook && (
+              <Pressable
+                style={styles.ownerAction}
+                onPress={() => onUnretireBook(book.id)}
+                accessibilityRole="button"
+              >
+                <Text style={styles.ownerActionText}>Send it travelling again</Text>
               </Pressable>
             )}
           </View>

@@ -763,6 +763,22 @@ begin
 end;
 $$;
 
+-- Back into circulation; the line is as it was.
+create or replace function public.unretire_book(p_book_id text) returns void
+language plpgsql security definer set search_path = public
+as $$
+begin
+  if not exists (
+    select 1 from public.handoffs
+    where book_id = p_book_id and from_friend is null and to_friend = public.me()
+  ) then
+    raise exception 'Only the book''s owner can send this copy travelling again';
+  end if;
+
+  update public.books set archived_at = null where id = p_book_id;
+end;
+$$;
+
 -- Send the book you're holding to the next reader in line, or home to its
 -- owner, with an optional letter. It's in the post until they say Got it.
 create or replace function public.pass_on(
@@ -843,7 +859,7 @@ revoke all on function public.me(), public.is_member(text), public.can_see_book(
   public.lend_book(text, text, text, text, text, text, text, text),
   public.set_cover(text, text),
   public.update_book(text, text, text),
-  public.retire_book(text),
+  public.retire_book(text), public.unretire_book(text),
   public.pass_on(text, text, text, text, smallint),
   public.mark_received(text)
   from public, anon;
@@ -856,7 +872,7 @@ grant execute on function public.me(), public.is_member(text), public.can_see_bo
   public.lend_book(text, text, text, text, text, text, text, text),
   public.set_cover(text, text),
   public.update_book(text, text, text),
-  public.retire_book(text),
+  public.retire_book(text), public.unretire_book(text),
   public.pass_on(text, text, text, text, smallint),
   public.mark_received(text)
   to authenticated;

@@ -398,6 +398,9 @@ export const updateBookDetails = (bookId: string, title: string, author: string)
 export const retireBook = (bookId: string) =>
   save('retireBook', (db) => db.rpc('retire_book', { p_book_id: bookId }));
 
+export const unretireBook = (bookId: string) =>
+  save('unretireBook', (db) => db.rpc('unretire_book', { p_book_id: bookId }));
+
 /** Rows store each pair once, smaller id first (see schema.sql). */
 const pairOf = (x: string, y: string) =>
   x < y ? { friend_a: x, friend_b: y } : { friend_a: y, friend_b: x };

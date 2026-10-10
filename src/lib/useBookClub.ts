@@ -18,6 +18,7 @@ import {
   removeFriendship,
   requestFriend,
   retireBook,
+  unretireBook,
   setCover,
   updateBookDetails,
   markReceived,
@@ -673,6 +674,14 @@ export function useBookClub() {
     track(`rest ${book?.title ?? 'book'}`, retireBook(bookId));
   };
 
+  const handleUnretireBook = (bookId: string) => {
+    const book = books.find((candidate) => candidate.id === bookId);
+    setBooks((current) =>
+      current.map((item) => (item.id === bookId ? { ...item, archivedAt: undefined } : item)),
+    );
+    track(`send ${book?.title ?? 'the book'} travelling again`, unretireBook(bookId));
+  };
+
   return {
     usesAccounts,
     signedIn: session !== null,
@@ -702,6 +711,7 @@ export function useBookClub() {
     changeCover: handleChangeCover,
     updateBookDetails: handleUpdateBookDetails,
     retireBook: handleRetireBook,
+    unretireBook: handleUnretireBook,
     joinLine: handleJoinLine,
     markReceived: handleMarkReceived,
     updateProfile: handleUpdateProfile,

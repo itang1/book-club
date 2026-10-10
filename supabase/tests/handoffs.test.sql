@@ -84,6 +84,11 @@ select test.refused('Ana cannot rest it while it''s in the post home', $$select 
 select mark_received('h-book');
 select retire_book('h-book');
 select test.check('Home again, Ana rests it', exists (select 1 from books where id = 'h-book' and archived_at is not null));
+select test.as_user('00000000-0000-0000-0000-0000000000b3');
+select test.refused('Cat cannot send Ana''s copy travelling', $$select unretire_book('h-book')$$);
+select test.as_user('00000000-0000-0000-0000-0000000000b1');
+select unretire_book('h-book');
+select test.check('Ana sends it travelling again', exists (select 1 from books where id = 'h-book' and archived_at is null));
 
 reset role;
 select 'ALL HANDOFF TESTS PASSED';
