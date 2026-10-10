@@ -40,6 +40,7 @@ type BookRow = {
   gifted_by: string | null;
   group_id: string | null;
   cover_url: string | null;
+  archived_at?: string | null;
 };
 
 export type QueueRow = {
@@ -188,6 +189,7 @@ function assembleBooks(
       giftedBy: row.gifted_by ?? undefined,
       groupId: row.group_id ?? undefined,
       coverUrl: row.cover_url ?? undefined,
+      archivedAt: row.archived_at ?? undefined,
       queue,
       handoffs: handoffRows
         .filter((entry) => entry.book_id === row.id)
@@ -385,6 +387,16 @@ export const updateFriendRequestsFrom = (personId: string, value: 'groups' | 'no
 /** Set or clear a book's cover (owner only, enforced by the database). */
 export const setCover = (bookId: string, coverUrl: string | null) =>
   save('setCover', (db) => db.rpc('set_cover', { p_book_id: bookId, p_cover_url: coverUrl }));
+
+/** Update a book's title and author (owner only). */
+export const updateBookDetails = (bookId: string, title: string, author: string) =>
+  save('updateBookDetails', (db) =>
+    db.rpc('update_book', { p_book_id: bookId, p_title: title, p_author: author }),
+  );
+
+/** Rest a book from circulation on its home shelf (owner only). */
+export const retireBook = (bookId: string) =>
+  save('retireBook', (db) => db.rpc('retire_book', { p_book_id: bookId }));
 
 /** Rows store each pair once, smaller id first (see schema.sql). */
 const pairOf = (x: string, y: string) =>

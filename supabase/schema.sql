@@ -78,6 +78,9 @@ alter table public.books add column if not exists gifted_by text;
 alter table public.books add column if not exists cover_url text
   check (cover_url is null or cover_url like 'https://covers.openlibrary.org/%');
 
+-- Resting copies: when the owner keeps the book home or retires it.
+alter table public.books add column if not exists archived_at timestamptz;
+
 -- ---------------------------------------------------------------
 -- Reading queue: who signed up for a book, in sign-up order, and each
 -- reader's progress. Nobody is added automatically; a row exists because that
@@ -715,6 +718,40 @@ begin
 end;
 $$;
 
+-- Update a book's title and author (owner only).
+create or replace function public.update_book(p_book_id text, p_title text, p_author text) returns void
+language plpgsql security definer set search_path = public
+as $$
+begin
+  if not exists (
+    select 1 from public.handoffs
+    where book_id = p_book_id and from_friend is null and to_friend = public.me()
+  ) then
+    raise exception 'Only the book''s owner can edit its details';
+  end if;
+
+  update public.books
+  set title = trim(p_title), author = trim(p_author)
+  where id = p_book_id;
+end;
+$$;
+
+-- Rest a book on the home shelf (owner only).
+create or replace function public.retire_book(p_book_id text) returns void
+language plpgsql security definer set search_path = public
+as $$
+begin
+  if not exists (
+    select 1 from public.handoffs
+    where book_id = p_book_id and from_friend is null and to_friend = public.me()
+  ) then
+    raise exception 'Only the book''s owner can rest this copy';
+  end if;
+
+  update public.books set archived_at = now() where id = p_book_id;
+end;
+$$;
+
 -- Send the book you're holding to the next reader in line, or home to its
 -- owner, with an optional letter. It's in the post until they say Got it.
 create or replace function public.pass_on(
@@ -794,6 +831,8 @@ revoke all on function public.me(), public.is_member(text), public.can_see_book(
   public.create_group(text, text), public.join_group(text), public.leave_group(text),
   public.lend_book(text, text, text, text, text, text, text, text),
   public.set_cover(text, text),
+  public.update_book(text, text, text),
+  public.retire_book(text),
   public.pass_on(text, text, text, text, smallint),
   public.mark_received(text)
   from public, anon;
@@ -805,6 +844,8 @@ grant execute on function public.me(), public.is_member(text), public.can_see_bo
   public.create_group(text, text), public.join_group(text), public.leave_group(text),
   public.lend_book(text, text, text, text, text, text, text, text),
   public.set_cover(text, text),
+  public.update_book(text, text, text),
+  public.retire_book(text),
   public.pass_on(text, text, text, text, smallint),
   public.mark_received(text)
   to authenticated;

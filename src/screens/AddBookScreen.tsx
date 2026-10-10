@@ -5,6 +5,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Book, Friend, Group, RootStackParamList } from '../types';
 import { theme } from '../theme';
 import { coverColorFor } from '../lib/covers';
+import { lookupIsbn } from '../lib/isbn';
 import { Ionicons } from '@expo/vector-icons';
 
 type AddBookScreenProps = {
@@ -27,6 +28,11 @@ export function AddBookScreen({
   onAddBook,
   onCreateGroup,
 }: AddBookScreenProps) {
+  const [isbn, setIsbn] = useState('');
+  const [lookingUp, setLookingUp] = useState(false);
+  const [lookupCoverUrl, setLookupCoverUrl] = useState<string | undefined>(undefined);
+  const [lookupMessage, setLookupMessage] = useState<string | null>(null);
+
   const [title, setTitle] = useState('');
   const [author, setAuthor] = useState('');
   const [groupId, setGroupId] = useState<string | null>(groups.length === 1 ? groups[0].id : null);
@@ -37,6 +43,22 @@ export function AddBookScreen({
   const giverSuggestions = members
     .filter((person) => person.id !== owner?.id)
     .map((person) => person.name.split(' ')[0]);
+
+  const handleIsbnLookup = async () => {
+    if (!isbn.trim() || lookingUp) return;
+    setLookingUp(true);
+    setLookupMessage(null);
+    const result = await lookupIsbn(isbn);
+    setLookingUp(false);
+    if (result) {
+      if (result.title) setTitle(result.title);
+      if (result.author) setAuthor(result.author);
+      if (result.coverUrl) setLookupCoverUrl(result.coverUrl);
+      setLookupMessage(`Found ${result.title}.`);
+    } else {
+      setLookupMessage('Add the title and author by hand below to put it into circulation.');
+    }
+  };
 
   const missing = [
     !title.trim() && 'a title',
@@ -56,6 +78,7 @@ export function AddBookScreen({
       title: title.trim(),
       author: author.trim(),
       coverColor: coverColorFor(title.trim(), author.trim()),
+      coverUrl: lookupCoverUrl,
       giftedBy: isGift && giftedBy.trim() ? giftedBy.trim() : undefined,
       groupId: group.id,
       // Only the owner starts in the queue. Everyone else signs up from the
@@ -92,6 +115,37 @@ export function AddBookScreen({
         Send a copy out into the world. Friends sign up for it, read it, write
         you a letter, and eventually it comes home a little more loved.
       </Text>
+
+      <View style={styles.lookupCard}>
+        <Text style={styles.lookupTitle}>Have an ISBN or barcode?</Text>
+        <Text style={styles.lookupHint}>
+          Type or paste the number to quickly fill in the book and find its cover.
+        </Text>
+        <View style={styles.lookupRow}>
+          <TextInput
+            value={isbn}
+            onChangeText={(text) => {
+              setIsbn(text);
+              if (lookupMessage) setLookupMessage(null);
+            }}
+            placeholder="e.g. 9780385729338"
+            placeholderTextColor={theme.colors.faint}
+            keyboardType="numeric"
+            style={styles.lookupInput}
+            returnKeyType="search"
+            onSubmitEditing={handleIsbnLookup}
+          />
+          <Pressable
+            style={[styles.lookupButton, (!isbn.trim() || lookingUp) && styles.disabled]}
+            disabled={!isbn.trim() || lookingUp}
+            onPress={handleIsbnLookup}
+            accessibilityRole="button"
+          >
+            <Text style={styles.lookupButtonText}>{lookingUp ? 'Searching…' : 'Look up'}</Text>
+          </Pressable>
+        </View>
+        {lookupMessage && <Text style={styles.lookupMessage}>{lookupMessage}</Text>}
+      </View>
 
       <View style={styles.formCard}>
         <Text style={styles.fieldLabel}>Title</Text>
@@ -354,5 +408,64 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: theme.colors.muted,
     fontSize: 12,
+  },
+  lookupCard: {
+    backgroundColor: theme.colors.card,
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    marginBottom: 16,
+  },
+  lookupTitle: {
+    fontFamily: theme.fonts.serif,
+    fontSize: 16,
+    fontWeight: '700',
+    color: theme.colors.text,
+    marginBottom: 4,
+  },
+  lookupHint: {
+    fontSize: 13,
+    color: theme.colors.muted,
+    lineHeight: 18,
+    marginBottom: 12,
+  },
+  lookupRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  lookupInput: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: 10,
+    backgroundColor: theme.colors.background,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    fontSize: 14,
+    color: theme.colors.text,
+  },
+  lookupButton: {
+    backgroundColor: theme.colors.accent,
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  lookupButtonText: {
+    color: theme.colors.onAccent,
+    fontWeight: '700',
+    fontSize: 13,
+  },
+  lookupMessage: {
+    marginTop: 10,
+    fontSize: 12,
+    color: theme.colors.muted,
+    lineHeight: 16,
+  },
+  disabled: {
+    opacity: 0.5,
   },
 });

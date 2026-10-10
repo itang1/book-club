@@ -17,7 +17,9 @@ import {
   leaveLine,
   removeFriendship,
   requestFriend,
+  retireBook,
   setCover,
+  updateBookDetails,
   markReceived,
   recordHandoff,
   updateEmailPrefs,
@@ -27,12 +29,13 @@ import {
 } from './bookClubService';
 import type { BookClubData } from './bookClubService';
 import { claimProfile, onSessionChange, signOutEverywhere } from './auth';
+import { loadCachedClubData, saveCachedClubData } from './cache';
 import { findCoverUrl } from './covers';
 import { hasFinished, holderId } from './bookState';
 import { isDevMode } from './devMode';
 import { clearInviteFromUrl } from './invite';
 import { clearReaderId, loadReaderId, saveReaderId } from './identity';
-import { isSupabaseConfigured } from './supabase';
+import { isSupabaseConfigured, supabase } from './supabase';
 
 export type NewProfile = { name: string; city: string; region: string };
 
@@ -96,12 +99,19 @@ export function useBookClub() {
   };
 
   const applyData = (data: BookClubData) => {
+    // If an error occurred and we already have cached content on screen, keep it.
+    if (data.error && books.length > 0) {
+      setSaveProblem({ action: 'load the club', reason: explain(data.error) });
+      return;
+    }
     setBooks(data.books);
     setMembers(data.friends);
     setFriendships(data.friendships);
     setGroups(data.groups);
     if (data.error) {
       setSaveProblem({ action: 'load the club', reason: explain(data.error) });
+    } else {
+      saveCachedClubData(data);
     }
   };
 
@@ -129,6 +139,16 @@ export function useBookClub() {
         active = false;
       };
     }
+
+    // Start with cached data so the shelf renders immediately.
+    loadCachedClubData().then((cached) => {
+      if (cached && active) {
+        setBooks(cached.books);
+        setMembers(cached.friends);
+        setFriendships(cached.friendships);
+        setGroups(cached.groups);
+      }
+    });
 
     // Supabase: who you are is whoever is signed in. The listener fires once
     // straight away with the stored session, then on every sign-in/out.
@@ -173,9 +193,7 @@ export function useBookClub() {
 
   /**
    * Keep what's on screen current without anyone having to reload: fetch
-   * again whenever the app comes back into view (switching back to the tab
-   * or app), and every minute while it's open. Other people's handoffs,
-   * new members and new groups only arrive on a fetch. Quiet: no spinner.
+   * again on realtime changes, app focus, and every minute while open.
    */
   const signedInRef = React.useRef(false);
   signedInRef.current = usesAccounts ? session !== null && currentUserId !== null : false;
@@ -194,6 +212,17 @@ export function useBookClub() {
         });
       }
     };
+
+    const channel = supabase
+      ? supabase
+          .channel('club-realtime')
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'handoffs' }, quietRefresh)
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'reading_queue' }, quietRefresh)
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'friendships' }, quietRefresh)
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'books' }, quietRefresh)
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'groups' }, quietRefresh)
+          .subscribe()
+      : null;
 
     const interval = setInterval(quietRefresh, 60_000);
     const appState = AppState.addEventListener('change', (state) => {
@@ -215,6 +244,9 @@ export function useBookClub() {
       appState.remove();
       if (Platform.OS === 'web' && typeof document !== 'undefined') {
         document.removeEventListener('visibilitychange', onVisible);
+      }
+      if (channel && supabase) {
+        supabase.removeChannel(channel);
       }
     };
   }, []);
@@ -621,6 +653,25 @@ export function useBookClub() {
     track('create your profile', write);
   };
 
+  const handleUpdateBookDetails = (bookId: string, title: string, author: string) => {
+    setBooks((current) =>
+      current.map((item) =>
+        item.id === bookId ? { ...item, title: title.trim(), author: author.trim() } : item,
+      ),
+    );
+    track('update book details', updateBookDetails(bookId, title.trim(), author.trim()));
+  };
+
+  const handleRetireBook = (bookId: string) => {
+    const book = books.find((candidate) => candidate.id === bookId);
+    setBooks((current) =>
+      current.map((item) =>
+        item.id === bookId ? { ...item, archivedAt: new Date().toISOString() } : item,
+      ),
+    );
+    track(`rest ${book?.title ?? 'book'}`, retireBook(bookId));
+  };
+
   return {
     usesAccounts,
     signedIn: session !== null,
@@ -648,6 +699,8 @@ export function useBookClub() {
     leaveGroup: handleLeaveGroup,
     addBook: handleAddBook,
     changeCover: handleChangeCover,
+    updateBookDetails: handleUpdateBookDetails,
+    retireBook: handleRetireBook,
     joinLine: handleJoinLine,
     markReceived: handleMarkReceived,
     updateProfile: handleUpdateProfile,

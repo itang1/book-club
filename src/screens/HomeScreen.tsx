@@ -1,5 +1,13 @@
 import { useState } from 'react';
-import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -9,7 +17,7 @@ import { BookCard } from '../components/BookCard';
 import { ClubYearCard } from '../components/ClubYearCard';
 import { AboutSheet } from '../components/AboutSheet';
 import { homage, tagline } from '../content/about';
-import { holderId } from '../lib/bookState';
+import { holderId, isInTransit } from '../lib/bookState';
 import { theme } from '../theme';
 
 type HomeScreenProps = {
@@ -21,6 +29,8 @@ type HomeScreenProps = {
   onRefresh: () => void;
 };
 
+type FilterMode = 'all' | 'hands' | 'ready' | 'travelling';
+
 export function HomeScreen({
   navigation,
   books,
@@ -31,10 +41,42 @@ export function HomeScreen({
 }: HomeScreenProps) {
   const insets = useSafeAreaInsets();
   const [aboutOpen, setAboutOpen] = useState(false);
-  const mine = books.filter((book) => currentUserId !== null && holderId(book) === currentUserId);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterMode, setFilterMode] = useState<FilterMode>('all');
+
+  const cleanQuery = searchQuery.trim().toLowerCase();
+  const matchesSearch = (book: Book) =>
+    !cleanQuery ||
+    book.title.toLowerCase().includes(cleanQuery) ||
+    book.author.toLowerCase().includes(cleanQuery);
+
+  const matchesFilter = (book: Book) => {
+    if (filterMode === 'all') return true;
+    const isMine = currentUserId !== null && holderId(book) === currentUserId;
+    if (filterMode === 'hands') return isMine;
+    const inPost = isInTransit(book);
+    if (filterMode === 'ready') {
+      return (
+        !book.archivedAt &&
+        (book.queue.length === 0 ||
+          book.queue.every((q) => q.status === 'done' || q.status === 'reading'))
+      );
+    }
+    if (filterMode === 'travelling') {
+      return !book.archivedAt && (inPost || !isMine);
+    }
+    return true;
+  };
+
+  const activeBooks = books.filter(matchesSearch).filter(matchesFilter);
+  const mine = activeBooks.filter(
+    (book) => currentUserId !== null && holderId(book) === currentUserId && !book.archivedAt,
+  );
   const sampleGroupIds = new Set(groups.filter((group) => group.isSample).map((group) => group.id));
   const isSampleBook = (book: Book) => Boolean(book.groupId && sampleGroupIds.has(book.groupId));
-  const others = books.filter((book) => !mine.includes(book));
+  const others = activeBooks.filter((book) => !mine.includes(book) && !book.archivedAt);
+  const rested = activeBooks.filter((book) => Boolean(book.archivedAt));
+
   const sections = [...groups]
     .sort(
       (a, b) =>
@@ -47,8 +89,6 @@ export function HomeScreen({
     .map((group) => group.name)
     .sort();
   const groupName = (book: Book) => groups.find((group) => group.id === book.groupId)?.name;
-  // Visible without being in one of your groups (say, you're in line for it
-  // but left its group): still listed, just not under a group.
   const ungrouped = others.filter(
     (book) => !sections.some((section) => section.books.includes(book)),
   );
@@ -95,14 +135,78 @@ export function HomeScreen({
         <Text style={styles.homage}>{homage}</Text>
       </View>
 
+      {/* Search and filters */}
+      <View style={styles.searchRow}>
+        <Ionicons name="search" size={16} color={theme.colors.faint} style={styles.searchIcon} />
+        <TextInput
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          placeholder="Search by title or author…"
+          placeholderTextColor={theme.colors.faint}
+          style={styles.searchInput}
+          returnKeyType="search"
+        />
+        {searchQuery.length > 0 && (
+          <Pressable onPress={() => setSearchQuery('')} hitSlop={8} accessibilityRole="button">
+            <Ionicons name="close-circle" size={16} color={theme.colors.faint} />
+          </Pressable>
+        )}
+      </View>
+
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={styles.chipsScroll}
+        contentContainerStyle={styles.chipsContent}
+      >
+        {(['all', 'hands', 'ready', 'travelling'] as const).map((mode) => {
+          const label = {
+            all: 'All books',
+            hands: 'In your hands',
+            ready: 'Ready to read',
+            travelling: 'Travelling',
+          }[mode];
+          const active = filterMode === mode;
+          return (
+            <Pressable
+              key={mode}
+              style={[styles.chip, active && styles.chipActive]}
+              onPress={() => setFilterMode(mode)}
+              accessibilityRole="button"
+            >
+              <Text style={[styles.chipText, active && styles.chipTextActive]}>{label}</Text>
+            </Pressable>
+          );
+        })}
+      </ScrollView>
+
       {/* Real groups only: the sample club would swamp the numbers. */}
-      {myGroupNames.length > 0 && (
+      {myGroupNames.length > 0 && !searchQuery && filterMode === 'all' && (
         <ClubYearCard
           books={books.filter((book) => !isSampleBook(book))}
           groupNames={myGroupNames}
           currentUserId={currentUserId}
           slim={mine.length >= 3}
         />
+      )}
+
+      {books.length > 0 && activeBooks.length === 0 && (
+        <View style={styles.searchEmptyCard}>
+          <Text style={styles.searchEmptyTitle}>Looking for another story?</Text>
+          <Text style={styles.searchEmptyText}>
+            Clear the search to explore the full shelf, or lend a new copy to your circle.
+          </Text>
+          <Pressable
+            style={styles.clearSearchButton}
+            onPress={() => {
+              setSearchQuery('');
+              setFilterMode('all');
+            }}
+            accessibilityRole="button"
+          >
+            <Text style={styles.clearSearchButtonText}>Show all books</Text>
+          </Pressable>
+        </View>
       )}
 
       {mine.length > 0 && (
@@ -161,6 +265,20 @@ export function HomeScreen({
             <Text style={styles.sectionTitle}>Other books</Text>
           </View>
           {ungrouped.map((book) => (
+            <BookCard key={book.id} book={book} currentUserId={currentUserId} onPress={open} />
+          ))}
+        </View>
+      )}
+
+      {rested.length > 0 && (
+        <View style={styles.restedSection}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Home shelf</Text>
+          </View>
+          <Text style={styles.restedSubtitle}>
+            Resting copies, kept safe after their journeys.
+          </Text>
+          {rested.map((book) => (
             <BookCard key={book.id} book={book} currentUserId={currentUserId} onPress={open} />
           ))}
         </View>
@@ -316,5 +434,97 @@ const styles = StyleSheet.create({
     color: theme.colors.muted,
     fontSize: 14,
     lineHeight: 20,
+  },
+  searchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: theme.colors.card,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    marginTop: 16,
+    marginBottom: 10,
+  },
+  searchIcon: {
+    marginRight: 8,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 14,
+    color: theme.colors.text,
+    paddingVertical: 2,
+  },
+  chipsScroll: {
+    marginBottom: 14,
+  },
+  chipsContent: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  chip: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 16,
+    backgroundColor: theme.colors.soft,
+    borderWidth: 1,
+    borderColor: 'transparent',
+  },
+  chipActive: {
+    backgroundColor: theme.colors.accent,
+    borderColor: theme.colors.accent,
+  },
+  chipText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: theme.colors.muted,
+  },
+  chipTextActive: {
+    color: theme.colors.onAccent,
+  },
+  searchEmptyCard: {
+    backgroundColor: theme.colors.card,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    padding: 18,
+    marginVertical: 12,
+  },
+  searchEmptyTitle: {
+    fontFamily: theme.fonts.serif,
+    fontSize: 16,
+    fontWeight: '700',
+    color: theme.colors.text,
+    marginBottom: 4,
+  },
+  searchEmptyText: {
+    fontSize: 13,
+    color: theme.colors.muted,
+    lineHeight: 18,
+    marginBottom: 12,
+  },
+  clearSearchButton: {
+    alignSelf: 'flex-start',
+    backgroundColor: theme.colors.accent,
+    borderRadius: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+  },
+  clearSearchButtonText: {
+    color: theme.colors.onAccent,
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  restedSection: {
+    marginTop: 20,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.border,
+    paddingTop: 16,
+  },
+  restedSubtitle: {
+    fontSize: 13,
+    color: theme.colors.muted,
+    marginBottom: 12,
   },
 });

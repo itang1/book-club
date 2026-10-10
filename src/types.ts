@@ -107,6 +107,8 @@ export type Book = {
   groupId?: string;
   /** A cover image from Open Library; without one, the colour swatch. */
   coverUrl?: string;
+  /** When the owner rested this copy from circulation. */
+  archivedAt?: string;
   queue: ReadingQueueEntry[];
   handoffs: Handoff[];
 };

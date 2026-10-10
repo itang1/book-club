@@ -33,6 +33,8 @@ export function TabBar({ state, descriptors, navigation }: BottomTabBarProps) {
           }
         };
 
+        const badge = options.tabBarBadge;
+
         return (
           <Pressable
             key={route.key}
@@ -48,6 +50,13 @@ export function TabBar({ state, descriptors, navigation }: BottomTabBarProps) {
                 size={20}
                 color={focused ? theme.colors.onAccent : theme.colors.faint}
               />
+              {badge !== undefined && (
+                <View style={styles.badge}>
+                  {typeof badge === 'number' && badge > 0 ? (
+                    <Text style={styles.badgeText}>{badge > 9 ? '9+' : badge}</Text>
+                  ) : null}
+                </View>
+              )}
             </View>
             <Text style={[styles.label, focused && styles.labelActive]}>{label}</Text>
           </Pressable>
@@ -97,5 +106,25 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '800',
     color: theme.colors.text,
+  },
+  badge: {
+    position: 'absolute',
+    top: -2,
+    right: -2,
+    minWidth: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: theme.colors.stamp,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 3,
+    borderWidth: 1.5,
+    borderColor: theme.colors.card,
+  },
+  badgeText: {
+    color: '#fff',
+    fontSize: 9,
+    fontWeight: '800',
+    lineHeight: 11,
   },
 });

@@ -11,7 +11,8 @@ import {
 
 import { FriendsStackParamList, RootStackParamList, RootTabParamList } from './src/types';
 import { BookClub, useBookClub } from './src/lib/useBookClub';
-import { friendIdsOf } from './src/lib/friendGraph';
+import { friendIdsOf, incomingRequests } from './src/lib/friendGraph';
+import { holderId, isInTransit } from './src/lib/bookState';
 import { isDevMode } from './src/lib/devMode';
 import { clearEmailActionFromUrl, emailActionTokenFromUrl, linking } from './src/lib/links';
 import { theme } from './src/theme';
@@ -118,6 +119,8 @@ function HomeStack({ club }: { club: BookClub }) {
             onHandOff={club.handOff}
             onMarkReceived={club.markReceived}
             onChangeCover={club.changeCover}
+            onUpdateBookDetails={club.updateBookDetails}
+            onRetireBook={club.retireBook}
             onJoinLine={club.joinLine}
             onLeaveLine={club.leaveLine}
           />
@@ -187,6 +190,12 @@ function FriendsStack({ club }: { club: BookClub }) {
 
 function Tabs({ club }: { club: BookClub }) {
   const me = club.members.find((person) => person.id === club.currentUserId) ?? null;
+  const incomingBookCount = club.books.filter(
+    (book) => club.currentUserId && holderId(book) === club.currentUserId && isInTransit(book),
+  ).length;
+  const pendingRequestsCount = club.currentUserId
+    ? incomingRequests(club.friendships, club.currentUserId).length
+    : 0;
 
   return (
     <NavigationContainer linking={linking}>
@@ -194,10 +203,22 @@ function Tabs({ club }: { club: BookClub }) {
         tabBar={(props) => <TabBar {...props} />}
         screenOptions={{ headerShown: false }}
       >
-        <Tab.Screen name="Home" options={{ title: 'Books' }}>
+        <Tab.Screen
+          name="Home"
+          options={{
+            title: 'Books',
+            tabBarBadge: incomingBookCount > 0 ? incomingBookCount : undefined,
+          }}
+        >
           {() => <HomeStack club={club} />}
         </Tab.Screen>
-        <Tab.Screen name="Friends" options={{ title: 'Friends & Groups' }}>
+        <Tab.Screen
+          name="Friends"
+          options={{
+            title: 'Friends & Groups',
+            tabBarBadge: pendingRequestsCount > 0 ? pendingRequestsCount : undefined,
+          }}
+        >
           {() => <FriendsStack club={club} />}
         </Tab.Screen>
         <Tab.Screen name="Profile" options={{ title: 'You' }}>

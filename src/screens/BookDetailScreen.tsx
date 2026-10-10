@@ -46,6 +46,8 @@ type BookDetailScreenProps = {
   onHandOff: (bookId: string, toFriend: string, letter: Letter) => void;
   onMarkReceived: (bookId: string) => void;
   onChangeCover: (bookId: string, mode: 'find' | 'clear') => void;
+  onUpdateBookDetails?: (bookId: string, title: string, author: string) => void;
+  onRetireBook?: (bookId: string) => void;
   onJoinLine: (bookId: string) => void;
   onLeaveLine: (bookId: string) => void;
 };
@@ -58,6 +60,8 @@ export function BookDetailScreen({
   onHandOff,
   onMarkReceived,
   onChangeCover,
+  onUpdateBookDetails,
+  onRetireBook,
   onJoinLine,
   onLeaveLine,
 }: BookDetailScreenProps) {
@@ -68,6 +72,10 @@ export function BookDetailScreen({
   const [note, setNote] = useState('');
   // Shown when the browser has no share sheet, to copy by hand.
   const [shownLink, setShownLink] = useState<string | null>(null);
+  const [editingDetails, setEditingDetails] = useState(false);
+  const [editTitle, setEditTitle] = useState('');
+  const [editAuthor, setEditAuthor] = useState('');
+  const [confirmingRetire, setConfirmingRetire] = useState(false);
   const book = books.find((item) => item.id === bookId);
 
   if (!book) {
@@ -121,6 +129,14 @@ export function BookDetailScreen({
   })();
 
   const renderAction = () => {
+    if (book.archivedAt) {
+      return (
+        <Text style={styles.actionNote}>
+          Resting on the home shelf after its travels.
+        </Text>
+      );
+    }
+
     if (isSample) {
       return (
         <Text style={styles.actionNote}>
@@ -253,14 +269,39 @@ export function BookDetailScreen({
           <Text style={styles.shareLinkText}>Share link</Text>
         </Pressable>
         {currentUserId !== null && currentUserId === owner && !isSample && (
-          <Pressable
-            style={styles.coverAction}
-            onPress={() => onChangeCover(book.id, book.coverUrl ? 'clear' : 'find')}
-          >
-            <Text style={styles.coverActionText}>
-              {book.coverUrl ? 'Wrong cover? Use the colour instead' : 'Find the cover'}
-            </Text>
-          </Pressable>
+          <View style={styles.ownerActions}>
+            <Pressable
+              style={styles.ownerAction}
+              onPress={() => onChangeCover(book.id, book.coverUrl ? 'clear' : 'find')}
+              accessibilityRole="button"
+            >
+              <Text style={styles.ownerActionText}>
+                {book.coverUrl ? 'Use colour swatch' : 'Find cover image'}
+              </Text>
+            </Pressable>
+            {onUpdateBookDetails && (
+              <Pressable
+                style={styles.ownerAction}
+                onPress={() => {
+                  setEditTitle(book.title);
+                  setEditAuthor(book.author);
+                  setEditingDetails(true);
+                }}
+                accessibilityRole="button"
+              >
+                <Text style={styles.ownerActionText}>Edit title & author</Text>
+              </Pressable>
+            )}
+            {!book.archivedAt && onRetireBook && (
+              <Pressable
+                style={styles.ownerAction}
+                onPress={() => setConfirmingRetire(true)}
+                accessibilityRole="button"
+              >
+                <Text style={styles.ownerActionText}>Rest this copy</Text>
+              </Pressable>
+            )}
+          </View>
         )}
         {shownLink && (
           <Text style={styles.shownLink} selectable>
@@ -412,6 +453,88 @@ export function BookDetailScreen({
           </View>
         </View>
       </Modal>
+
+      <Modal
+        visible={editingDetails}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setEditingDetails(false)}
+      >
+        <View style={styles.backdrop}>
+          <View style={styles.sheet}>
+            <Text style={styles.sheetTitle}>Edit book details</Text>
+            <Text style={styles.sheetBody}>
+              Fix typos in the title or author. The changes will show for everyone reading this copy.
+            </Text>
+            <Text style={styles.sheetLabel}>Title</Text>
+            <TextInput
+              value={editTitle}
+              onChangeText={setEditTitle}
+              placeholder="Title"
+              placeholderTextColor={theme.colors.faint}
+              style={styles.fieldInput}
+            />
+            <Text style={styles.sheetLabel}>Author</Text>
+            <TextInput
+              value={editAuthor}
+              onChangeText={setEditAuthor}
+              placeholder="Author"
+              placeholderTextColor={theme.colors.faint}
+              style={styles.fieldInput}
+            />
+            <Pressable
+              style={[
+                styles.sheetConfirm,
+                (!editTitle.trim() || !editAuthor.trim()) && styles.disabled,
+              ]}
+              disabled={!editTitle.trim() || !editAuthor.trim()}
+              onPress={() => {
+                if (onUpdateBookDetails && editTitle.trim() && editAuthor.trim()) {
+                  onUpdateBookDetails(book.id, editTitle.trim(), editAuthor.trim());
+                }
+                setEditingDetails(false);
+              }}
+              accessibilityRole="button"
+            >
+              <Text style={styles.sheetConfirmText}>Save changes</Text>
+            </Pressable>
+            <Pressable style={styles.sheetCancel} onPress={() => setEditingDetails(false)}>
+              <Text style={styles.sheetCancelText}>Cancel</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
+        visible={confirmingRetire}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setConfirmingRetire(false)}
+      >
+        <View style={styles.backdrop}>
+          <View style={styles.sheet}>
+            <Text style={styles.sheetTitle}>Keep this copy home?</Text>
+            <Text style={styles.sheetBody}>
+              Put this copy to rest on the home shelf. Its past travels, stamps, and letters stay safe to look back on, and the line will rest.
+            </Text>
+            <Pressable
+              style={styles.sheetConfirm}
+              onPress={() => {
+                if (onRetireBook) {
+                  onRetireBook(book.id);
+                }
+                setConfirmingRetire(false);
+              }}
+              accessibilityRole="button"
+            >
+              <Text style={styles.sheetConfirmText}>Yes, rest this copy</Text>
+            </Pressable>
+            <Pressable style={styles.sheetCancel} onPress={() => setConfirmingRetire(false)}>
+              <Text style={styles.sheetCancelText}>Keep travelling</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
     </>
   );
 }
@@ -488,15 +611,35 @@ const styles = StyleSheet.create({
   coverTextBeside: {
     flex: 1,
   },
-  coverAction: {
-    alignSelf: 'flex-end',
-    marginTop: -10,
-    marginBottom: 10,
+  ownerActions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    alignSelf: 'flex-start',
+    marginTop: -8,
+    marginBottom: 12,
   },
-  coverActionText: {
+  ownerAction: {
+    paddingVertical: 2,
+  },
+  ownerActionText: {
     color: theme.colors.muted,
     fontSize: 12,
     textDecorationLine: 'underline',
+  },
+  fieldInput: {
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: 10,
+    backgroundColor: theme.colors.background,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    fontSize: 14,
+    color: theme.colors.text,
+    marginBottom: 12,
+  },
+  disabled: {
+    opacity: 0.5,
   },
   shareLink: {
     flexDirection: 'row',
