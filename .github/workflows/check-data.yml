@@ -1,0 +1,24 @@
+# One-off, run by hand: memberships for the signed-in account, ids only
+# (this repo's logs are public).
+name: Check data
+
+on:
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Memberships
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 <<'SQL'
+          select f.id as person, f.user_id is not null as signed_in, m.group_id, g.is_sample
+          from friends f
+          left join group_members m on m.person_id = f.id
+          left join groups g on g.id = m.group_id
+          where f.user_id is not null
+          order by f.id, m.group_id;
+          select id, length(name) as name_length, is_sample, invite_code is not null as has_code from groups order by id;
+          SQL
