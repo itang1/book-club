@@ -54,7 +54,7 @@ export const bio: BioRun[][] = [
 // the silly one, documenting, writing to each other, passing it on,
 // logistics, and love.
 export const rules = [
-  'You must never dog-ear a page. Use a sticky note, a receipt, a boarding pass if you have to.',
+  'You must give it a safe ride: a sleeve, a scarf, anywhere but loose in a bag with your keys.',
   'You must never apologize for what you underlined.',
   'You must never say "I\'m not a reader" while it\'s in your hands.',
   'You must never spoil the ending.',

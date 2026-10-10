@@ -11,6 +11,9 @@ export const theme = {
     accent: '#7a5c48',
     border: '#eaded3',
     soft: '#f0e5dc',
+    // The masthead band on Books: a shade deeper than soft, so the header
+    // reads as its own area.
+    masthead: '#e8d9cb',
     avatar: '#e4d2c3',
     // Text and icons sitting on accent or stamp.
     onAccent: '#fffdfb',

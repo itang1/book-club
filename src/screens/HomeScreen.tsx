@@ -8,7 +8,7 @@ import { Book, Group, RootStackParamList } from '../types';
 import { BookCard } from '../components/BookCard';
 import { ClubYearCard } from '../components/ClubYearCard';
 import { AboutSheet } from '../components/AboutSheet';
-import { tagline } from '../content/about';
+import { homage, tagline } from '../content/about';
 import { holderId } from '../lib/bookState';
 import { theme } from '../theme';
 
@@ -66,7 +66,7 @@ export function HomeScreen({
   return (
     <ScrollView
       style={styles.container}
-      contentContainerStyle={[styles.content, { paddingTop: insets.top + 20 }]}
+      contentContainerStyle={styles.content}
       // Other people's handoffs only show up on a fetch, so pull to get them.
       refreshControl={
         <RefreshControl
@@ -76,7 +76,10 @@ export function HomeScreen({
         />
       }
     >
-      <View style={styles.headerWrap}>
+      {/* The header sits on its own tinted band, edge to edge and up under
+          the status bar, so it reads as the masthead rather than the first
+          item on the page. */}
+      <View style={[styles.headerWrap, { paddingTop: insets.top + 20 }]}>
         <Text style={styles.title}>Sisterhood of the Traveling Books</Text>
         <Text style={styles.subtitle}>{tagline}</Text>
         {/* Labelled rather than a bare +: an icon on its own didn't say what
@@ -101,6 +104,8 @@ export function HomeScreen({
             <Text style={styles.aboutButtonText}>Rules & About</Text>
           </Pressable>
         </View>
+        {/* Small print, on the first screen, so the homage is never in doubt. */}
+        <Text style={styles.homage}>{homage}</Text>
       </View>
 
       {/* Your groups' year at a glance, straight under the header: the first
@@ -191,8 +196,9 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: theme.colors.background,
   },
+  // No top padding: the header band reaches the top edge itself.
   content: {
-    padding: 20,
+    paddingHorizontal: 20,
     paddingBottom: 32,
   },
   actions: {
@@ -224,8 +230,21 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     fontSize: 15,
   },
+  // Bleeds past the content padding to the screen edges.
   headerWrap: {
+    backgroundColor: theme.colors.masthead,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+    marginHorizontal: -20,
+    paddingHorizontal: 20,
+    paddingBottom: 16,
     marginBottom: 24,
+  },
+  homage: {
+    fontSize: 11,
+    lineHeight: 15,
+    color: theme.colors.muted,
+    marginTop: 6,
   },
   title: {
     fontFamily: theme.fonts.serif,
