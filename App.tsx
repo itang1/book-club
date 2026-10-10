@@ -28,6 +28,13 @@ import { GroupScreen } from './src/screens/GroupScreen';
 import { SignInScreen } from './src/screens/SignInScreen';
 import { RulesAgreementScreen } from './src/screens/RulesAgreementScreen';
 
+/**
+ * The one-time "Welcome, Lena. Before your first book, here are the rules"
+ * screen with I agree. Off for now; set to true to bring it back (agreements
+ * already given are still remembered).
+ */
+const ASK_TO_AGREE_TO_RULES = false;
+
 const Tab = createBottomTabNavigator<RootTabParamList>();
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const FriendsNav = createNativeStackNavigator<FriendsStackParamList>();
@@ -248,7 +255,7 @@ function Root() {
         onSignOut={club.usesAccounts ? club.signOut : undefined}
       />
     );
-  } else if (me && !me.agreedRulesAt) {
+  } else if (ASK_TO_AGREE_TO_RULES && me && !me.agreedRulesAt) {
     // Once per person, right after joining.
     body = (
       <RulesAgreementScreen firstName={me.name.split(' ')[0]} onAgree={club.agreeToRules} />
