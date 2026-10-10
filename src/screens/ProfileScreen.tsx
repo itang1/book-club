@@ -69,9 +69,9 @@ export function ProfileScreen({
   return (
     <ScrollView
       style={styles.container}
-      contentContainerStyle={[styles.content, { paddingTop: insets.top + 20 }]}
+      contentContainerStyle={styles.content}
     >
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + 20 }]}>
         <View style={styles.avatar}>
           <Text style={styles.avatarText}>{me?.name.charAt(0) ?? '?'}</Text>
         </View>
@@ -230,12 +230,18 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.background,
   },
   content: {
-    padding: 20,
+    paddingHorizontal: 20,
     paddingBottom: 32,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: theme.colors.masthead,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+    marginHorizontal: -20,
+    paddingHorizontal: 20,
+    paddingBottom: 16,
     marginBottom: 20,
   },
   headerText: {

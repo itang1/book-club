@@ -216,13 +216,15 @@ export function FriendsScreen({
   return (
     <ScrollView
       style={styles.container}
-      contentContainerStyle={[styles.content, { paddingTop: insets.top + 20 }]}
+      contentContainerStyle={styles.content}
       keyboardShouldPersistTaps="handled"
     >
-      <Text style={styles.title}>Friends and Groups</Text>
-      <Text style={styles.subtitle}>
-        Friends see what you're reading. To lend to each other, share a group.
-      </Text>
+      <View style={[styles.headerWrap, { paddingTop: insets.top + 20 }]}>
+        <Text style={styles.title}>Friends and Groups</Text>
+        <Text style={styles.subtitle}>
+          Friends see what you're reading. To lend to each other, share a group.
+        </Text>
+      </View>
 
       {requests.length > 0 && (
         <>
@@ -370,6 +372,15 @@ const styles = StyleSheet.create({
   content: {
     paddingHorizontal: 20,
     paddingBottom: 32,
+  },
+  headerWrap: {
+    backgroundColor: theme.colors.masthead,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+    marginHorizontal: -20,
+    paddingHorizontal: 20,
+    paddingBottom: 16,
+    marginBottom: 16,
   },
   title: {
     fontFamily: theme.fonts.serif,
