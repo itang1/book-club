@@ -152,9 +152,14 @@ export function ProfileScreen({
               <View style={styles.bookInfo}>
                 <Text style={styles.bookTitle}>{book.title}</Text>
                 <Text style={styles.bookMeta}>
-                  {isInTransit(book)
+                  {/* In the post counts as coming to you only when it's
+                      addressed to you; in the post to someone else, you're
+                      next after them. */}
+                  {isInTransit(book) && holderId(book) === me?.id
                     ? `In the post from ${friendNameIn(book, senderId(book)).split(' ')[0]}`
-                    : `You're next. Currently with ${friendNameIn(book, holderId(book)).split(' ')[0]}`}
+                    : isInTransit(book)
+                      ? `You're next. In the post to ${friendNameIn(book, holderId(book)).split(' ')[0]}`
+                      : `You're next. Currently with ${friendNameIn(book, holderId(book)).split(' ')[0]}`}
                 </Text>
               </View>
             </View>
