@@ -79,7 +79,7 @@ export function ProfileScreen({
           <Text style={styles.title}>{me?.name ?? 'You'}</Text>
           {me && (
             <Text style={styles.subtitle}>
-              {me.city}, {me.state} · {friendCount} {friendCount === 1 ? 'friend' : 'friends'}
+              {[me.city, me.state].filter((part) => part && part !== '—').join(', ')} · {friendCount} {friendCount === 1 ? 'friend' : 'friends'}
             </Text>
           )}
         </View>

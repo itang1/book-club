@@ -30,6 +30,7 @@ import { claimProfile, onSessionChange, signOutEverywhere } from './auth';
 import { findCoverUrl } from './covers';
 import { hasFinished, holderId } from './bookState';
 import { isDevMode } from './devMode';
+import { clearInviteFromUrl } from './invite';
 import { clearReaderId, loadReaderId, saveReaderId } from './identity';
 import { isSupabaseConfigured } from './supabase';
 
@@ -241,6 +242,8 @@ export function useBookClub() {
       return;
     }
 
+    // The claim used the invite, so the join prompt shouldn't offer it again.
+    clearInviteFromUrl();
     applyData(await fetchBookClubData());
     setCurrentUserId(claim.personId);
   };
@@ -595,6 +598,8 @@ export function useBookClub() {
       userId: session?.user.id,
     };
 
+    // Joining happens below, so the join prompt shouldn't offer it again.
+    clearInviteFromUrl();
     setMembers((current) => [...current, person]);
     if (usesAccounts) {
       setCurrentUserId(person.id);

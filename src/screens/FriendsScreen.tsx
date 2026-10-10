@@ -277,7 +277,7 @@ export function FriendsScreen({
               <View style={styles.personInfo}>
                 <Text style={styles.personName}>{friend.name}</Text>
                 <Text style={styles.muted}>
-                  {friend.city}, {friend.state}
+                  {[friend.city, friend.state].filter((part) => part && part !== '—').join(', ')}
                 </Text>
                 <Text style={styles.activity}>{activityFor(friend, books)}</Text>
                 {!groupmates.has(friend.id) && (

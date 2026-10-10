@@ -46,7 +46,7 @@ export function JoinGroupPrompt({ groups, currentUserId, onJoin }: JoinGroupProm
           <Text style={styles.title}>Join {invite?.name}?</Text>
           <Text style={styles.body}>
             Members see each other's books and can join their lines. You can leave any
-            time.
+            time, and your invite link keeps working whenever you're ready.
           </Text>
           <Pressable
             style={styles.join}
