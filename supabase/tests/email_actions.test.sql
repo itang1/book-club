@@ -26,7 +26,7 @@ insert into auth.users values
   ('00000000-0000-0000-0000-0000000000e3', 'cy@x');
 set role authenticated;
 select test.as_user('00000000-0000-0000-0000-0000000000e1');
-insert into friends (id, name, city, state, user_id) values ('e-ada', 'Ada Lane', 'Austin', 'TX', '00000000-0000-0000-0000-0000000000e1');
+insert into friends (id, name, city, state, user_id, email_book_arrived) values ('e-ada', 'Ada Lane', 'Austin', 'TX', '00000000-0000-0000-0000-0000000000e1', true);
 select create_group('g-e', 'Button club');
 reset role;
 select invite_code as code from groups where id = 'g-e' \gset
@@ -86,7 +86,7 @@ end $$;
 reset role;
 
 select test.expect('Bo has it now', (select count(*) from handoffs where id = 'e-leg-3' and received_at is not null and place_city = 'Boise'), 1);
-select test.expect('Ada hears it arrived', (select count(*) from notifications where person_id = 'e-ada' and kind = 'book_arrived'), 1);
+select test.expect('Ada opted in, so she hears it arrived', (select count(*) from notifications where person_id = 'e-ada' and kind = 'book_arrived'), 1);
 select test.expect('Cy is in line for Middlemarch', (select count(*) from reading_queue where book_id = 'e-book-2' and friend_id = 'e-cy' and status = 'waiting'), 1);
 select test.expect('Ada and Bo are friends', (select count(*) from friendships where friend_a = 'e-ada' and friend_b = 'e-bo' and status = 'accepted'), 1);
 select test.expect('Only Cy joined Middlemarch''s line', (select count(*) from reading_queue where book_id = 'e-book-2' and friend_id <> 'e-ada'), 1);

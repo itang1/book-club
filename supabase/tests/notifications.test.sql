@@ -21,7 +21,7 @@ insert into auth.users values
   ('00000000-0000-0000-0000-0000000000c3', 'pip@x');
 set role authenticated;
 select test.as_user('00000000-0000-0000-0000-0000000000c1');
-insert into friends (id, name, city, state, user_id) values ('n-nia', 'Nia', 'Denver', 'CO', '00000000-0000-0000-0000-0000000000c1');
+insert into friends (id, name, city, state, user_id, email_book_arrived) values ('n-nia', 'Nia', 'Denver', 'CO', '00000000-0000-0000-0000-0000000000c1', true);
 select create_group('g-n', 'Email club');
 reset role;
 select invite_code as code from groups where id = 'g-n' \gset
@@ -30,7 +30,7 @@ select test.as_user('00000000-0000-0000-0000-0000000000c2');
 insert into friends (id, name, city, state, user_id) values ('n-oli', 'Oli', 'Omaha', 'NE', '00000000-0000-0000-0000-0000000000c2');
 select join_group(:'code');
 select test.as_user('00000000-0000-0000-0000-0000000000c3');
-insert into friends (id, name, city, state, user_id, email_next_in_line) values ('n-pip', 'Pip', 'Provo', 'UT', '00000000-0000-0000-0000-0000000000c3', false);
+insert into friends (id, name, city, state, user_id) values ('n-pip', 'Pip', 'Provo', 'UT', '00000000-0000-0000-0000-0000000000c3');
 select join_group(:'code');
 
 -- Nia lends; Oli and Pip sign up; Nia sends it to Oli; Oli says Got it.
@@ -50,8 +50,8 @@ reset role;
 
 select test.expect('Lending queues nothing', (select count(*) from notifications where book_id = 'n-book' and kind = 'book_sent' and person_id = 'n-nia'), 0);
 select test.expect('Oli is told it was sent to him', (select count(*) from notifications where person_id = 'n-oli' and kind = 'book_sent' and about_person = 'n-nia'), 1);
-select test.expect('Nia is told it arrived', (select count(*) from notifications where person_id = 'n-nia' and kind = 'book_arrived' and about_person = 'n-oli'), 1);
-select test.expect('Pip turned off next-in-line emails, so none', (select count(*) from notifications where person_id = 'n-pip' and kind = 'next_in_line'), 0);
+select test.expect('Nia opted in, so she is told it arrived', (select count(*) from notifications where person_id = 'n-nia' and kind = 'book_arrived' and about_person = 'n-oli'), 1);
+select test.expect('Next-in-line is opt-in, so Pip gets none', (select count(*) from notifications where person_id = 'n-pip' and kind = 'next_in_line'), 0);
 select test.expect('Nia is told Oli asked to be friends', (select count(*) from notifications where person_id = 'n-nia' and kind = 'friend_request'), 1);
 
 set role authenticated;

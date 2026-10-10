@@ -63,9 +63,10 @@ local development).
 
 ## Emails
 
-People get an email when a book is sent to them, when one they sent
-arrives, when they're next in line, and when someone asks to be friends.
-Each can be turned off under **You → Emails**.
+People get an email when a new book joins their group, when a book is sent
+to them, and when someone asks to be friends. "A book you sent arrived" and
+"You're next in line" are opt-in. Each has its own switch under
+**You → Emails**, with one switch at the top for all of them.
 
 Reminders stay rare: at most one per person per 30 days. "Has it reached
 you?" goes once per trip, when Got it is untapped after 5 days; "How's it

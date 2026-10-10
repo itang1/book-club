@@ -176,8 +176,8 @@ export function ProfileScreen({
               me.emails ?? {
                 newBook: true,
                 bookSent: true,
-                bookArrived: true,
-                nextInLine: true,
+                bookArrived: false,
+                nextInLine: false,
                 friendRequest: true,
                 reminders: true,
               }

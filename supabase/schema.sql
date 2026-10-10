@@ -891,9 +891,13 @@ grant execute on function public.group_preview(text) to anon;
 -- ---------------------------------------------------------------
 alter table public.friends
   add column if not exists email_book_sent boolean not null default true,
-  add column if not exists email_book_arrived boolean not null default true,
-  add column if not exists email_next_in_line boolean not null default true,
+  add column if not exists email_book_arrived boolean not null default false,
+  add column if not exists email_next_in_line boolean not null default false,
   add column if not exists email_friend_request boolean not null default true;
+-- A mostly quiet app: these two are opt-in for people who join from now on.
+alter table public.friends
+  alter column email_book_arrived set default false,
+  alter column email_next_in_line set default false;
 
 create table if not exists public.notifications (
   id bigserial primary key,

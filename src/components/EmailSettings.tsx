@@ -22,10 +22,29 @@ const OPTIONS: { key: keyof EmailPrefs; label: string; detail: string }[] = [
 ];
 
 export function EmailSettings({ prefs, onChange }: EmailSettingsProps) {
+  const anyOn = OPTIONS.some((option) => prefs[option.key]);
+  const setAll = (value: boolean) =>
+    onChange(Object.fromEntries(OPTIONS.map((option) => [option.key, value])) as EmailPrefs);
+
   return (
     <View>
-      {OPTIONS.map((option, index) => (
-        <View key={option.key} style={[styles.row, index > 0 && styles.divider]}>
+      <View style={styles.row}>
+        <View style={styles.text}>
+          <Text style={styles.allLabel}>All emails</Text>
+          <Text style={styles.detail}>
+            {anyOn ? 'Switch off to pause every email at once.' : 'All paused. Switch on to hear about every one.'}
+          </Text>
+        </View>
+        <Switch
+          value={anyOn}
+          onValueChange={setAll}
+          trackColor={{ true: theme.colors.accent, false: theme.colors.border }}
+          thumbColor={theme.colors.card}
+          accessibilityLabel="All emails"
+        />
+      </View>
+      {OPTIONS.map((option) => (
+        <View key={option.key} style={[styles.row, styles.divider]}>
           <View style={styles.text}>
             <Text style={styles.label}>{option.label}</Text>
             <Text style={styles.detail}>{option.detail}</Text>
@@ -60,6 +79,11 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 14,
     fontWeight: '600',
+    color: theme.colors.text,
+  },
+  allLabel: {
+    fontSize: 15,
+    fontWeight: '700',
     color: theme.colors.text,
   },
   detail: {

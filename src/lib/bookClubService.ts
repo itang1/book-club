@@ -123,8 +123,8 @@ function toFriend(row: FriendRow): Friend {
     emails: {
       newBook: row.email_new_book ?? true,
       bookSent: row.email_book_sent ?? true,
-      bookArrived: row.email_book_arrived ?? true,
-      nextInLine: row.email_next_in_line ?? true,
+      bookArrived: row.email_book_arrived ?? false,
+      nextInLine: row.email_next_in_line ?? false,
       friendRequest: row.email_friend_request ?? true,
       reminders: row.email_reminders ?? true,
     },
