@@ -1,0 +1,17 @@
+{
+  "name": "Sisterhood of the Traveling Books",
+  "short_name": "Traveling Books",
+  "description": "Read it. Write in it. Pass it on.",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#f7f1ea",
+  "theme_color": "#f7f1ea",
+  "icons": [
+    {
+      "src": "icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
