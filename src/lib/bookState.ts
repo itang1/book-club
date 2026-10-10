@@ -94,7 +94,7 @@ export function senderId(book: Book): string | null {
  */
 export function statusLabel(book: Book): string {
   if (!holderId(book)) {
-    return 'Not circulating';
+    return 'Ready to travel';
   }
   if (isInTransit(book)) {
     return 'In the post';
@@ -255,7 +255,7 @@ export function heldForDays(legs: Handoff[], index: number): number | null {
 
 export function relativeTime(iso: string | null): string {
   if (!iso) {
-    return 'Not circulating yet';
+    return 'Ready to travel';
   }
 
   const then = Date.parse(iso);

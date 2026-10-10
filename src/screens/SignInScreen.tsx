@@ -86,7 +86,7 @@ export function SignInScreen() {
           <>
             <Text style={styles.cardTitle}>Sign in</Text>
             <Text style={styles.body}>
-              No password. We'll email you a link; new here is fine too.
+              We'll email you a link to sign in. New here? Welcome.
             </Text>
             <TextInput
               value={email}

@@ -44,7 +44,7 @@ export type SaveProblem = { action: string; reason: string };
  */
 function explain(reason: string): string {
   if (/schema cache|does not exist/i.test(reason)) {
-    return `The database is behind the app (${reason}). Re-run supabase/schema.sql in the Supabase SQL editor.`;
+    return `The app is a step ahead of the database (${reason}). Re-run supabase/schema.sql in the Supabase SQL editor to catch it up.`;
   }
 
   return reason;
@@ -308,7 +308,7 @@ export function useBookClub() {
     if (mode === 'find' && !url) {
       setSaveProblem({
         action: `find a cover for ${book.title}`,
-        reason: "Open Library doesn't have one for this title and author.",
+        reason: 'The colour swatch stays for now; try again once Open Library adds this cover.',
       });
       return;
     }

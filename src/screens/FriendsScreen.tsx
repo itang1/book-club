@@ -55,7 +55,7 @@ function activityFor(friend: Friend, books: Book[]) {
     lines.push(`Signed up for ${later.map((book) => book.title).join(', ')}`);
   }
 
-  return lines.join(' · ') || 'No books in hand';
+  return lines.join(' · ') || 'Between books';
 }
 
 function Avatar({ name }: { name: string }) {
@@ -139,7 +139,7 @@ function GroupCard({
           ? 'A pretend group with some history, so you can see how it all works.'
           : latest
             ? `${describeLeg(latest.book, latest.leg)} · ${relativeTime(latest.leg.happenedAt)}`
-            : 'Nothing has moved yet. Lend a book to start.'}
+            : 'Ready for its first book. Lend one to start.'}
       </Text>
     </View>
   );
@@ -277,7 +277,7 @@ export function FriendsScreen({
       <Text style={styles.sectionTitle}>Friends</Text>
       {friends.length === 0 ? (
         <Text style={styles.empty}>
-          No friends yet. Add someone from your groups below.
+          Add someone from your groups below to get started.
         </Text>
       ) : (
         friends.map((friend) => (
@@ -292,7 +292,7 @@ export function FriendsScreen({
                 <Text style={styles.activity}>{activityFor(friend, books)}</Text>
                 {!groupmates.has(friend.id) && (
                   <Text style={styles.activity}>
-                    Not in any of your groups yet, so you can't borrow each other's books.
+                    Share a group to lend each other books.
                   </Text>
                 )}
               </View>
@@ -349,8 +349,7 @@ export function FriendsScreen({
           <View style={styles.sheet}>
             <Text style={styles.sheetTitle}>Unfriend {unfriending?.name.split(' ')[0]}?</Text>
             <Text style={styles.note}>
-              {unfriending?.name.split(' ')[0]} won't be told. You'll still share any groups
-              you're both in.
+              This stays private, and you'll keep sharing any groups you're both in.
             </Text>
             <Pressable
               style={styles.dangerButtonWide}

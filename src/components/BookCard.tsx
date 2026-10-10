@@ -30,7 +30,7 @@ type BookCardProps = {
 function whereLine(book: Book, currentUserId: string | null): string {
   const holder = holderId(book);
   if (!holder) {
-    return 'Not circulating yet';
+    return 'Ready to travel';
   }
   if (isInTransit(book)) {
     return holder === currentUserId
@@ -55,7 +55,7 @@ function nextLine(book: Book, currentUserId: string | null): string {
   }
 
   const nextId = nextInLineId(book);
-  return nextId ? `${friendNameIn(book, nextId)} is next` : 'Nobody in line yet';
+  return nextId ? `${friendNameIn(book, nextId)} is next` : 'Ready for its next reader';
 }
 
 export function BookCard({ book, currentUserId, isSample, groupName, onPress }: BookCardProps) {

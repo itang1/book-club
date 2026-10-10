@@ -70,7 +70,7 @@ describe('who has it and who owns it', () => {
 
   it('has no holder before the first leg', () => {
     expect(holderId(book([], []))).toBeNull();
-    expect(statusLabel(book([], []))).toBe('Not circulating');
+    expect(statusLabel(book([], []))).toBe('Ready to travel');
   });
 });
 

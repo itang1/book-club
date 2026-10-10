@@ -73,7 +73,7 @@ export function BookDetailScreen({
   if (!book) {
     return (
       <View style={styles.container}>
-        <Text style={styles.title}>Book not found.</Text>
+        <Text style={styles.title}>This book is off the shelf for now.</Text>
       </View>
     );
   }
@@ -173,7 +173,7 @@ export function BookDetailScreen({
 
       return (
         <Text style={styles.actionNote}>
-          Nobody's waiting yet. It's yours to keep reading until someone asks.
+          It's yours to enjoy until someone joins the line.
         </Text>
       );
     }
@@ -283,7 +283,7 @@ export function BookDetailScreen({
           {isSample
             ? ' · in the sample club'
             : groupName
-              ? ` · only ${groupName} can see it`
+              ? ` · shared with ${groupName}`
               : ''}
         </Text>
 
@@ -323,7 +323,7 @@ export function BookDetailScreen({
           <Text style={styles.boxTitle}>Travel history</Text>
           <Text style={styles.boxCaption}>Every leg of the journey, newest first.</Text>
           {legs.length === 0 ? (
-            <Text style={styles.legMeta}>This copy has not started travelling yet.</Text>
+            <Text style={styles.legMeta}>This copy's journey starts with its first handoff.</Text>
           ) : (
             legs.map((leg, index) => {
               // `legs` is newest-first, so the held duration comes from the
@@ -441,7 +441,7 @@ function Stars({
   onChange?: (value: number | undefined) => void;
 }) {
   return (
-    <View style={styles.stars} accessibilityLabel={value ? `${value} of 5 stars` : 'No rating'}>
+    <View style={styles.stars} accessibilityLabel={value ? `${value} of 5 stars` : 'Unrated'}>
       {[1, 2, 3, 4, 5].map((star) => {
         const icon = (
           <Ionicons

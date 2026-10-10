@@ -131,7 +131,7 @@ export function WelcomeScreen({
       {email && onSignOut && (
         <Pressable style={styles.footerLink} onPress={onSignOut}>
           <Text style={styles.muted}>
-            Signed in as {email}. <Text style={styles.link}>Not you? Sign out</Text>
+            Signed in as {email}. <Text style={styles.link}>Someone else? Sign out</Text>
           </Text>
         </Pressable>
       )}

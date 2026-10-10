@@ -69,7 +69,7 @@ function content(facts: EmailFacts): Content {
         heading: `${titleText} is on its way to you`,
         paragraphs: [
           `${other} put it in the post. When it arrives, open the app and tap <b>Got it</b> so ${other} knows it made it.`,
-          "No rush on the reading. Someone's waiting after you, so send it on when you're done.",
+          "Take your time with it. Someone's next after you, so send it on when you're done.",
         ],
         aside: facts.hasLetter
           ? `&#9993; ${other} tucked a letter inside. It opens once you've finished the book.`

@@ -161,7 +161,7 @@ export function AddBookScreen({
           </View>
         )}
         {group && (
-          <Text style={styles.hint}>Only {group.name} can see it and join the line.</Text>
+          <Text style={styles.hint}>Shared with {group.name}: they can see it and join the line.</Text>
         )}
 
         {/* A gift stays yours to lend; the book page credits the giver. */}

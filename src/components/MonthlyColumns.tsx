@@ -22,7 +22,7 @@ export function MonthlyColumns({ data }: { data: MonthCount[] }) {
       <Text style={styles.readout}>
         {picked
           ? `${picked.month.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })} · ${
-              picked.count === 0 ? 'nothing finished' : picked.titles.join(', ')
+              picked.count === 0 ? 'between books' : picked.titles.join(', ')
             }`
           : `${total} ${total === 1 ? 'book' : 'books'} finished in the last ${data.length} months`}
       </Text>

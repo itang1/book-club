@@ -125,7 +125,7 @@ export function ProfileScreen({
       <View style={styles.card}>
         <Text style={styles.cardTitle}>In your hands</Text>
         {withMe.length === 0 ? (
-          <Text style={styles.empty}>Nothing right now. Enjoy the quiet.</Text>
+          <Text style={styles.empty}>Free hands: a good moment to join a line.</Text>
         ) : (
           withMe.map((book) => (
             <View key={book.id} style={styles.bookRow}>
@@ -144,7 +144,7 @@ export function ProfileScreen({
       <View style={styles.card}>
         <Text style={styles.cardTitle}>On its way to you</Text>
         {comingToMe.length === 0 ? (
-          <Text style={styles.empty}>Nothing on its way. Join a line and something will find you.</Text>
+          <Text style={styles.empty}>Join a line and your next book will find you.</Text>
         ) : (
           comingToMe.map((book) => (
             <View key={book.id} style={styles.bookRow}>
@@ -195,7 +195,7 @@ export function ProfileScreen({
             <View style={styles.settingText}>
               <Text style={styles.settingLabel}>Let people in my groups ask</Text>
               <Text style={styles.settingDetail}>
-                Off means nobody can send you a request. You can still ask others.
+                On, people in your groups can ask to be friends. Either way, you can always ask them.
               </Text>
             </View>
             <Switch

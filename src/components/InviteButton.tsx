@@ -105,7 +105,7 @@ export function InviteButton({ group, compact = false }: { group: Group; compact
 
                 <Text style={styles.stepsTitle}>What they'll see</Text>
                 {[
-                  'They open the link and sign in with their email. No password.',
+                  'They open the link and sign in with just their email.',
                   "If you've already added them, they tap their name. Otherwise they make a profile.",
                   `They're in ${group.name}: they can see its books and join their lines.`,
                 ].map((step, index) => (
@@ -115,7 +115,7 @@ export function InviteButton({ group, compact = false }: { group: Group; compact
                   </View>
                 ))}
                 <Text style={styles.warning}>
-                  Anyone with this link can join, so send it only to people you mean to invite.
+                  This link welcomes in whoever has it, so share it with the people you'd love to have.
                 </Text>
               </>
             ) : (

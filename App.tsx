@@ -291,10 +291,10 @@ function Root() {
       </SafeAreaInsetsContext.Provider>
       {club.saveProblem && (
         <Pressable style={tabStyles.banner} onPress={club.dismissSaveProblem}>
-          <Text style={tabStyles.bannerTitle}>Couldn't {club.saveProblem.action}.</Text>
+          <Text style={tabStyles.bannerTitle}>One more try to {club.saveProblem.action}.</Text>
           <Text style={tabStyles.bannerText}>{club.saveProblem.reason}</Text>
           <Text style={tabStyles.bannerHint}>
-            It shows here for now but won't be there next time. Tap to dismiss.
+            It shows here for now; try again to keep it. Tap to close.
           </Text>
         </Pressable>
       )}

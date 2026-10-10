@@ -75,7 +75,7 @@ export function YearInReviewSheet({
             <Text style={styles.title}>Your {year} in books</Text>
             <Text style={styles.subtitle}>
               {review.handoffs === 0
-                ? 'Nothing has moved yet this year. Lend a book and this page fills in.'
+                ? 'A fresh year: lend a book and this page fills in.'
                 : 'Everything your groups passed around this year, so far.'}
             </Text>
 
@@ -129,7 +129,7 @@ export function YearInReviewSheet({
             <View style={styles.card}>
               <Text style={styles.mine}>
                 {review.mine.finished === 0
-                  ? "You haven't passed a book on yet this year."
+                  ? 'Your first pass-on of the year is just ahead.'
                   : `You finished and passed on ${review.mine.finished} ${
                       review.mine.finished === 1 ? 'book' : 'books'
                     }, with ${review.mine.lettersWritten} ${

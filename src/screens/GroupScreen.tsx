@@ -46,7 +46,7 @@ export function GroupScreen({
   if (!group) {
     return (
       <View style={styles.container}>
-        <Text style={styles.empty}>This group isn't one of yours.</Text>
+        <Text style={styles.empty}>This group's page opens to its members.</Text>
       </View>
     );
   }
@@ -75,8 +75,8 @@ export function GroupScreen({
         </Text>
         <Text style={styles.subtitle}>
           {group.isSample
-            ? "A sample club, so you can see what a group with some history looks like. Nobody can lend or sign up here, and you won't see the other real people in it."
-            : "Members see each other's books and can join their lines. Nobody outside the group can."}
+            ? "A sample club with some history, so you can see how a group comes together. It's for looking around: lending and lines happen in your own groups, and fellow visitors stay private."
+            : "Members see each other's books and join their lines. It's all just for the group."}
         </Text>
 
         <View style={styles.tiles}>
@@ -111,7 +111,7 @@ export function GroupScreen({
 
         <Text style={styles.heading}>Books</Text>
         {groupBooks.length === 0 ? (
-          <Text style={styles.empty}>No books in this group yet. Lend one from Books.</Text>
+          <Text style={styles.empty}>Lend the first book from Books and it shows up here.</Text>
         ) : (
           <View style={styles.card}>
             {groupBooks.map((book, index) => (
@@ -147,7 +147,7 @@ export function GroupScreen({
 
         <Text style={styles.heading}>History</Text>
         {history.length === 0 ? (
-          <Text style={styles.empty}>Nothing has happened here yet.</Text>
+          <Text style={styles.empty}>The story starts with the first handoff.</Text>
         ) : (
           <View style={styles.card}>
             {history.map(({ book, leg }, index) => (

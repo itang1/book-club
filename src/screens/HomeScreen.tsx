@@ -136,7 +136,7 @@ export function HomeScreen({
 
       {sections.length === 0 && mine.length === 0 && ungrouped.length === 0 && (
         <Text style={styles.empty}>
-          Nothing travelling yet. Got a book you'd pass around? Lend it.
+          Got a book you'd pass around? Lend it and its journey begins.
         </Text>
       )}
 
