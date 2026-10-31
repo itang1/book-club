@@ -29,6 +29,7 @@ permissions:
 jobs:
   dump:
     runs-on: ubuntu-24.04
+    timeout-minutes: 20
     steps:
       - name: Dump and encrypt
         env:

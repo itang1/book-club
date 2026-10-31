@@ -45,6 +45,7 @@ jobs:
   # Postgres, before anything touches the real database.
   db-tests:
     runs-on: ubuntu-24.04
+    timeout-minutes: 10
     services:
       postgres:
         image: postgres:16
@@ -65,6 +66,7 @@ jobs:
   schema:
     needs: db-tests
     runs-on: ubuntu-24.04
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - name: Apply supabase/schema.sql
@@ -104,6 +106,7 @@ jobs:
   email-function:
     needs: schema
     runs-on: ubuntu-24.04
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       # Pinned, so a new CLI release can't change a deploy without a commit.
@@ -174,6 +177,7 @@ jobs:
   build:
     needs: schema
     runs-on: ubuntu-24.04
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -203,6 +207,7 @@ jobs:
   deploy:
     needs: build
     runs-on: ubuntu-24.04
+    timeout-minutes: 10
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
