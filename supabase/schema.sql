@@ -719,6 +719,107 @@ as $$
   delete from public.group_members where group_id = p_group_id and person_id = public.me();
 $$;
 
+-- ---------------------------------------------------------------
+-- Running a group: rename it, remove a member, hand it to someone else,
+-- and reset its invite link if it leaks. One person runs each group:
+-- whoever started it while they're still in it, and after that whoever has
+-- been in it longest, so a group is never left with nobody at the helm.
+-- Only members can ask who that is; sample groups have nobody.
+-- ---------------------------------------------------------------
+create or replace function public.group_admin(p_group_id text) returns text
+language sql stable security definer set search_path = public
+as $$
+  select case when public.is_member(p_group_id) and not public.is_sample_group(p_group_id) then
+    coalesce(
+      (select g.created_by from public.groups g
+       join public.group_members m on m.group_id = g.id and m.person_id = g.created_by
+       where g.id = p_group_id),
+      (select person_id from public.group_members where group_id = p_group_id
+       order by joined_at, person_id limit 1)
+    )
+  end
+$$;
+
+-- The same, as a column the app can select on groups (`admin_id`).
+create or replace function public.admin_id(public.groups) returns text
+language sql stable set search_path = public
+as $$
+  select public.group_admin($1.id)
+$$;
+
+create or replace function public.require_group_admin(p_group_id text) returns void
+language plpgsql stable security definer set search_path = public
+as $$
+begin
+  if public.me() is null or public.group_admin(p_group_id) is distinct from public.me() then
+    raise exception 'Only the person who runs this group can do that';
+  end if;
+end;
+$$;
+
+create or replace function public.rename_group(p_group_id text, p_name text) returns void
+language plpgsql security definer set search_path = public
+as $$
+begin
+  perform public.require_group_admin(p_group_id);
+  if nullif(trim(p_name), '') is null then
+    raise exception 'A group needs a name';
+  end if;
+  update public.groups set name = trim(p_name) where id = p_group_id;
+end;
+$$;
+
+-- Like leaving, done for them: off the group's waiting lines, out of the
+-- group. A book they hold or are being sent stays with them until it's
+-- passed on; their own copies stay in the group.
+create or replace function public.remove_from_group(p_group_id text, p_person_id text)
+returns void
+language plpgsql security definer set search_path = public
+as $$
+begin
+  perform public.require_group_admin(p_group_id);
+  if p_person_id = public.me() then
+    raise exception 'To step away from your own group, leave it';
+  end if;
+  delete from public.reading_queue q
+  using public.books b
+  where q.book_id = b.id and b.group_id = p_group_id
+    and q.friend_id = p_person_id and q.status = 'waiting';
+  delete from public.group_members where group_id = p_group_id and person_id = p_person_id;
+end;
+$$;
+
+create or replace function public.hand_over_group(p_group_id text, p_person_id text)
+returns void
+language plpgsql security definer set search_path = public
+as $$
+begin
+  perform public.require_group_admin(p_group_id);
+  if not exists (
+    select 1 from public.group_members where group_id = p_group_id and person_id = p_person_id
+  ) or p_person_id = public.me() then
+    raise exception 'Hand the group to someone else in it';
+  end if;
+  update public.groups set created_by = p_person_id where id = p_group_id;
+end;
+$$;
+
+-- A new invite link; the old one stops working. Returns the new code.
+create or replace function public.reset_invite_code(p_group_id text) returns text
+language plpgsql security definer set search_path = public
+as $$
+declare
+  code text;
+begin
+  perform public.require_group_admin(p_group_id);
+  update public.groups set invite_code = default where id = p_group_id
+  returning invite_code into code;
+  return code;
+end;
+$$;
+
+revoke all on function public.require_group_admin(text) from public, anon, authenticated;
+
 -- Everyone is in the sample group(s) from the start, so a new member has
 -- a group with some history to look around before their own is busy.
 create or replace function public.join_sample_groups() returns trigger
@@ -1001,6 +1102,9 @@ revoke all on function public.me(), public.is_member(text), public.can_see_book(
   public.can_see_person(text), public.claim_profile(text, text),
   public.unclaimed_in_group(text), public.group_preview(text),
   public.create_group(text, text), public.join_group(text), public.leave_group(text),
+  public.group_admin(text), public.admin_id(public.groups),
+  public.rename_group(text, text), public.remove_from_group(text, text),
+  public.hand_over_group(text, text), public.reset_invite_code(text),
   public.delete_my_account(),
   public.lend_book(text, text, text, text, text, text, text, text),
   public.set_cover(text, text),
@@ -1016,6 +1120,9 @@ grant execute on function public.me(), public.is_member(text), public.can_see_bo
   public.can_see_person(text), public.claim_profile(text, text),
   public.unclaimed_in_group(text), public.group_preview(text),
   public.create_group(text, text), public.join_group(text), public.leave_group(text),
+  public.group_admin(text), public.admin_id(public.groups),
+  public.rename_group(text, text), public.remove_from_group(text, text),
+  public.hand_over_group(text, text), public.reset_invite_code(text),
   public.delete_my_account(),
   public.lend_book(text, text, text, text, text, text, text, text),
   public.set_cover(text, text),

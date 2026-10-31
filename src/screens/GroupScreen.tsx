@@ -4,6 +4,7 @@ import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-nati
 import { Book, Friend, Group } from '../types';
 import { theme } from '../theme';
 import { InviteButton } from '../components/InviteButton';
+import { GroupAdminPanel } from '../components/GroupAdminPanel';
 import {
   describeLeg,
   formatDate,
@@ -24,6 +25,10 @@ type GroupScreenProps = {
   onOpenBook: (bookId: string) => void;
   onLeave: (groupId: string) => void;
   onLeft: () => void;
+  onRename: (groupId: string, name: string) => void;
+  onRemoveMember: (groupId: string, personId: string) => void;
+  onHandOver: (groupId: string, personId: string) => void;
+  onResetInvite: (groupId: string) => void;
 };
 
 export function GroupScreen({
@@ -35,6 +40,10 @@ export function GroupScreen({
   onOpenBook,
   onLeave,
   onLeft,
+  onRename,
+  onRemoveMember,
+  onHandOver,
+  onResetInvite,
 }: GroupScreenProps) {
   const [confirmLeave, setConfirmLeave] = useState(false);
   const group = groups.find((candidate) => candidate.id === route.params.groupId);
@@ -95,6 +104,7 @@ export function GroupScreen({
                 <Text style={styles.memberName} numberOfLines={1}>
                   {person.id === currentUserId ? 'You' : person.name.split(' ')[0]}
                 </Text>
+                {person.id === group.adminId && <Text style={styles.adminTag}>Runs it</Text>}
               </View>
             ))}
           </View>
@@ -104,6 +114,18 @@ export function GroupScreen({
             </View>
           )}
         </View>
+
+        {!group.isSample && group.adminId === currentUserId && (
+          <GroupAdminPanel
+            key={group.id}
+            group={group}
+            others={people.filter((person) => person.id !== currentUserId)}
+            onRename={(name) => onRename(group.id, name)}
+            onRemove={(personId) => onRemoveMember(group.id, personId)}
+            onHandOver={(personId) => onHandOver(group.id, personId)}
+            onResetInvite={() => onResetInvite(group.id)}
+          />
+        )}
 
         <Text style={styles.heading}>Books</Text>
         {groupBooks.length === 0 ? (
@@ -300,6 +322,12 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: theme.colors.text,
     marginTop: 4,
+  },
+  adminTag: {
+    ...theme.caps,
+    fontSize: 11,
+    color: theme.colors.muted,
+    marginTop: 2,
   },
   invite: {
     paddingBottom: 12,
