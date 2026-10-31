@@ -259,7 +259,7 @@ export function renderEmail(facts: EmailFacts): Email {
 </td></tr>
 <tr><td style="padding:16px 6px 0;font-family:-apple-system,Helvetica,Arial,sans-serif;font-size:12px;line-height:18px;color:#575046;text-align:center;">
   ${escape(c.why)}<br><i style="font-family:Georgia,serif;">Read it, write in it, and pass it on.</i><br>
-  <a href="${escape(settings)}" style="color:#575046;">Choose which emails you get: Profile &rarr; Emails</a>
+  <a href="${escape(settings)}" style="color:#575046;">Choose which emails you get: Profile &rarr; Emails</a> &middot; <a href="${escape(root)}privacy.html" style="color:#575046;">Privacy</a>
 </td></tr>
 </table></td></tr></table></body></html>`;
 
