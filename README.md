@@ -94,6 +94,14 @@ One-time setup:
    `notifications`, event Insert, type *Supabase Edge Functions*, function
    `notify`. Emails then go out within seconds of being queued.
 
+## Backups
+
+`.github/workflows/backup.yml` dumps the data every night at 06:23 UTC,
+encrypts it, and keeps it as a workflow artifact for 90 days. Add one repo
+secret, `BACKUP_PASSPHRASE` (a long random passphrase, also saved in a
+password manager), and run the workflow once by hand from the Actions tab to
+check it. Restore instructions are at the top of the workflow file.
+
 ## Accounts and privacy
 
 - Everyone signs in with an emailed link. No passwords.
