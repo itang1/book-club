@@ -116,7 +116,10 @@ export function useBookClub() {
     } else {
       saveCachedClubData(data);
     }
-  };
+  };  // Effects (startup, the session listener, background refreshes) outlive the
+  // render they were set up in; this lets them apply data with today's state.
+  const applyDataFromEffect = React.useEffectEvent(applyData);
+
 
   React.useEffect(() => {
     let active = true;
@@ -129,7 +132,7 @@ export function useBookClub() {
           return;
         }
 
-        applyData(data);
+        applyDataFromEffect(data);
         if (saved && data.friends.some((person) => person.id === saved)) {
           setCurrentUserId(saved);
         } else if (isDevMode) {
@@ -167,7 +170,7 @@ export function useBookClub() {
 
       if (!next) {
         clearCachedClubData();
-        applyData({ books: [], friends: [], friendships: [], groups: [] });
+        applyDataFromEffect({ books: [], friends: [], friendships: [], groups: [] });
         setCurrentUserId(null);
         setLoaded(true);
         return;
@@ -178,7 +181,7 @@ export function useBookClub() {
         return;
       }
 
-      applyData(data);
+      applyDataFromEffect(data);
       setCurrentUserId(claim.personId);
       setLoaded(true);
     });
@@ -199,23 +202,20 @@ export function useBookClub() {
    * Keep what's on screen current without anyone having to reload: fetch
    * again on realtime changes, app focus, and every minute while open.
    */
-  const signedInRef = React.useRef(false);
-  signedInRef.current = usesAccounts ? session !== null && currentUserId !== null : false;
+  const quietRefresh = React.useEffectEvent(() => {
+    if (session !== null && currentUserId !== null) {
+      fetchBookClubData().then((data) => {
+        // A failed background fetch shouldn't blank the screen or nag.
+        if (!data.error) {
+          applyDataFromEffect(data);
+        }
+      });
+    }
+  });
   React.useEffect(() => {
     if (!usesAccounts) {
       return;
     }
-
-    const quietRefresh = () => {
-      if (signedInRef.current) {
-        fetchBookClubData().then((data) => {
-          // A failed background fetch shouldn't blank the screen or nag.
-          if (!data.error) {
-            applyData(data);
-          }
-        });
-      }
-    };
 
     const channel = supabase
       ? supabase

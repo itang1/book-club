@@ -44,17 +44,22 @@ type Outcome = Promise<string | null>;
 export function useShelf(enabled: boolean) {
   const [books, setBooks] = React.useState<ShelfBook[]>([]);
   const [requests, setRequests] = React.useState<ShelfRequest[]>([]);
-  const [loading, setLoading] = React.useState(false);
+  const [loading, setLoading] = React.useState(enabled && Boolean(supabase));
   const [error, setError] = React.useState<string | null>(null);
 
-  const reload = React.useCallback(async () => {
-    if (!supabase || !enabled) return;
-    setLoading(true);
-    const [shelf, asks] = await Promise.all([
+  /** Fetch the shelf and requests (no state changes here). */
+  const fetchShelf = React.useCallback(async () => {
+    if (!supabase || !enabled) return null;
+    return Promise.all([
       supabase.from('shelf_books').select('*').order('created_at'),
       supabase.from('shelf_requests').select('*').order('created_at'),
     ]);
+  }, [enabled]);
+
+  const apply = React.useCallback((result: Awaited<ReturnType<typeof fetchShelf>>) => {
     setLoading(false);
+    if (!result) return;
+    const [shelf, asks] = result;
     if (shelf.error || asks.error) {
       setError((shelf.error ?? asks.error)!.message);
       return;
@@ -62,11 +67,27 @@ export function useShelf(enabled: boolean) {
     setError(null);
     setBooks((shelf.data as ShelfRow[]).map(toBook));
     setRequests((asks.data as RequestRow[]).map(toRequest));
-  }, [enabled]);
+  }, []);
+
+  /** Pull to refresh: show the spinner while it fetches. */
+  const reload = React.useCallback(async () => {
+    setLoading(true);
+    apply(await fetchShelf());
+  }, [fetchShelf, apply]);
 
   React.useEffect(() => {
-    reload();
-  }, [reload]);
+    let current = true;
+    fetchShelf().then((result) => {
+      if (current) apply(result);
+    });
+    return () => {
+      current = false;
+    };
+  }, [fetchShelf, apply]);
+
+  React.useEffect(() => {
+    fetchShelf();
+  }, [fetchShelf]);
 
   /** Runs a change, then reloads so the screen shows what the database now says. */
   const change = async (run: () => PromiseLike<{ error: { message: string } | null }>): Outcome => {

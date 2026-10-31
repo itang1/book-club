@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -26,7 +26,14 @@ export function ScanReviewSheet({ visible, found, isShelved, onClose, onAdd }: S
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
 
-  useEffect(() => {
+  // Fresh rows each time it opens, or with a new scan; later shelf reloads
+  // (isShelved changing) don't reset edits in progress.
+  const [shown, setShown] = useState<{ visible: boolean; found: ScanReviewSheetProps['found'] }>({
+    visible: false,
+    found: [],
+  });
+  if (visible !== shown.visible || found !== shown.found) {
+    setShown({ visible, found });
     if (visible) {
       setRows(
         found.map((book) => {
@@ -37,9 +44,7 @@ export function ScanReviewSheet({ visible, found, isShelved, onClose, onAdd }: S
       setBusy(false);
       setProblem(null);
     }
-    // Only when the sheet opens: later shelf reloads shouldn't reset edits.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [visible, found]);
+  }
 
   const change = (index: number, patch: Partial<Row>) =>
     setRows((current) => current.map((row, i) => (i === index ? { ...row, ...patch } : row)));

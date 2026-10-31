@@ -32,6 +32,7 @@ export function JoinGroupPrompt({ groups, currentUserId, onJoin }: JoinGroupProm
       }
     });
     // Only on arrival: the link is answered once.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const close = () => {

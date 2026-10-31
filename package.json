@@ -1,7 +1,17 @@
 {
   "name": "book-club",
-  "private": true,
   "version": "1.0.0",
+  "private": true,
+  "description": "Read it, write in it, and pass it on: one copy of a book travels a circle of friends, and the app keeps its journey.",
+  "homepage": "https://itang1.github.io/book-club",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/itang1/book-club.git"
+  },
+  "license": "MIT",
+  "engines": {
+    "node": ">=22"
+  },
   "main": "expo/AppEntry",
   "scripts": {
     "start": "expo start --clear",
@@ -11,7 +21,13 @@
     "web": "expo start --web",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "sample:sql": "WRITE_SAMPLE_SQL=1 vitest run src/data/sampleSql.test.ts"
+    "sample:sql": "WRITE_SAMPLE_SQL=1 vitest run src/data/sampleSql.test.ts",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test:db": "supabase/tests/run.sh",
+    "icons": "node scripts/icons.js",
+    "check": "npm run typecheck && npm run lint && npm run format:check && npm test"
   },
   "dependencies": {
     "@expo/metro-runtime": "~57.0.16",
@@ -36,6 +52,9 @@
   "devDependencies": {
     "@types/node": "^26.6.4",
     "@types/react": "~19.2.4",
+    "eslint": "^9.39.5",
+    "eslint-config-expo": "~57.0.0",
+    "prettier": "^3.9.10",
     "typescript": "~6.0.3",
     "vitest": "^3.2.7"
   }

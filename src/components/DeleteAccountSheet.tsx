@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { theme } from '../theme';
@@ -14,12 +14,15 @@ export function DeleteAccountSheet({ visible, onClose, onDelete }: DeleteAccount
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
 
-  useEffect(() => {
+  // Fresh each time it opens (React's "adjust state when a prop changes").
+  const [wasVisible, setWasVisible] = useState(visible);
+  if (visible !== wasVisible) {
+    setWasVisible(visible);
     if (visible) {
       setBusy(false);
       setProblem(null);
     }
-  }, [visible]);
+  }
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>

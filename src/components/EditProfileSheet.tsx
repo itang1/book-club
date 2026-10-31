@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { Friend } from '../types';
@@ -16,13 +16,16 @@ export function EditProfileSheet({ me, visible, onClose, onSave }: EditProfileSh
   const [city, setCity] = useState(me.city);
   const [region, setRegion] = useState(me.state === '—' ? '' : me.state);
 
-  useEffect(() => {
+  // Fresh each time it opens (React's "adjust state when a prop changes").
+  const [wasVisible, setWasVisible] = useState(visible);
+  if (visible !== wasVisible) {
+    setWasVisible(visible);
     if (visible) {
       setName(me.name);
       setCity(me.city);
       setRegion(me.state === '—' ? '' : me.state);
     }
-  }, [visible, me]);
+  }
 
   const ready = Boolean(name.trim() && city.trim());
 
