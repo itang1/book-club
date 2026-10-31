@@ -19,6 +19,7 @@ concurrency:
 jobs:
   app:
     runs-on: ubuntu-24.04
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -34,17 +35,20 @@ jobs:
         env:
           EXPO_BASE_URL: /book-club
 
+  # In Playwright's own image, at the version in package-lock.json, so the
+  # browser and its system libraries are already there: installing them on
+  # the runner once hung for over ten minutes.
   e2e:
     runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    container:
+      image: mcr.microsoft.com/playwright:v1.63.0-noble
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version-file: .nvmrc
-          cache: npm
       - run: npm ci
-      - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e
+        env:
+          HOME: /root
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
@@ -56,6 +60,7 @@ jobs:
 
   db-tests:
     runs-on: ubuntu-24.04
+    timeout-minutes: 10
     services:
       postgres:
         image: postgres:16
