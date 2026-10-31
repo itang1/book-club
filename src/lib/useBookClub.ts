@@ -1,5 +1,4 @@
 import * as React from 'react';
-import { AppState, Platform } from 'react-native';
 import type { Session } from '@supabase/supabase-js';
 
 import type { Book, EmailPrefs, Friend, Friendship, Group, Handoff, Letter } from '../types';
@@ -34,20 +33,15 @@ import type { BookClubData } from './bookClubService';
 import { claimProfile, deleteMyAccount, onSessionChange, signOutEverywhere } from './auth';
 import { clearCachedClubData, loadCachedClubData, saveCachedClubData } from './cache';
 import { findCoverUrl } from './covers';
-import { copyOwnerId, hasFinished, holderId } from './bookState';
+import { hasFinished, holderId } from './bookState';
 import { isDevMode } from './devMode';
 import { clearInviteFromUrl } from './invite';
 import { clearReaderId, loadReaderId, saveReaderId } from './identity';
-import { isSupabaseConfigured, supabase } from './supabase';
+import { isSupabaseConfigured } from './supabase';
 import type { OutboxEntry, OutboxOp } from './outbox';
 import { clubOutbox as outbox, listenToOutbox } from './clubOutbox';
-import { coalesce } from './coalesce';
-
-/** Realtime events this close together are one change. */
-const REFRESH_SETTLE_MS = 400;
-/** Without realtime, fetch every minute; with it, every fifth minute. */
-const POLL_MS = 60_000;
-const LIVE_POLL_EVERY = 5;
+import { withJoined, withLeft, withPassedOn, withReceived } from './journeyChanges';
+import { useLiveRefresh } from './useLiveRefresh';
 
 export type NewProfile = { name: string; city: string; region: string };
 
@@ -239,7 +233,7 @@ export function useBookClub() {
    * Keep what's on screen current without anyone having to reload: fetch
    * again on realtime changes, app focus, and on a timer while open.
    */
-  const quietFetch = React.useEffectEvent(async () => {
+  const quietFetch = async () => {
     if (session !== null && currentUserId !== null) {
       // Send anything that was waiting for a connection before looking again.
       await outbox.flush();
@@ -249,83 +243,8 @@ export function useBookClub() {
         applyDataFromEffect(data);
       }
     }
-  });
-  React.useEffect(() => {
-    if (!usesAccounts) {
-      return;
-    }
-
-    // One change arrives as several realtime events (a handoff, a queue row,
-    // the book), so they're collapsed into one fetch.
-    const fetcher = coalesce(() => quietFetch(), REFRESH_SETTLE_MS);
-    const quietRefresh = () => fetcher.schedule();
-
-    // While realtime is connected it brings changes as they happen, and the
-    // timer only catches what it doesn't carry (profile edits, new members).
-    let live = false;
-    let sinceLastPoll = 0;
-    const interval = setInterval(() => {
-      sinceLastPoll += 1;
-      if (!live || sinceLastPoll >= LIVE_POLL_EVERY) {
-        sinceLastPoll = 0;
-        quietRefresh();
-      }
-    }, POLL_MS);
-
-    const channel = supabase
-      ? supabase
-          .channel('club-realtime')
-          .on('postgres_changes', { event: '*', schema: 'public', table: 'handoffs' }, quietRefresh)
-          .on(
-            'postgres_changes',
-            { event: '*', schema: 'public', table: 'reading_queue' },
-            quietRefresh,
-          )
-          .on(
-            'postgres_changes',
-            { event: '*', schema: 'public', table: 'friendships' },
-            quietRefresh,
-          )
-          .on('postgres_changes', { event: '*', schema: 'public', table: 'books' }, quietRefresh)
-          .on('postgres_changes', { event: '*', schema: 'public', table: 'groups' }, quietRefresh)
-          .subscribe((status) => {
-            const wasLive = live;
-            live = status === 'SUBSCRIBED';
-            // Coming back from a dropped connection: catch up on what was missed.
-            if (live && !wasLive) {
-              quietRefresh();
-            }
-          })
-      : null;
-    const appState = AppState.addEventListener('change', (state) => {
-      if (state === 'active') {
-        quietRefresh();
-      }
-    });
-    const onVisible = () => {
-      if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
-        quietRefresh();
-      }
-    };
-    if (Platform.OS === 'web' && typeof document !== 'undefined') {
-      document.addEventListener('visibilitychange', onVisible);
-      // Back online: send what was waiting straight away.
-      window.addEventListener('online', quietRefresh);
-    }
-
-    return () => {
-      fetcher.cancel();
-      clearInterval(interval);
-      appState.remove();
-      if (Platform.OS === 'web' && typeof document !== 'undefined') {
-        document.removeEventListener('visibilitychange', onVisible);
-        window.removeEventListener('online', quietRefresh);
-      }
-      if (channel && supabase) {
-        supabase.removeChannel(channel);
-      }
-    };
-  }, []);
+  };
+  useLiveRefresh(usesAccounts, quietFetch);
 
   /** Demo mode only: become someone else (the dev bar). */
   const chooseReader = (personId: string) => {
@@ -444,13 +363,7 @@ export function useBookClub() {
     }
 
     const position = Math.max(-1, ...book.queue.map((entry) => entry.position)) + 1;
-    updateBook(bookId, (candidate) => ({
-      ...candidate,
-      queue: [
-        ...candidate.queue.filter((entry) => entry.id !== me.id),
-        { ...me, position, status: 'waiting' },
-      ],
-    }));
+    updateBook(bookId, (candidate) => withJoined(candidate, me, position));
     trackOrQueue(`sign you up for ${book.title}`, {
       kind: 'joinLine',
       entry: { book_id: bookId, friend_id: me.id, position, status: 'waiting' },
@@ -464,15 +377,7 @@ export function useBookClub() {
     }
 
     const readBefore = hasFinished(book, currentUserId);
-    updateBook(bookId, (candidate) => ({
-      ...candidate,
-      queue: candidate.queue.flatMap((entry) => {
-        if (entry.id !== currentUserId || entry.status !== 'waiting') {
-          return [entry];
-        }
-        return readBefore ? [{ ...entry, status: 'done' as const }] : [];
-      }),
-    }));
+    updateBook(bookId, (candidate) => withLeft(candidate, currentUserId, readBefore));
     trackOrQueue(`take you out of the line for ${book.title}`, {
       kind: 'leaveLine',
       bookId,
@@ -508,28 +413,7 @@ export function useBookClub() {
       placeRegion: recipient?.state,
     };
 
-    updateBook(bookId, (candidate) => ({
-      ...candidate,
-      // Going home answers a call home.
-      calledHomeAt: toFriend === copyOwnerId(candidate) ? undefined : candidate.calledHomeAt,
-      // Passing it on means you had it, even if you never tapped Got it.
-      handoffs: [
-        ...candidate.handoffs.map((leg) =>
-          leg.toFriend === fromFriend && !leg.receivedAt ? { ...leg, receivedAt: now } : leg,
-        ),
-        handoff,
-      ],
-      queue: candidate.queue.map((entry) => {
-        if (entry.id === fromFriend) {
-          return { ...entry, status: 'done' as const };
-        }
-        // An owner getting their copy back has already read it.
-        if (entry.id === toFriend && entry.status === 'waiting') {
-          return { ...entry, status: 'reading' as const };
-        }
-        return entry;
-      }),
-    }));
+    updateBook(bookId, (candidate) => withPassedOn(candidate, handoff));
 
     trackOrQueue(`pass ${book.title} on`, {
       kind: 'passOn',
@@ -550,14 +434,7 @@ export function useBookClub() {
     }
 
     const now = new Date().toISOString();
-    updateBook(bookId, (candidate) => ({
-      ...candidate,
-      handoffs: candidate.handoffs.map((leg) =>
-        leg.toFriend === me.id && !leg.receivedAt
-          ? { ...leg, receivedAt: now, placeCity: me.city, placeRegion: me.state }
-          : leg,
-      ),
-    }));
+    updateBook(bookId, (candidate) => withReceived(candidate, me, now));
     trackOrQueue(`mark ${book.title} as arrived`, { kind: 'markReceived', bookId });
   };
 
