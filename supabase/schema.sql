@@ -199,10 +199,18 @@ create table if not exists public.groups (
   id text primary key,
   name text not null,
   created_by text references public.friends (id) on delete set null,
-  invite_code text not null unique
-    default substr(md5(random()::text || clock_timestamp()::text), 1, 10),
+  invite_code text not null unique,
   created_at timestamptz not null default now()
 );
+
+-- The invite code is the only key to a group, so it comes from the
+-- cryptographic generator behind gen_random_uuid(), not random(), which is
+-- predictable: 16 hex characters from the random parts of two UUIDs, 64
+-- bits. Set here rather than in the create table so existing databases pick
+-- it up; codes already handed out keep working.
+alter table public.groups alter column invite_code
+  set default substr(replace(gen_random_uuid()::text, '-', ''), 1, 12)
+    || substr(replace(gen_random_uuid()::text, '-', ''), 1, 4);
 
 create table if not exists public.group_members (
   group_id text not null references public.groups (id) on delete cascade,

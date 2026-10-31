@@ -155,4 +155,7 @@ select leave_group('g-real');
 select test.expect('Juhyae sees only the sample clubs after leaving', (select count(*) from books), :n_sample);
 
 reset role;
+select test.expect('New invite codes are 16 random hex characters',
+  (select count(*) from groups where id in ('g-real', 'g-room') and invite_code ~ '^[0-9a-f]{16}$'), 2);
+
 select 'ALL GROUP TESTS PASSED';
