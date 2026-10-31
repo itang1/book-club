@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Image, Pressable, ScrollView, Share, Text, View } from 'react-native';
+import { Image, Platform, Pressable, ScrollView, Share, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import { Book, Group, Letter } from '../types';
@@ -9,6 +9,7 @@ import { EditDetailsSheet, PassOnSheet, RetireSheet } from './book/BookSheets';
 import { TravelHistory } from './book/TravelHistory';
 import { styles } from './book/styles';
 import { bookLink } from '../lib/links';
+import { printBookplate } from '../lib/bookplate';
 import {
   canReturnHome,
   copyOwnerId,
@@ -285,6 +286,23 @@ export function BookDetailScreen({
                 accessibilityRole="button"
               >
                 <Text style={styles.ownerActionText}>Edit title & author</Text>
+              </Pressable>
+            )}
+            {Platform.OS === 'web' && (
+              <Pressable
+                style={styles.ownerAction}
+                onPress={() =>
+                  printBookplate({
+                    title: book.title,
+                    author: book.author,
+                    owner: friendNameIn(book, owner),
+                    link: bookLink(book.id),
+                  })
+                }
+                accessibilityRole="button"
+                accessibilityHint="Opens a page to print a bookplate with a QR code to this book"
+              >
+                <Text style={styles.ownerActionText}>Print a bookplate</Text>
               </Pressable>
             )}
             {!book.archivedAt && iHoldIt && onRetireBook && (
