@@ -80,7 +80,7 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 380,
     backgroundColor: theme.colors.card,
-    borderRadius: 20,
+    borderRadius: theme.radius.md,
     padding: 22,
   },
   title: {
@@ -98,14 +98,15 @@ const styles = StyleSheet.create({
   },
   join: {
     backgroundColor: theme.colors.accent,
-    borderRadius: 12,
+    borderRadius: theme.radius.md,
     paddingVertical: 13,
     alignItems: 'center',
   },
   joinText: {
+    ...theme.caps,
     color: theme.colors.onAccent,
     fontWeight: '700',
-    fontSize: 15,
+    fontSize: 13,
   },
   notNow: {
     marginTop: 8,

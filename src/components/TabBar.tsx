@@ -49,7 +49,7 @@ export function TabBar({ state, descriptors, navigation }: BottomTabBarProps) {
               <Ionicons
                 name={focused ? icons.active : icons.idle}
                 size={20}
-                color={focused ? theme.colors.onAccent : theme.colors.faint}
+                color={focused ? theme.colors.text : theme.colors.faint}
               />
               {badge !== undefined && (
                 <View style={styles.badge}>
@@ -72,46 +72,43 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     backgroundColor: theme.colors.card,
     borderTopWidth: 1,
-    borderTopColor: theme.colors.border,
+    borderTopColor: theme.colors.rule,
     paddingHorizontal: 8,
   },
   item: {
     flex: 1,
     alignItems: 'center',
-    paddingTop: 12,
-    paddingBottom: 6,
-    marginHorizontal: 4,
-    borderBottomLeftRadius: 14,
-    borderBottomRightRadius: 14,
+    paddingTop: 10,
+    paddingBottom: 4,
+    marginHorizontal: 6,
+    borderTopWidth: 2,
+    borderTopColor: 'transparent',
+    marginTop: -1,
   },
   itemActive: {
-    backgroundColor: theme.colors.soft,
+    borderTopColor: theme.colors.text,
   },
   iconWrap: {
-    width: 44,
-    height: 28,
-    borderRadius: 14,
+    width: 32,
+    height: 24,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 4,
+    marginBottom: 3,
   },
-  iconWrapActive: {
-    backgroundColor: theme.colors.accent,
-  },
+  iconWrapActive: {},
   label: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '600',
-    color: theme.colors.muted,
+    color: theme.colors.faint,
   },
   labelActive: {
-    fontSize: 12,
-    fontWeight: '800',
     color: theme.colors.text,
+    fontWeight: '700',
   },
   badge: {
     position: 'absolute',
-    top: -2,
-    right: -2,
+    top: -3,
+    right: -4,
     minWidth: 16,
     height: 16,
     borderRadius: 8,

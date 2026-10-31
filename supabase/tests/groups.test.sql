@@ -35,6 +35,9 @@ insert into auth.users values
   ('00000000-0000-0000-0000-0000000000a6', 'albert@x'),
   ('00000000-0000-0000-0000-0000000000a7', 'newcomer@x');
 
+-- How big the sample groups are (sample.sql), so the counts below don't go stale.
+select count(*) as n_sample from books b join groups g on g.id = b.group_id where g.is_sample \gset
+select count(*) as n_characters from friends where is_character \gset
 set role authenticated;
 select test.as_user('00000000-0000-0000-0000-0000000000a2');
 insert into friends (id, name, city, state, user_id) values ('p-irene', 'Irene', 'Los Angeles', 'CA', '00000000-0000-0000-0000-0000000000a2');
@@ -64,9 +67,10 @@ select lend_book('b-room', 'The Art of Asking Better Questions', 'J. R. Briggs',
 
 -- The sample club: everyone's in it, and can look.
 select test.as_user('00000000-0000-0000-0000-0000000000a5');   -- Eve, brand new
+select test.expect('Eve was added to all four sample groups when she joined', (select count(*) from group_members m join groups g on g.id = m.group_id where g.is_sample and m.person_id = 'p-eve'), 4);
 select test.expect('Eve was added to the sample club when she joined', (select count(*) from group_members where group_id = 'group-pants' and person_id = 'p-eve'), 1);
-select test.expect('Eve sees the 5 sample books and nothing else', (select count(*) from books), 5);
-select test.expect('Eve sees the four characters and herself', (select count(*) from friends), 5);
+select test.expect('Eve sees the sample books and nothing else', (select count(*) from books), :n_sample);
+select test.expect('Eve sees the sample characters and herself', (select count(*) from friends), :n_characters + 1);
 select test.expect('Eve sees no other real member of the sample club', (select count(*) from group_members where group_id = 'group-pants' and person_id like 'p-%' and person_id <> 'p-eve'), 0);
 select test.refused('Eve cannot join a sample line', $$insert into reading_queue (book_id, friend_id, position, status) values ('sample-pride', 'p-eve', 9, 'waiting')$$);
 select test.refused('Eve cannot lend into the sample club', $$select lend_book('b-x', 'X', 'Y', '#000', 'h-x', null, 'group-pants')$$);
@@ -78,7 +82,7 @@ select test.refused('A new account cannot claim Lena', $$select claim_profile('f
 
 -- Real groups: walls between them.
 select test.as_user('00000000-0000-0000-0000-0000000000a3');   -- Juhyae (Real club)
-select test.expect('Juhyae sees the sample books and the Real club book', (select count(*) from books), 6);
+select test.expect('Juhyae sees the sample books and the Real club book', (select count(*) from books), :n_sample + 1);
 select test.expect('Juhyae cannot see the Living room book', (select count(*) from books where id = 'b-room'), 0);
 select test.expect('Juhyae cannot see Becky', (select count(*) from friends where id = 'p-becky'), 0);
 select test.expect('Juhyae cannot see Eve through the sample club', (select count(*) from friends where id = 'p-eve'), 0);
@@ -89,11 +93,11 @@ select test.refused('Juhyae cannot friend-request Becky', $$insert into friendsh
 select test.expect('Juhyae sees Claire''s gift', (select count(*) from books where gifted_by = 'Claire'), 1);
 
 select test.as_user('00000000-0000-0000-0000-0000000000a4');   -- Becky (Living room)
-select test.expect('Becky sees the sample books and the Living room book', (select count(*) from books), 6);
+select test.expect('Becky sees the sample books and the Living room book', (select count(*) from books), :n_sample + 1);
 select test.expect('Becky cannot see Juhyae', (select count(*) from friends where id = 'p-juhyae'), 0);
 
 select test.as_user('00000000-0000-0000-0000-0000000000a2');   -- Irene (both)
-select test.expect('Irene sees the sample books and both her groups books', (select count(*) from books), 7);
+select test.expect('Irene sees the sample books and both her groups books', (select count(*) from books), :n_sample + 2);
 
 -- Friend requests: ask, can't accept your own, accept, unfriend.
 select test.as_user('00000000-0000-0000-0000-0000000000a3');
@@ -148,7 +152,7 @@ set role authenticated;
 -- Leaving.
 select test.as_user('00000000-0000-0000-0000-0000000000a3');
 select leave_group('g-real');
-select test.expect('Juhyae sees only the sample club after leaving', (select count(*) from books), 5);
+select test.expect('Juhyae sees only the sample clubs after leaving', (select count(*) from books), :n_sample);
 
 reset role;
 select 'ALL GROUP TESTS PASSED';

@@ -287,7 +287,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: theme.colors.border,
     backgroundColor: theme.colors.card,
-    borderRadius: 999,
+    borderRadius: theme.radius.sm,
     paddingHorizontal: 14,
     paddingVertical: 7,
   },
@@ -327,7 +327,7 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.card,
     borderWidth: 1,
     borderColor: theme.colors.border,
-    borderRadius: 16,
+    borderRadius: theme.radius.md,
     padding: 18,
     marginBottom: 16,
   },
@@ -348,13 +348,14 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.card,
     borderWidth: 1,
     borderColor: theme.colors.border,
-    borderRadius: 16,
+    borderRadius: theme.radius.md,
     padding: 18,
     marginBottom: 14,
   },
   statValue: {
+    fontFamily: theme.fonts.serif,
     fontSize: 26,
-    fontWeight: '600',
+    fontWeight: '700',
     color: theme.colors.text,
   },
   statLabel: {
@@ -374,7 +375,7 @@ const styles = StyleSheet.create({
   swatch: {
     width: 34,
     height: 46,
-    borderRadius: 6,
+    borderRadius: theme.radius.md,
     marginRight: 12,
   },
   bookInfo: {

@@ -84,13 +84,14 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 560,
     backgroundColor: theme.colors.accent,
-    borderRadius: 12,
+    borderRadius: theme.radius.md,
     paddingVertical: 14,
     alignItems: 'center',
   },
   agreeText: {
+    ...theme.caps,
     color: theme.colors.onAccent,
     fontWeight: '700',
-    fontSize: 16,
+    fontSize: 13,
   },
 });

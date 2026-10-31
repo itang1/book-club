@@ -52,12 +52,21 @@ are already set: `SUPABASE_DB_URL`, `EXPO_PUBLIC_SUPABASE_URL`,
 | File | What it is | Runs |
 | --- | --- | --- |
 | `supabase/schema.sql` | Tables, access rules, functions | Automatically, on every deploy |
-| `supabase/sample.sql` | The sample club: the Carmen, Lena, Tibby and Bridget passing five classics around | Automatically, after schema.sql |
+| `supabase/sample.sql` | The sample groups (generated from `src/data/sampleClubs.ts`) | Automatically, after schema.sql |
 | `supabase/seed.local.sql` | Your real groups and books (gitignored) | By hand |
 
-**The sample club.** Everyone is added to The Traveling Pants when they
-join, so there's a group with some history to look around. It's read-only
-for real people, and real members can't see each other through it.
+**The sample groups.** Everyone is added to four when they join: The
+Traveling Pants, Central Perk Regulars (*Friends*), The Upper East Side
+(*Gossip Girl*) and The Pritchett-Dunphys (*Modern Family*). Each has books in
+the post, notes on the way and lines waiting, so a newcomer walks into
+something already moving. They're read-only for real people, and real
+members can't see each other through them. The dates stay fresh: each deploy
+re-anchors them to now, and `refresh_sample_dates()` moves them forward every
+hour, so "sent 5 hours ago" stays true.
+
+To change them, edit `src/data/sampleClubs.ts` (the demo reads it too) and
+run `npm run sample:sql` to rewrite `supabase/sample.sql`. `npm test` fails
+while the two disagree.
 
 Sign-in links need **Authentication → URL Configuration** to allow
 `https://itang1.github.io/book-club/**` (and `http://localhost:8081/**` for
@@ -144,6 +153,8 @@ src/lib/useBookClub.ts  all club state and every change to it
 src/lib/bookState.ts    holder, line, status: derived from the log
 src/lib/stats.ts        numbers behind the visualisations
 src/content/about.ts    the Rules of the Books and the bio
+src/data/sampleClubs.ts the sample groups, for the demo and sample.sql
+assets/crest.svg        the crest; `node scripts/icons.js` renders the icons from it
 supabase/               schema and seeds
 docs/                   plans
 ```

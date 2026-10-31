@@ -288,24 +288,23 @@ const styles = StyleSheet.create({
   },
   formCard: {
     backgroundColor: theme.colors.card,
-    borderRadius: 16,
+    borderRadius: theme.radius.md,
     borderWidth: 1,
     borderColor: theme.colors.border,
     padding: 18,
     marginBottom: 18,
   },
   fieldLabel: {
+    ...theme.caps,
     fontSize: 12,
     color: theme.colors.muted,
     marginBottom: 8,
     marginTop: 8,
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
     fontWeight: '700',
   },
   input: {
     backgroundColor: theme.colors.soft,
-    borderRadius: 12,
+    borderRadius: theme.radius.md,
     padding: 12,
     color: theme.colors.text,
     fontSize: 15,
@@ -315,7 +314,7 @@ const styles = StyleSheet.create({
   groupChip: {
     borderWidth: 1.5,
     borderColor: theme.colors.accent,
-    borderRadius: 999,
+    borderRadius: theme.radius.sm,
     paddingHorizontal: 14,
     paddingVertical: 8,
     marginRight: 8,
@@ -342,7 +341,7 @@ const styles = StyleSheet.create({
   checkbox: {
     width: 20,
     height: 20,
-    borderRadius: 6,
+    borderRadius: theme.radius.md,
     borderWidth: 1.5,
     borderColor: theme.colors.accent,
     alignItems: 'center',
@@ -365,7 +364,7 @@ const styles = StyleSheet.create({
   },
   giverChip: {
     backgroundColor: theme.colors.soft,
-    borderRadius: 999,
+    borderRadius: theme.radius.sm,
     paddingHorizontal: 12,
     paddingVertical: 7,
     marginRight: 8,
@@ -391,7 +390,7 @@ const styles = StyleSheet.create({
   primaryButton: {
     marginTop: 18,
     backgroundColor: theme.colors.accent,
-    borderRadius: 12,
+    borderRadius: theme.radius.md,
     paddingVertical: 12,
     alignItems: 'center',
   },
@@ -399,9 +398,10 @@ const styles = StyleSheet.create({
     opacity: 0.45,
   },
   primaryButtonText: {
+    ...theme.caps,
     color: theme.colors.onAccent,
     fontWeight: '700',
-    fontSize: 15,
+    fontSize: 13,
   },
   missing: {
     marginTop: 8,
@@ -411,7 +411,7 @@ const styles = StyleSheet.create({
   },
   lookupCard: {
     backgroundColor: theme.colors.card,
-    borderRadius: 16,
+    borderRadius: theme.radius.md,
     padding: 16,
     borderWidth: 1,
     borderColor: theme.colors.border,
@@ -439,7 +439,7 @@ const styles = StyleSheet.create({
     flex: 1,
     borderWidth: 1,
     borderColor: theme.colors.border,
-    borderRadius: 10,
+    borderRadius: theme.radius.md,
     backgroundColor: theme.colors.background,
     paddingHorizontal: 12,
     paddingVertical: 9,
@@ -448,7 +448,7 @@ const styles = StyleSheet.create({
   },
   lookupButton: {
     backgroundColor: theme.colors.accent,
-    borderRadius: 10,
+    borderRadius: theme.radius.md,
     paddingHorizontal: 14,
     paddingVertical: 10,
     alignItems: 'center',

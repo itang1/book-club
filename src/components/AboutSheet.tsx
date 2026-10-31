@@ -158,6 +158,7 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.background,
   },
   topBarTitle: {
+    fontFamily: theme.fonts.serif,
     fontSize: 15,
     fontWeight: '700',
     color: theme.colors.text,
@@ -168,9 +169,10 @@ const styles = StyleSheet.create({
     bottom: 12,
   },
   doneText: {
+    ...theme.caps,
     color: theme.colors.accent,
     fontWeight: '700',
-    fontSize: 15,
+    fontSize: 13,
   },
   scroll: {
     paddingHorizontal: 20,
@@ -211,7 +213,7 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.card,
     borderWidth: 1,
     borderColor: theme.colors.border,
-    borderRadius: 16,
+    borderRadius: theme.radius.md,
     paddingHorizontal: 20,
     paddingVertical: 8,
   },

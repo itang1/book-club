@@ -62,7 +62,7 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 380,
     backgroundColor: theme.colors.card,
-    borderRadius: 20,
+    borderRadius: theme.radius.md,
     padding: 22,
   },
   title: {
@@ -75,7 +75,7 @@ const styles = StyleSheet.create({
   note: { fontSize: 13, lineHeight: 19, color: theme.colors.muted, marginBottom: 12 },
   option: {
     backgroundColor: theme.colors.soft,
-    borderRadius: 12,
+    borderRadius: theme.radius.md,
     paddingVertical: 13,
     paddingHorizontal: 14,
     marginBottom: 8,

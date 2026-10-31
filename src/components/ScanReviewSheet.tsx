@@ -130,7 +130,7 @@ const styles = StyleSheet.create({
     maxWidth: 420,
     maxHeight: '90%',
     backgroundColor: theme.colors.card,
-    borderRadius: 20,
+    borderRadius: theme.radius.md,
     padding: 22,
   },
   title: {
@@ -146,7 +146,7 @@ const styles = StyleSheet.create({
   fields: { flex: 1 },
   input: {
     backgroundColor: theme.colors.soft,
-    borderRadius: 10,
+    borderRadius: theme.radius.md,
     paddingHorizontal: 12,
     paddingVertical: 8,
     color: theme.colors.text,
@@ -158,7 +158,7 @@ const styles = StyleSheet.create({
   problem: { fontSize: 13, color: theme.colors.text, fontWeight: '600', marginBottom: 8 },
   add: {
     backgroundColor: theme.colors.accent,
-    borderRadius: 12,
+    borderRadius: theme.radius.md,
     paddingVertical: 13,
     alignItems: 'center',
   },

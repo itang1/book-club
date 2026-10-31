@@ -1306,6 +1306,46 @@ exception when others then
   raise warning 'Reminders left unscheduled: %', sqlerrm;
 end $$;
 
+-- ---------------------------------------------------------------
+-- The sample groups stay current. sample.sql writes their dates relative to
+-- now on every deploy; between deploys this moves every sample leg forward by
+-- the time that has passed, so a copy "sent 5 hours ago" stays 5 hours ago
+-- and the groups always look the way they did on day one: alive.
+-- ---------------------------------------------------------------
+create table if not exists public.sample_clock (
+  only_row boolean primary key default true check (only_row),
+  anchored_at timestamptz not null default now()
+);
+insert into public.sample_clock default values on conflict do nothing;
+alter table public.sample_clock enable row level security;
+revoke all on public.sample_clock from anon, authenticated;
+
+create or replace function public.refresh_sample_dates() returns void
+language plpgsql security definer set search_path = public
+as $$
+declare
+  shift interval;
+begin
+  select now() - anchored_at into shift from public.sample_clock for update;
+  update public.handoffs h
+  set happened_at = h.happened_at + shift,
+      received_at = h.received_at + shift
+  from public.books b join public.groups g on g.id = b.group_id and g.is_sample
+  where h.book_id = b.id;
+  update public.sample_clock set anchored_at = now();
+end;
+$$;
+revoke all on function public.refresh_sample_dates() from public, anon, authenticated;
+
+do $$
+begin
+  if exists (select 1 from pg_extension where extname = 'pg_cron') then
+    perform cron.schedule('refresh-sample-dates', '7 * * * *', 'select public.refresh_sample_dates()');
+  end if;
+exception when others then
+  raise warning 'Sample dates left unscheduled: %', sqlerrm;
+end $$;
+
 
 -- ---------------------------------------------------------------
 -- Bookshelves. What a person owns, scanned from a photo or typed in. Seen by

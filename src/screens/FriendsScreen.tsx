@@ -128,11 +128,9 @@ function GroupCard({
       </View>
 
       <Text style={styles.latest} numberOfLines={2} pointerEvents="none">
-        {group.isSample
-          ? 'A pretend group with some history, so you can see how it all works.'
-          : latest
-            ? `${describeLeg(latest.book, latest.leg)} · ${relativeTime(latest.leg.happenedAt)}`
-            : 'Ready for its first book. Lend one to start.'}
+        {latest
+          ? `${describeLeg(latest.book, latest.leg)} · ${relativeTime(latest.leg.happenedAt)}`
+          : 'Ready for its first book. Lend one to start.'}
       </Text>
     </View>
   );
@@ -422,7 +420,7 @@ const styles = StyleSheet.create({
   },
   card: {
     backgroundColor: theme.colors.card,
-    borderRadius: 16,
+    borderRadius: theme.radius.md,
     padding: 14,
     marginBottom: 10,
     borderWidth: 1,
@@ -479,14 +477,15 @@ const styles = StyleSheet.create({
     marginLeft: 10,
   },
   groupName: {
+    fontFamily: theme.fonts.serif,
     fontSize: 16,
     fontWeight: '700',
     color: theme.colors.text,
   },
   sampleTag: {
+    ...theme.caps,
     fontSize: 11,
     fontWeight: '700',
-    letterSpacing: 0.8,
     color: theme.colors.muted,
     marginBottom: 1,
   },
@@ -523,6 +522,7 @@ const styles = StyleSheet.create({
     paddingRight: 8,
   },
   personName: {
+    fontFamily: theme.fonts.serif,
     fontSize: 16,
     fontWeight: '700',
     color: theme.colors.text,
@@ -535,7 +535,7 @@ const styles = StyleSheet.create({
   },
   input: {
     backgroundColor: theme.colors.soft,
-    borderRadius: 12,
+    borderRadius: theme.radius.md,
     padding: 12,
     color: theme.colors.text,
     fontSize: 15,
@@ -544,7 +544,7 @@ const styles = StyleSheet.create({
   },
   addButton: {
     backgroundColor: theme.colors.soft,
-    borderRadius: 999,
+    borderRadius: theme.radius.sm,
     paddingHorizontal: 16,
     paddingVertical: 8,
   },
@@ -556,7 +556,7 @@ const styles = StyleSheet.create({
   requested: {
     borderWidth: 1,
     borderColor: theme.colors.border,
-    borderRadius: 999,
+    borderRadius: theme.radius.sm,
     paddingHorizontal: 14,
     paddingVertical: 7,
   },
@@ -567,7 +567,7 @@ const styles = StyleSheet.create({
   },
   primarySmall: {
     backgroundColor: theme.colors.accent,
-    borderRadius: 999,
+    borderRadius: theme.radius.sm,
     paddingHorizontal: 16,
     paddingVertical: 8,
   },
@@ -590,7 +590,7 @@ const styles = StyleSheet.create({
   },
   secondaryButton: {
     backgroundColor: theme.colors.soft,
-    borderRadius: 12,
+    borderRadius: theme.radius.md,
     paddingVertical: 12,
     alignItems: 'center',
   },
@@ -615,7 +615,7 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 380,
     backgroundColor: theme.colors.card,
-    borderRadius: 20,
+    borderRadius: theme.radius.md,
     padding: 22,
   },
   sheetTitle: {
@@ -628,7 +628,7 @@ const styles = StyleSheet.create({
   dangerButtonWide: {
     borderWidth: 1.5,
     borderColor: theme.colors.text,
-    borderRadius: 12,
+    borderRadius: theme.radius.md,
     paddingVertical: 12,
     alignItems: 'center',
   },

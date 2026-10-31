@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import {
+  Image,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -17,7 +18,8 @@ import { BookCard } from '../components/BookCard';
 import { ClubYearCard } from '../components/ClubYearCard';
 import { AboutSheet } from '../components/AboutSheet';
 import { homage, tagline } from '../content/about';
-import { holderId, isInTransit } from '../lib/bookState';
+import { holderId, isInTransit, relativeTime } from '../lib/bookState';
+import { lately } from '../lib/lately';
 import { theme } from '../theme';
 
 type HomeScreenProps = {
@@ -92,6 +94,8 @@ export function HomeScreen({
     (book) => !sections.some((section) => section.books.includes(book)),
   );
 
+  const recent = lately(books.filter((book) => !book.archivedAt), 6);
+
   const open = (book: Book) =>
     navigation.navigate('BookDetail', { bookId: book.id, bookTitle: book.title });
   const openGroup = (groupId: string) =>
@@ -110,24 +114,30 @@ export function HomeScreen({
         />
       }
     >
-      <View style={[styles.headerWrap, { paddingTop: insets.top + 20 }]}>
+      <View style={[styles.headerWrap, { paddingTop: insets.top + 28 }]}>
+        <Image source={require('../../assets/crest.png')} style={styles.crest} accessibilityIgnoresInvertColors />
         <Text style={styles.title}>The Traveling Books</Text>
+        <View style={styles.ornament}>
+          <View style={styles.ornamentRule} />
+          <View style={styles.ornamentDiamond} />
+          <View style={styles.ornamentRule} />
+        </View>
+        <Text style={styles.motto}>Lege · Scribe · Trade</Text>
         <Text style={styles.subtitle}>{tagline}</Text>
         <View style={styles.actions}>
           <Pressable
-            style={styles.addButton}
+            style={({ pressed }) => [styles.addButton, pressed && styles.addButtonPressed]}
             onPress={() => navigation.navigate('AddBook')}
             accessibilityRole="button"
           >
-            <Ionicons name="add" size={18} color={theme.colors.onAccent} />
             <Text style={styles.addButtonText}>Lend a new book</Text>
           </Pressable>
           <Pressable
             style={styles.aboutButton}
             onPress={() => setAboutOpen(true)}
             accessibilityRole="button"
+            hitSlop={8}
           >
-            <Ionicons name="book-outline" size={17} color={theme.colors.accent} />
             <Text style={styles.aboutButtonText}>Rules & About</Text>
           </Pressable>
         </View>
@@ -189,6 +199,28 @@ export function HomeScreen({
         />
       )}
 
+      {!searchQuery && filterMode === 'all' && recent.length > 0 && (
+        <View style={styles.lately}>
+          <Text style={styles.latelyHeading}>Lately</Text>
+          {recent.map((event) => (
+            <Pressable
+              key={event.id}
+              style={({ pressed }) => [styles.latelyRow, pressed && styles.latelyPressed]}
+              onPress={() => navigation.navigate('BookDetail', { bookId: event.bookId, bookTitle: event.title })}
+              accessibilityRole="button"
+            >
+              <Text style={styles.latelyText}>
+                <Text style={styles.latelyWho}>{event.who}</Text>
+                {event.verb === 'lent' ? ' put ' : event.verb === 'sent' ? ' sent ' : ' received '}
+                <Text style={styles.latelyTitle}>{event.title}</Text>
+                {event.verb === 'lent' ? ' into circulation' : event.verb === 'sent' ? ` to ${event.to}` : ''}
+              </Text>
+              <Text style={styles.latelyWhen}>{relativeTime(event.at)}</Text>
+            </Pressable>
+          ))}
+        </View>
+      )}
+
       {books.length > 0 && activeBooks.length === 0 && (
         <View style={styles.searchEmptyCard}>
           <Text style={styles.searchEmptyTitle}>Looking for another story?</Text>
@@ -222,9 +254,6 @@ export function HomeScreen({
             accessibilityRole="button"
             accessibilityLabel={`${group.name} group`}
           >
-            <View style={styles.groupIcon}>
-              <Ionicons name="people" size={16} color={theme.colors.accent} />
-            </View>
             <View style={styles.groupHeaderText}>
               <Text style={styles.groupKicker}>{group.isSample ? 'Sample group' : 'Group'}</Text>
               <Text style={styles.sectionTitle}>{group.name}</Text>
@@ -233,7 +262,7 @@ export function HomeScreen({
                 {groupBooks.length} {groupBooks.length === 1 ? 'book' : 'books'}
               </Text>
             </View>
-            <Text style={styles.seeGroup}>See group ›</Text>
+            <Text style={styles.seeGroup}>See group →</Text>
           </Pressable>
           {groupBooks.map((book) => (
             <BookCard key={book.id} book={book} currentUserId={currentUserId} onPress={open} />
@@ -282,128 +311,218 @@ const styles = StyleSheet.create({
   },
   actions: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginTop: 16,
-    marginRight: -10,
-  },
-  aboutButton: {
-    flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 1.5,
-    borderColor: theme.colors.accent,
-    backgroundColor: theme.colors.card,
-    borderRadius: 999,
-    paddingVertical: 9,
-    paddingLeft: 14,
-    paddingRight: 18,
-    marginRight: 10,
-    marginBottom: 10,
+    marginTop: 20,
   },
-  aboutButtonText: {
-    marginLeft: 6,
-    color: theme.colors.accent,
-    fontWeight: '700',
-    fontSize: 15,
-  },
-  headerWrap: {
-    backgroundColor: theme.colors.masthead,
+
+
+  aboutButton: {
+    marginLeft: 22,
     borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
-    marginHorizontal: -20,
-    paddingHorizontal: 20,
-    paddingBottom: 16,
-    marginBottom: 24,
+    borderBottomColor: theme.colors.brass,
+    paddingBottom: 2,
   },
+
+
+  aboutButtonText: {
+    ...theme.caps,
+    color: theme.colors.onMasthead,
+    fontSize: 12,
+  },
+
+
+  headerWrap: {
+    backgroundColor: theme.colors.letterhead,
+    marginHorizontal: -20,
+    paddingHorizontal: 24,
+    paddingBottom: 22,
+    marginBottom: 8,
+    alignItems: 'center',
+    borderBottomWidth: 3,
+    borderBottomColor: theme.colors.brass,
+  },
+
+
   homage: {
+    fontFamily: theme.fonts.serif,
+    fontStyle: 'italic',
     fontSize: 11,
     lineHeight: 15,
-    color: theme.colors.muted,
-    marginTop: 6,
+    color: theme.colors.onMasthead,
+    opacity: 0.55,
+    textAlign: 'center',
+    marginTop: 20,
   },
+
+
   title: {
     fontFamily: theme.fonts.serif,
-    fontSize: 30,
-    lineHeight: 36,
-    fontWeight: '700',
-    color: theme.colors.text,
-    marginBottom: 8,
+    fontSize: 32,
+    lineHeight: 38,
+    fontWeight: '400',
+    letterSpacing: 0.3,
+    color: theme.colors.onMasthead,
+    textAlign: 'center',
+    marginTop: 12,
   },
+
+
   subtitle: {
+    fontFamily: theme.fonts.serif,
+    fontStyle: 'italic',
     fontSize: 16,
-    lineHeight: 24,
+    lineHeight: 22,
+    color: theme.colors.onMasthead,
+    opacity: 0.8,
+    textAlign: 'center',
+    marginTop: 8,
+  },
+
+
+  crest: {
+    width: 50,
+    height: 60,
+  },
+  ornament: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 12,
+    width: 180,
+  },
+  ornamentRule: {
+    flex: 1,
+    height: 1,
+    backgroundColor: theme.colors.brass,
+  },
+  ornamentDiamond: {
+    width: 6,
+    height: 6,
+    backgroundColor: theme.colors.brass,
+    transform: [{ rotate: '45deg' }],
+    marginHorizontal: 8,
+  },
+  motto: {
+    ...theme.caps,
+    fontSize: 11,
+    letterSpacing: 3,
+    color: theme.colors.brass,
+    marginTop: 10,
+  },
+  lately: {
+    marginTop: 26,
+  },
+  latelyHeading: {
+    ...theme.caps,
+    fontSize: 12,
+    letterSpacing: 2.4,
+    color: theme.colors.text,
+    borderBottomWidth: 2,
+    borderBottomColor: theme.colors.text,
+    paddingBottom: 8,
+  },
+  latelyRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    paddingVertical: 10,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: theme.colors.rule,
+  },
+  latelyPressed: {
+    backgroundColor: theme.colors.soft,
+  },
+  latelyText: {
+    flex: 1,
+    fontSize: 14,
+    lineHeight: 20,
     color: theme.colors.muted,
   },
-  addButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    backgroundColor: theme.colors.accent,
-    borderRadius: 999,
-    paddingVertical: 10,
-    paddingLeft: 14,
-    paddingRight: 18,
-    marginRight: 10,
-    marginBottom: 10,
-  },
-  addButtonText: {
-    color: theme.colors.onAccent,
-    fontWeight: '700',
-    fontSize: 15,
-    marginLeft: 6,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 14,
-    marginTop: 4,
-  },
-  sectionTitle: {
-    fontFamily: theme.fonts.serif,
-    fontSize: 20,
+  latelyWho: {
     fontWeight: '700',
     color: theme.colors.text,
   },
+  latelyTitle: {
+    fontFamily: theme.fonts.serif,
+    fontStyle: 'italic',
+    color: theme.colors.text,
+  },
+  latelyWhen: {
+    ...theme.caps,
+    fontSize: 10,
+    color: theme.colors.faint,
+    marginLeft: 12,
+  },
+
+
+  addButtonPressed: {
+    opacity: 0.85,
+  },
+  addButton: {
+    backgroundColor: theme.colors.onMasthead,
+    borderRadius: theme.radius.sm,
+    paddingVertical: 11,
+    paddingHorizontal: 18,
+  },
+
+
+  addButtonText: {
+    ...theme.caps,
+    color: theme.colors.accent,
+    fontWeight: '700',
+    fontSize: 12,
+  },
+
+  sectionHeader: {
+    borderBottomWidth: 2,
+    borderBottomColor: theme.colors.text,
+    paddingBottom: 8,
+    marginTop: 28,
+  },
+
+  sectionTitle: {
+    fontFamily: theme.fonts.serif,
+    fontSize: 22,
+    lineHeight: 28,
+    fontWeight: '700',
+    color: theme.colors.text,
+  },
+
   groupHeader: {
     flexDirection: 'row',
-    alignItems: 'center',
-    borderTopWidth: 1,
-    borderTopColor: theme.colors.border,
-    paddingTop: 18,
-    marginTop: 10,
-    marginBottom: 14,
+    alignItems: 'flex-end',
+    borderBottomWidth: 2,
+    borderBottomColor: theme.colors.text,
+    paddingBottom: 8,
+    marginTop: 28,
   },
-  groupIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: theme.colors.soft,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-  },
+
+
   groupHeaderText: {
     flex: 1,
   },
   groupKicker: {
+    ...theme.caps,
     fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 0.8,
+    letterSpacing: 1,
     textTransform: 'uppercase',
     color: theme.colors.muted,
-    marginBottom: 1,
+    marginBottom: 2,
   },
+
   groupMeta: {
-    fontSize: 12,
+    ...theme.caps,
+    fontSize: 11,
     color: theme.colors.muted,
-    marginTop: 2,
+    marginTop: 3,
   },
+
   seeGroup: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '700',
     color: theme.colors.accent,
     marginLeft: 8,
+    marginBottom: 2,
   },
+
   sectionMeta: {
     fontSize: 12,
     color: theme.colors.accent,
@@ -417,54 +536,56 @@ const styles = StyleSheet.create({
   searchRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: theme.colors.card,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    paddingHorizontal: 12,
-    paddingVertical: 9,
-    marginTop: 16,
-    marginBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.rule,
+    paddingVertical: 10,
+    marginTop: 12,
+    marginBottom: 6,
   },
+
   searchIcon: {
     marginRight: 8,
   },
   searchInput: {
     flex: 1,
-    fontSize: 14,
+    fontSize: 15,
     color: theme.colors.text,
     paddingVertical: 2,
-  },
+    outlineStyle: 'none',
+  } as object,
+
   chipsScroll: {
-    marginBottom: 14,
+    marginBottom: 8,
   },
+
   chipsContent: {
     flexDirection: 'row',
-    gap: 8,
+    gap: 20,
   },
+
   chip: {
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 16,
-    backgroundColor: theme.colors.soft,
-    borderWidth: 1,
-    borderColor: 'transparent',
+    paddingVertical: 8,
+    borderBottomWidth: 2,
+    borderBottomColor: 'transparent',
   },
+
   chipActive: {
-    backgroundColor: theme.colors.accent,
-    borderColor: theme.colors.accent,
+    borderBottomColor: theme.colors.accent,
   },
+
   chipText: {
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: '600',
     color: theme.colors.muted,
   },
+
   chipTextActive: {
-    color: theme.colors.onAccent,
+    color: theme.colors.text,
   },
+
   searchEmptyCard: {
     backgroundColor: theme.colors.card,
-    borderRadius: 12,
+    borderRadius: theme.radius.md,
     borderWidth: 1,
     borderColor: theme.colors.border,
     padding: 18,
@@ -486,7 +607,7 @@ const styles = StyleSheet.create({
   clearSearchButton: {
     alignSelf: 'flex-start',
     backgroundColor: theme.colors.accent,
-    borderRadius: 8,
+    borderRadius: theme.radius.md,
     paddingVertical: 8,
     paddingHorizontal: 14,
   },
@@ -496,14 +617,15 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   restedSection: {
-    marginTop: 20,
-    borderTopWidth: 1,
-    borderTopColor: theme.colors.border,
-    paddingTop: 16,
+    marginTop: 12,
   },
+
   restedSubtitle: {
-    fontSize: 13,
+    fontFamily: theme.fonts.serif,
+    fontStyle: 'italic',
+    fontSize: 14,
     color: theme.colors.muted,
-    marginBottom: 12,
+    marginTop: 8,
   },
+
 });

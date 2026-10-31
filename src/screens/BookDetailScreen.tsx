@@ -142,7 +142,7 @@ export function BookDetailScreen({
     if (isSample) {
       return (
         <Text style={styles.actionNote}>
-          This is the sample club: a look at a group with some history. Start your own
+          This is a sample group: a look at a group in motion. Start your own
           group, or ask a friend for an invite, to lend and borrow for real.
         </Text>
       );
@@ -323,7 +323,7 @@ export function BookDetailScreen({
         <Text style={styles.ownership}>
           {first(owner)}'s copy
           {isSample
-            ? ' · in the sample club'
+            ? ' · in a sample group'
             : groupName
               ? ` · shared with ${groupName}`
               : ''}
@@ -646,7 +646,7 @@ const styles = StyleSheet.create({
   fieldInput: {
     borderWidth: 1,
     borderColor: theme.colors.border,
-    borderRadius: 10,
+    borderRadius: theme.radius.md,
     backgroundColor: theme.colors.background,
     paddingHorizontal: 12,
     paddingVertical: 9,
@@ -688,7 +688,7 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.card,
     borderWidth: 1,
     borderColor: theme.colors.border,
-    borderRadius: 16,
+    borderRadius: theme.radius.md,
     padding: 16,
     marginBottom: 18,
   },
@@ -709,7 +709,7 @@ const styles = StyleSheet.create({
   letter: {
     marginTop: 8,
     backgroundColor: theme.colors.background,
-    borderRadius: 10,
+    borderRadius: theme.radius.md,
     padding: 10,
   },
   letterText: {
@@ -737,16 +737,15 @@ const styles = StyleSheet.create({
     lineHeight: 17,
   },
   sheetLabel: {
+    ...theme.caps,
     fontSize: 12,
     color: theme.colors.muted,
     marginBottom: 8,
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
     fontWeight: '700',
   },
   sheetInput: {
     backgroundColor: theme.colors.soft,
-    borderRadius: 12,
+    borderRadius: theme.radius.md,
     padding: 12,
     marginTop: 14,
     marginBottom: 16,
@@ -766,7 +765,7 @@ const styles = StyleSheet.create({
   cover: {
     width: '100%',
     minHeight: 190,
-    borderRadius: 24,
+    borderRadius: theme.radius.md,
     overflow: 'hidden',
     justifyContent: 'flex-end',
     paddingVertical: 22,
@@ -790,10 +789,10 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   coverAuthor: {
+    ...theme.caps,
     color: theme.colors.coverInk,
     opacity: 0.8,
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: 12,
     marginTop: 6,
   },
   title: {
@@ -807,7 +806,7 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.card,
     borderWidth: 1,
     borderColor: theme.colors.border,
-    borderRadius: 16,
+    borderRadius: theme.radius.md,
     paddingVertical: 14,
     marginBottom: 18,
   },
@@ -816,8 +815,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   statValue: {
+    fontFamily: theme.fonts.serif,
     fontSize: 22,
-    fontWeight: '600',
+    fontWeight: '700',
     color: theme.colors.text,
   },
   statLabel: {
@@ -836,19 +836,20 @@ const styles = StyleSheet.create({
   },
   primaryButton: {
     backgroundColor: theme.colors.accent,
-    borderRadius: 12,
+    borderRadius: theme.radius.md,
     paddingVertical: 13,
     alignItems: 'center',
   },
   primaryButtonText: {
+    ...theme.caps,
     color: theme.colors.onAccent,
     fontWeight: '700',
-    fontSize: 15,
+    fontSize: 13,
   },
   secondaryButton: {
     marginTop: 8,
     backgroundColor: theme.colors.soft,
-    borderRadius: 12,
+    borderRadius: theme.radius.md,
     paddingVertical: 12,
     alignItems: 'center',
   },
@@ -868,7 +869,7 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 380,
     backgroundColor: theme.colors.card,
-    borderRadius: 20,
+    borderRadius: theme.radius.md,
     borderWidth: 1,
     borderColor: theme.colors.border,
     padding: 22,
@@ -888,14 +889,15 @@ const styles = StyleSheet.create({
   },
   sheetConfirm: {
     backgroundColor: theme.colors.accent,
-    borderRadius: 12,
+    borderRadius: theme.radius.md,
     paddingVertical: 13,
     alignItems: 'center',
   },
   sheetConfirmText: {
+    ...theme.caps,
     color: theme.colors.onAccent,
     fontWeight: '700',
-    fontSize: 15,
+    fontSize: 13,
   },
   sheetCancel: {
     marginTop: 10,
@@ -909,7 +911,7 @@ const styles = StyleSheet.create({
   },
   box: {
     backgroundColor: theme.colors.card,
-    borderRadius: 18,
+    borderRadius: theme.radius.md,
     borderWidth: 1,
     borderColor: theme.colors.border,
     padding: 18,

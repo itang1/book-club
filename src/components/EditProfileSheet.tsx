@@ -88,7 +88,7 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 380,
     backgroundColor: theme.colors.card,
-    borderRadius: 20,
+    borderRadius: theme.radius.md,
     padding: 22,
   },
   title: {
@@ -100,7 +100,7 @@ const styles = StyleSheet.create({
   },
   input: {
     backgroundColor: theme.colors.soft,
-    borderRadius: 12,
+    borderRadius: theme.radius.md,
     padding: 12,
     color: theme.colors.text,
     fontSize: 15,
@@ -116,7 +116,7 @@ const styles = StyleSheet.create({
   },
   save: {
     backgroundColor: theme.colors.accent,
-    borderRadius: 12,
+    borderRadius: theme.radius.md,
     paddingVertical: 13,
     alignItems: 'center',
   },
@@ -124,9 +124,10 @@ const styles = StyleSheet.create({
     opacity: 0.45,
   },
   saveText: {
+    ...theme.caps,
     color: theme.colors.onAccent,
     fontWeight: '700',
-    fontSize: 15,
+    fontSize: 13,
   },
   cancel: {
     marginTop: 8,

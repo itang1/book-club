@@ -76,7 +76,7 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 380,
     backgroundColor: theme.colors.card,
-    borderRadius: 20,
+    borderRadius: theme.radius.md,
     padding: 22,
   },
   title: {
@@ -98,13 +98,13 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: theme.colors.text,
     backgroundColor: theme.colors.soft,
-    borderRadius: 10,
+    borderRadius: theme.radius.md,
     padding: 10,
     marginBottom: 10,
   },
   delete: {
     backgroundColor: theme.colors.stamp,
-    borderRadius: 12,
+    borderRadius: theme.radius.md,
     paddingVertical: 13,
     alignItems: 'center',
     marginTop: 4,
@@ -113,9 +113,10 @@ const styles = StyleSheet.create({
     opacity: 0.45,
   },
   deleteText: {
+    ...theme.caps,
     color: theme.colors.onAccent,
     fontWeight: '700',
-    fontSize: 15,
+    fontSize: 13,
   },
   cancel: {
     alignItems: 'center',

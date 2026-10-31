@@ -75,15 +75,16 @@ export function ClubYearCard({
         <View style={styles.tiles}>
           {tiles.map((tile) => (
             <View key={tile.label} style={styles.tile}>
-              <Text style={styles.value}>{tile.value}</Text>
               <Text style={styles.label}>{tile.label}</Text>
+              <View style={styles.leader} />
+              <Text style={styles.value}>{tile.value}</Text>
             </View>
           ))}
         </View>
       )}
       <Text style={styles.note}>
         {december ? 'Your year in books is ready. ' : ''}
-        <Text style={styles.link}>{december ? 'Open it' : 'See the year so far'}</Text>
+        <Text style={styles.link}>{december ? 'Open it →' : 'See the year so far →'}</Text>
       </Text>
       {sheet}
     </Pressable>
@@ -114,42 +115,58 @@ function listOf(names: string[]): string {
 
 const styles = StyleSheet.create({
   scope: {
-    fontSize: 12,
+    fontFamily: theme.fonts.serif,
+    fontStyle: 'italic',
+    fontSize: 14,
     color: theme.colors.muted,
-    marginTop: -8,
-    marginBottom: 12,
+    marginTop: 2,
+    marginBottom: 14,
   },
   card: {
     backgroundColor: theme.colors.card,
     borderWidth: 1,
-    borderColor: theme.colors.border,
-    borderRadius: 16,
+    borderColor: theme.colors.rule,
+    borderRadius: theme.radius.md,
     padding: 16,
-    marginTop: 4,
-    marginBottom: 20,
+    marginTop: 12,
+    marginBottom: 4,
   },
   title: {
     fontFamily: theme.fonts.serif,
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '700',
     color: theme.colors.text,
-    marginBottom: 12,
   },
   tiles: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
+    columnGap: 24,
+    rowGap: 6,
   },
   tile: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    flexBasis: '42%',
+    flexGrow: 1,
+  },
+  leader: {
     flex: 1,
+    borderBottomWidth: 1.5,
+    borderStyle: 'dotted',
+    borderBottomColor: theme.colors.faint,
+    marginHorizontal: 6,
+    marginBottom: 5,
   },
   value: {
-    fontSize: 24,
-    fontWeight: '600',
+    fontFamily: theme.fonts.serif,
+    fontSize: 20,
+    fontWeight: '700',
     color: theme.colors.text,
   },
   label: {
-    fontSize: 11,
+    fontSize: 14,
     color: theme.colors.muted,
-    marginTop: 2,
+    marginBottom: 2,
   },
   early: {
     fontSize: 14,
@@ -163,14 +180,15 @@ const styles = StyleSheet.create({
   },
   slimTitle: {
     fontFamily: theme.fonts.serif,
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
     color: theme.colors.text,
-    marginRight: 10,
+    marginRight: 12,
   },
   slimStats: {
     flex: 1,
-    fontSize: 13,
+    ...theme.caps,
+    fontSize: 12,
     color: theme.colors.muted,
   },
   link: {
@@ -178,9 +196,9 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   note: {
-    fontSize: 12,
-    lineHeight: 17,
+    fontSize: 14,
+    lineHeight: 18,
     color: theme.colors.muted,
-    marginTop: 12,
+    marginTop: 14,
   },
 });

@@ -160,7 +160,7 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.card,
     borderWidth: 1,
     borderColor: theme.colors.border,
-    borderRadius: 16,
+    borderRadius: theme.radius.md,
     padding: 18,
     marginBottom: 16,
   },
@@ -188,6 +188,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   personName: {
+    fontFamily: theme.fonts.serif,
     fontSize: 15,
     fontWeight: '700',
     color: theme.colors.text,
@@ -199,7 +200,7 @@ const styles = StyleSheet.create({
   },
   claimButton: {
     backgroundColor: theme.colors.accent,
-    borderRadius: 999,
+    borderRadius: theme.radius.sm,
     paddingHorizontal: 14,
     paddingVertical: 8,
   },
@@ -210,7 +211,7 @@ const styles = StyleSheet.create({
   },
   input: {
     backgroundColor: theme.colors.soft,
-    borderRadius: 12,
+    borderRadius: theme.radius.md,
     padding: 12,
     color: theme.colors.text,
     fontSize: 15,
@@ -220,7 +221,7 @@ const styles = StyleSheet.create({
   primaryButton: {
     marginTop: 6,
     backgroundColor: theme.colors.accent,
-    borderRadius: 12,
+    borderRadius: theme.radius.md,
     paddingVertical: 13,
     alignItems: 'center',
   },
@@ -228,9 +229,10 @@ const styles = StyleSheet.create({
     opacity: 0.45,
   },
   primaryButtonText: {
+    ...theme.caps,
     color: theme.colors.onAccent,
     fontWeight: '700',
-    fontSize: 15,
+    fontSize: 13,
   },
   footerLink: {
     marginTop: 12,

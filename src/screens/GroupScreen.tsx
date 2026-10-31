@@ -71,7 +71,7 @@ export function GroupScreen({
         </Text>
         <Text style={styles.subtitle}>
           {group.isSample
-            ? "A sample club with some history, so you can see how a group comes together. It's for looking around: lending and lines happen in your own groups, and fellow visitors stay private."
+            ? "A sample group, already in motion, so you can see how a group comes together. It's for looking around: lending and lines happen in your own groups, and fellow visitors stay private."
             : "Members see each other's books and join their lines. It's all just for the group."}
         </Text>
 
@@ -220,6 +220,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   sampleTag: {
+    ...theme.caps,
     fontSize: 13,
     fontWeight: '700',
     color: theme.colors.muted,
@@ -236,7 +237,7 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.card,
     borderWidth: 1,
     borderColor: theme.colors.border,
-    borderRadius: 16,
+    borderRadius: theme.radius.md,
     paddingVertical: 14,
   },
   tile: {
@@ -244,8 +245,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   tileValue: {
+    fontFamily: theme.fonts.serif,
     fontSize: 24,
-    fontWeight: '600',
+    fontWeight: '700',
     color: theme.colors.text,
   },
   tileLabel: {
@@ -265,7 +267,7 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.card,
     borderWidth: 1,
     borderColor: theme.colors.border,
-    borderRadius: 16,
+    borderRadius: theme.radius.md,
     paddingHorizontal: 16,
     paddingVertical: 6,
   },
@@ -391,7 +393,7 @@ const styles = StyleSheet.create({
   dangerButton: {
     borderWidth: 1.5,
     borderColor: theme.colors.text,
-    borderRadius: 999,
+    borderRadius: theme.radius.sm,
     paddingHorizontal: 16,
     paddingVertical: 7,
   },

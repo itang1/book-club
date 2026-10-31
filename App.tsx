@@ -16,6 +16,7 @@ import { holderId, isInTransit } from './src/lib/bookState';
 import { isDevMode } from './src/lib/devMode';
 import { clearEmailActionFromUrl, emailActionTokenFromUrl, linking } from './src/lib/links';
 import { theme } from './src/theme';
+import { registerFonts } from './src/fonts';
 import { DevBar } from './src/components/DevBar';
 import { TabBar } from './src/components/TabBar';
 import { JoinGroupPrompt } from './src/components/JoinGroupPrompt';
@@ -36,6 +37,8 @@ import { EmailActionScreen } from './src/screens/EmailActionScreen';
 /** The one-time rules agreement after joining. Agreements already given are still remembered. */
 const ASK_TO_AGREE_TO_RULES = false;
 
+registerFonts();
+
 const Tab = createBottomTabNavigator<RootTabParamList>();
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const FriendsNav = createNativeStackNavigator<FriendsStackParamList>();
@@ -52,7 +55,7 @@ const tabStyles = StyleSheet.create({
     right: 16,
     bottom: 104,
     backgroundColor: theme.colors.text,
-    borderRadius: 12,
+    borderRadius: theme.radius.md,
     paddingVertical: 12,
     paddingHorizontal: 14,
   },

@@ -117,7 +117,7 @@ const styles = StyleSheet.create({
     maxWidth: 380,
     maxHeight: '80%',
     backgroundColor: theme.colors.card,
-    borderRadius: 20,
+    borderRadius: theme.radius.md,
     padding: 18,
   },
   sheetTitle: {
@@ -136,7 +136,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 11,
     paddingHorizontal: 12,
-    borderRadius: 10,
+    borderRadius: theme.radius.md,
   },
   rowSelected: {
     backgroundColor: theme.colors.accent,

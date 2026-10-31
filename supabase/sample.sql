@@ -1,101 +1,271 @@
--- The sample club: The Traveling Pants.
+-- The sample groups: The Traveling Pants, Central Perk Regulars, The Upper East Side, The Pritchett-Dunphys.
 --
--- Carmen, Lena, Tibby and Bridget, in the places they spend the first book's
--- summer, passing five classics around. Every member of the app is in this
--- group (schema.sql adds them automatically), so a newcomer has a group with
--- some history to look around before their own gets going. It's read-only
--- for real people, and real members can't see each other through it.
+-- GENERATED from src/data/sampleClubs.ts by `npm run sample:sql`. Edit that
+-- file, not this one.
 --
--- Applied after schema.sql on every deploy, so it must stay safe to re-run:
--- everything is "on conflict do nothing", and the dates are set on the first
--- run and then age naturally.
+-- Fictional casts passing books around. Every member of the app is in these
+-- groups (schema.sql adds them automatically), so a newcomer walks into
+-- groups with history and books on the move. They're read-only for real
+-- people, and real members can't see each other through them.
 --
--- `state` carries a region or country for international readers ('Greece',
--- 'Mexico'), which is why it's plain text rather than a two-letter code.
+-- Applied after schema.sql on every deploy, so it must stay safe to re-run.
+-- Each run re-anchors the dates to now, and refresh_sample_dates() (hourly,
+-- in schema.sql) keeps them there, so "sent 5 hours ago" stays true.
 
--- The group first, so the characters are added to it as they're inserted.
 insert into public.groups (id, name, invite_code, is_sample) values
-  ('group-pants', 'The Traveling Pants', 'sample-pants', true)
-on conflict (id) do update set is_sample = true;
+  ('group-pants', 'The Traveling Pants', 'sample-pants', true),
+  ('group-friends', 'Central Perk Regulars', 'sample-friends', true),
+  ('group-ues', 'The Upper East Side', 'sample-ues', true),
+  ('group-pritchett', 'The Pritchett-Dunphys', 'sample-pritchett', true)
+on conflict (id) do update set name = excluded.name, is_sample = true;
 
 insert into public.friends (id, name, city, state, agreed_rules_at, is_character) values
-  ('friend-lena',    'Lena Kaligaris',   'Santorini',       'Greece', now(), true),
-  ('friend-tibby',   'Tibby Rollins',    'Bethesda',        'MD',     now(), true),
-  ('friend-carmen',  'Carmen Lowell',    'Charleston',      'SC',     now(), true),
-  ('friend-bridget', 'Bridget Vreeland', 'Baja California', 'Mexico', now(), true)
-on conflict (id) do update set is_character = true;
+  ('friend-lena', 'Lena Kaligaris', 'Santorini', 'Greece', now(), true),
+  ('friend-tibby', 'Tibby Rollins', 'Bethesda', 'MD', now(), true),
+  ('friend-carmen', 'Carmen Lowell', 'Charleston', 'SC', now(), true),
+  ('friend-bridget', 'Bridget Vreeland', 'Baja California', 'Mexico', now(), true),
+  ('friend-rachel', 'Rachel Green', 'New York', 'NY', now(), true),
+  ('friend-monica', 'Monica Geller', 'Westchester', 'NY', now(), true),
+  ('friend-chandler', 'Chandler Bing', 'Westchester', 'NY', now(), true),
+  ('friend-ross', 'Ross Geller', 'New York', 'NY', now(), true),
+  ('friend-joey', 'Joey Tribbiani', 'Los Angeles', 'CA', now(), true),
+  ('friend-phoebe', 'Phoebe Buffay', 'New York', 'NY', now(), true),
+  ('friend-blair', 'Blair Waldorf', 'Manhattan', 'NY', now(), true),
+  ('friend-serena', 'Serena van der Woodsen', 'Southampton', 'NY', now(), true),
+  ('friend-dan', 'Dan Humphrey', 'Brooklyn', 'NY', now(), true),
+  ('friend-nate', 'Nate Archibald', 'Manhattan', 'NY', now(), true),
+  ('friend-chuck', 'Chuck Bass', 'Monaco', 'Monaco', now(), true),
+  ('friend-jenny', 'Jenny Humphrey', 'Hudson', 'NY', now(), true),
+  ('friend-jay', 'Jay Pritchett', 'Los Angeles', 'CA', now(), true),
+  ('friend-gloria', 'Gloria Pritchett', 'Cartagena', 'Colombia', now(), true),
+  ('friend-claire', 'Claire Dunphy', 'Los Angeles', 'CA', now(), true),
+  ('friend-phil', 'Phil Dunphy', 'Los Angeles', 'CA', now(), true),
+  ('friend-mitchell', 'Mitchell Pritchett', 'Los Angeles', 'CA', now(), true),
+  ('friend-cameron', 'Cameron Tucker', 'Los Angeles', 'CA', now(), true),
+  ('friend-alex', 'Alex Dunphy', 'Pasadena', 'CA', now(), true),
+  ('friend-manny', 'Manny Delgado', 'Los Angeles', 'CA', now(), true)
+on conflict (id) do update
+  set name = excluded.name, city = excluded.city, state = excluded.state, is_character = true;
 
 insert into public.books (id, title, author, cover_color, gifted_by, group_id) values
-  ('sample-pride',  'Pride and Prejudice',  'Jane Austen',       '#c89366', null,     'group-pants'),
-  ('sample-room',   'A Room with a View',   'E. M. Forster',     '#c7a6b5', null,     'group-pants'),
-  ('sample-little', 'Little Women',         'Louisa May Alcott', '#a8927d', 'Grandma', 'group-pants'),
-  ('sample-anne',   'Anne of Green Gables', 'L. M. Montgomery',  '#8f9bb0', null,     'group-pants'),
-  ('sample-eyre',   'Jane Eyre',            'Charlotte Brontë',  '#b4b8a9', null,     'group-pants')
-on conflict (id) do nothing;
+  ('sample-pride', 'Pride and Prejudice', 'Jane Austen', '#c89366', null, 'group-pants'),
+  ('sample-room', 'A Room with a View', 'E. M. Forster', '#c7a6b5', null, 'group-pants'),
+  ('sample-little', 'Little Women', 'Louisa May Alcott', '#a8927d', 'Grandma', 'group-pants'),
+  ('sample-anne', 'Anne of Green Gables', 'L. M. Montgomery', '#8f9bb0', null, 'group-pants'),
+  ('sample-eyre', 'Jane Eyre', 'Charlotte Brontë', '#b4b8a9', null, 'group-pants'),
+  ('sample-persuasion', 'Persuasion', 'Jane Austen', '#b8c4d4', null, 'group-pants'),
+  ('sample-rebecca', 'Rebecca', 'Daphne du Maurier', '#c2b4a3', null, 'group-pants'),
+  ('sample-jurassic', 'Jurassic Park', 'Michael Crichton', '#a9b48f', null, 'group-friends'),
+  ('sample-shining', 'The Shining', 'Stephen King', '#b4c3d1', null, 'group-friends'),
+  ('sample-french', 'Mastering the Art of French Cooking', 'Julia Child', '#dcc196', null, 'group-friends'),
+  ('sample-catch', 'Catch-22', 'Joseph Heller', '#d1b878', null, 'group-friends'),
+  ('sample-bridget-jones', 'Bridget Jones''s Diary', 'Helen Fielding', '#e0b4b0', null, 'group-friends'),
+  ('sample-seagull', 'Jonathan Livingston Seagull', 'Richard Bach', '#bcd3cc', null, 'group-friends'),
+  ('sample-tiffany', 'Breakfast at Tiffany''s', 'Truman Capote', '#a6d2cc', null, 'group-ues'),
+  ('sample-gatsby', 'The Great Gatsby', 'F. Scott Fitzgerald', '#d4c08e', null, 'group-ues'),
+  ('sample-innocence', 'The Age of Innocence', 'Edith Wharton', '#cbbcd8', null, 'group-ues'),
+  ('sample-dorian', 'The Picture of Dorian Gray', 'Oscar Wilde', '#d9b0a8', null, 'group-ues'),
+  ('sample-brideshead', 'Brideshead Revisited', 'Evelyn Waugh', '#b2c6a8', null, 'group-ues'),
+  ('sample-oldman', 'The Old Man and the Sea', 'Ernest Hemingway', '#a9c1cf', null, 'group-pritchett'),
+  ('sample-carnegie', 'How to Win Friends and Influence People', 'Dale Carnegie', '#e2c886', null, 'group-pritchett'),
+  ('sample-cholera', 'Love in the Time of Cholera', 'Gabriel García Márquez', '#e5bca6', null, 'group-pritchett'),
+  ('sample-hawking', 'A Brief History of Time', 'Stephen Hawking', '#bfc1d0', null, 'group-pritchett'),
+  ('sample-tuscan', 'Under the Tuscan Sun', 'Frances Mayes', '#e8d3a2', null, 'group-pritchett')
+on conflict (id) do update
+  set title = excluded.title, author = excluded.author, cover_color = excluded.cover_color,
+      gifted_by = excluded.gifted_by, group_id = excluded.group_id;
 
 insert into public.reading_queue (book_id, friend_id, position, status) values
-  -- Carmen's Pride and Prejudice: with Lena, Tibby and Bridget waiting.
-  ('sample-pride',  'friend-carmen',  0, 'done'),
-  ('sample-pride',  'friend-lena',    1, 'reading'),
-  ('sample-pride',  'friend-tibby',   2, 'waiting'),
-  ('sample-pride',  'friend-bridget', 3, 'waiting'),
-  -- Lena's A Room with a View: in the post to Bridget right now.
-  ('sample-room',   'friend-lena',    0, 'done'),
-  ('sample-room',   'friend-bridget', 1, 'reading'),
-  ('sample-room',   'friend-tibby',   2, 'waiting'),
-  -- Tibby's Little Women (a gift from her grandmother): with Bridget.
-  ('sample-little', 'friend-tibby',   0, 'done'),
-  ('sample-little', 'friend-carmen',  1, 'done'),
+  ('sample-pride', 'friend-carmen', 0, 'done'),
+  ('sample-pride', 'friend-lena', 1, 'reading'),
+  ('sample-pride', 'friend-tibby', 2, 'waiting'),
+  ('sample-pride', 'friend-bridget', 3, 'waiting'),
+  ('sample-room', 'friend-lena', 0, 'done'),
+  ('sample-room', 'friend-bridget', 1, 'reading'),
+  ('sample-room', 'friend-tibby', 2, 'waiting'),
+  ('sample-little', 'friend-tibby', 0, 'done'),
+  ('sample-little', 'friend-carmen', 1, 'done'),
   ('sample-little', 'friend-bridget', 2, 'reading'),
-  -- Bridget's Anne of Green Gables: back home, and Tibby wants a reread.
-  ('sample-anne',   'friend-bridget', 0, 'done'),
-  ('sample-anne',   'friend-carmen',  2, 'done'),
-  ('sample-anne',   'friend-tibby',   3, 'waiting'),
-  -- Lena's Jane Eyre: all the way round the group and home again.
-  ('sample-eyre',   'friend-lena',    0, 'done'),
-  ('sample-eyre',   'friend-carmen',  1, 'done'),
-  ('sample-eyre',   'friend-tibby',   2, 'done'),
-  ('sample-eyre',   'friend-bridget', 3, 'done')
-on conflict (book_id, friend_id) do nothing;
+  ('sample-anne', 'friend-bridget', 0, 'done'),
+  ('sample-anne', 'friend-tibby', 4, 'waiting'),
+  ('sample-anne', 'friend-carmen', 2, 'done'),
+  ('sample-eyre', 'friend-lena', 0, 'done'),
+  ('sample-eyre', 'friend-carmen', 1, 'done'),
+  ('sample-eyre', 'friend-tibby', 2, 'done'),
+  ('sample-eyre', 'friend-bridget', 3, 'done'),
+  ('sample-persuasion', 'friend-tibby', 0, 'done'),
+  ('sample-persuasion', 'friend-carmen', 1, 'reading'),
+  ('sample-persuasion', 'friend-lena', 2, 'waiting'),
+  ('sample-rebecca', 'friend-carmen', 0, 'reading'),
+  ('sample-rebecca', 'friend-lena', 1, 'waiting'),
+  ('sample-rebecca', 'friend-bridget', 2, 'waiting'),
+  ('sample-jurassic', 'friend-ross', 0, 'done'),
+  ('sample-jurassic', 'friend-joey', 1, 'done'),
+  ('sample-jurassic', 'friend-chandler', 2, 'done'),
+  ('sample-jurassic', 'friend-phoebe', 3, 'done'),
+  ('sample-jurassic', 'friend-rachel', 4, 'reading'),
+  ('sample-jurassic', 'friend-monica', 5, 'waiting'),
+  ('sample-shining', 'friend-joey', 0, 'done'),
+  ('sample-shining', 'friend-rachel', 1, 'reading'),
+  ('sample-shining', 'friend-chandler', 2, 'waiting'),
+  ('sample-shining', 'friend-ross', 3, 'waiting'),
+  ('sample-french', 'friend-monica', 0, 'done'),
+  ('sample-french', 'friend-phoebe', 1, 'done'),
+  ('sample-french', 'friend-rachel', 2, 'done'),
+  ('sample-french', 'friend-joey', 4, 'waiting'),
+  ('sample-catch', 'friend-chandler', 0, 'done'),
+  ('sample-catch', 'friend-ross', 1, 'reading'),
+  ('sample-catch', 'friend-joey', 2, 'waiting'),
+  ('sample-bridget-jones', 'friend-rachel', 0, 'reading'),
+  ('sample-bridget-jones', 'friend-monica', 1, 'waiting'),
+  ('sample-bridget-jones', 'friend-phoebe', 2, 'waiting'),
+  ('sample-seagull', 'friend-phoebe', 0, 'done'),
+  ('sample-seagull', 'friend-joey', 1, 'done'),
+  ('sample-seagull', 'friend-monica', 2, 'done'),
+  ('sample-seagull', 'friend-chandler', 3, 'done'),
+  ('sample-seagull', 'friend-ross', 4, 'done'),
+  ('sample-tiffany', 'friend-blair', 0, 'done'),
+  ('sample-tiffany', 'friend-serena', 1, 'done'),
+  ('sample-tiffany', 'friend-jenny', 2, 'done'),
+  ('sample-tiffany', 'friend-nate', 3, 'done'),
+  ('sample-tiffany', 'friend-chuck', 4, 'reading'),
+  ('sample-tiffany', 'friend-dan', 5, 'waiting'),
+  ('sample-gatsby', 'friend-serena', 0, 'done'),
+  ('sample-gatsby', 'friend-dan', 1, 'done'),
+  ('sample-gatsby', 'friend-blair', 2, 'reading'),
+  ('sample-gatsby', 'friend-chuck', 3, 'waiting'),
+  ('sample-gatsby', 'friend-nate', 4, 'waiting'),
+  ('sample-innocence', 'friend-dan', 0, 'done'),
+  ('sample-innocence', 'friend-blair', 1, 'done'),
+  ('sample-innocence', 'friend-serena', 2, 'done'),
+  ('sample-innocence', 'friend-jenny', 3, 'done'),
+  ('sample-dorian', 'friend-chuck', 0, 'done'),
+  ('sample-dorian', 'friend-nate', 1, 'done'),
+  ('sample-dorian', 'friend-blair', 2, 'reading'),
+  ('sample-dorian', 'friend-serena', 3, 'waiting'),
+  ('sample-brideshead', 'friend-nate', 0, 'reading'),
+  ('sample-brideshead', 'friend-blair', 1, 'waiting'),
+  ('sample-brideshead', 'friend-chuck', 2, 'waiting'),
+  ('sample-brideshead', 'friend-dan', 3, 'waiting'),
+  ('sample-oldman', 'friend-jay', 0, 'done'),
+  ('sample-oldman', 'friend-manny', 1, 'done'),
+  ('sample-oldman', 'friend-phil', 2, 'done'),
+  ('sample-oldman', 'friend-cameron', 3, 'done'),
+  ('sample-carnegie', 'friend-phil', 0, 'done'),
+  ('sample-carnegie', 'friend-claire', 1, 'done'),
+  ('sample-carnegie', 'friend-mitchell', 2, 'reading'),
+  ('sample-carnegie', 'friend-jay', 3, 'waiting'),
+  ('sample-carnegie', 'friend-gloria', 4, 'waiting'),
+  ('sample-cholera', 'friend-manny', 0, 'done'),
+  ('sample-cholera', 'friend-gloria', 1, 'done'),
+  ('sample-cholera', 'friend-cameron', 2, 'done'),
+  ('sample-cholera', 'friend-claire', 3, 'reading'),
+  ('sample-cholera', 'friend-mitchell', 4, 'waiting'),
+  ('sample-hawking', 'friend-alex', 0, 'done'),
+  ('sample-hawking', 'friend-phil', 1, 'done'),
+  ('sample-hawking', 'friend-manny', 2, 'reading'),
+  ('sample-hawking', 'friend-jay', 3, 'waiting'),
+  ('sample-tuscan', 'friend-cameron', 0, 'reading'),
+  ('sample-tuscan', 'friend-gloria', 1, 'waiting'),
+  ('sample-tuscan', 'friend-claire', 2, 'waiting')
+on conflict (book_id, friend_id) do update set position = excluded.position, status = excluded.status;
 
 insert into public.handoffs
   (id, book_id, from_friend, to_friend, happened_at, received_at, place_city, place_region, rating, note)
 values
-  ('sample-pride-1',  'sample-pride',  null,             'friend-carmen',  now() - interval '41 days',  now() - interval '41 days',  'Charleston',      'SC',     null, null),
-  ('sample-pride-2',  'sample-pride',  'friend-carmen',  'friend-lena',    now() - interval '12 days',  now() - interval '9 days',   'Santorini',       'Greece', 5, 'Read it somewhere sunny. You''ll work out which of us is which by chapter three.'),
+  ('sample-pride-1', 'sample-pride', null, 'friend-carmen', now() - interval '41 days', now() - interval '41 days', 'Charleston', 'SC', null, null),
+  ('sample-pride-2', 'sample-pride', 'friend-carmen', 'friend-lena', now() - interval '12 days', now() - interval '9 days', 'Santorini', 'Greece', 5, 'Read it somewhere sunny. You''ll work out which of us is which by chapter three.'),
+  ('sample-room-1', 'sample-room', null, 'friend-lena', now() - interval '63 days', now() - interval '63 days', 'Santorini', 'Greece', null, null),
+  ('sample-room-2', 'sample-room', 'friend-lena', 'friend-bridget', now() - interval '5 hours', null, null, null, 3, 'Slow to start, then it''s all sunlight. Lucy is so frustrating and so right.'),
+  ('sample-little-1', 'sample-little', null, 'friend-tibby', now() - interval '94 days', now() - interval '94 days', 'Bethesda', 'MD', null, null),
+  ('sample-little-2', 'sample-little', 'friend-tibby', 'friend-carmen', now() - interval '38 days', now() - interval '33 days', 'Charleston', 'SC', 4, 'Bring tissues. I mean it. Call me when you get to the end.'),
+  ('sample-little-3', 'sample-little', 'friend-carmen', 'friend-bridget', now() - interval '7 days', now() - interval '3 days', 'Baja California', 'Mexico', 5, 'I underlined way too much, sorry not sorry.'),
+  ('sample-anne-1', 'sample-anne', null, 'friend-bridget', now() - interval '121 days', now() - interval '121 days', 'Baja California', 'Mexico', null, null),
+  ('sample-anne-2', 'sample-anne', 'friend-bridget', 'friend-tibby', now() - interval '88 days', now() - interval '84 days', 'Bethesda', 'MD', 4, 'Anne talks a lot for the first fifty pages. You''ll love her anyway.'),
+  ('sample-anne-3', 'sample-anne', 'friend-tibby', 'friend-carmen', now() - interval '59 days', now() - interval '55 days', 'Charleston', 'SC', 5, 'Kindred spirits. That''s all I''ll say.'),
+  ('sample-anne-4', 'sample-anne', 'friend-carmen', 'friend-bridget', now() - interval '20 days', now() - interval '16 days', 'Baja California', 'Mexico', 4, 'Thank you for lending me your copy. It''s a little sandier now.'),
+  ('sample-eyre-1', 'sample-eyre', null, 'friend-lena', now() - interval '200 days', now() - interval '200 days', 'Santorini', 'Greece', null, null),
+  ('sample-eyre-2', 'sample-eyre', 'friend-lena', 'friend-carmen', now() - interval '170 days', now() - interval '163 days', 'Charleston', 'SC', 5, 'Reader, I mailed it. Tell me when you meet Mr. Rochester.'),
+  ('sample-eyre-3', 'sample-eyre', 'friend-carmen', 'friend-tibby', now() - interval '140 days', now() - interval '136 days', 'Bethesda', 'MD', 4, 'Darker than I expected and better for it. Read the attic chapters at night.'),
+  ('sample-eyre-4', 'sample-eyre', 'friend-tibby', 'friend-bridget', now() - interval '110 days', now() - interval '104 days', 'Baja California', 'Mexico', 5, 'Jane would have been great at soccer. Stubborn, fast, never quits.'),
+  ('sample-eyre-5', 'sample-eyre', 'friend-bridget', 'friend-lena', now() - interval '75 days', now() - interval '68 days', 'Santorini', 'Greece', 5, 'Home it goes, with sand in the spine. Thank you for starting this one.'),
+  ('sample-persuasion-1', 'sample-persuasion', null, 'friend-tibby', now() - interval '30 days', now() - interval '30 days', 'Bethesda', 'MD', null, null),
+  ('sample-persuasion-2', 'sample-persuasion', 'friend-tibby', 'friend-carmen', now() - interval '10 hours', null, null, null, 5, 'Eight years of waiting and one letter. Read the letter chapter twice, then call me.'),
+  ('sample-rebecca-1', 'sample-rebecca', null, 'friend-carmen', now() - interval '4 days', now() - interval '4 days', 'Charleston', 'SC', null, null),
+  ('sample-jurassic-1', 'sample-jurassic', null, 'friend-ross', now() - interval '120 days', now() - interval '120 days', 'New York', 'NY', null, null),
+  ('sample-jurassic-2', 'sample-jurassic', 'friend-ross', 'friend-joey', now() - interval '96 days', now() - interval '92 days', 'Los Angeles', 'CA', 3, 'I''ve corrected the paleontology in the margins. Velociraptors were the size of turkeys. Please read the margins.'),
+  ('sample-jurassic-3', 'sample-jurassic', 'friend-joey', 'friend-chandler', now() - interval '61 days', now() - interval '58 days', 'Westchester', 'NY', 5, 'Dinosaurs! Skipped the margin stuff. The T. rex part, I had to put it down and walk around the apartment.'),
+  ('sample-jurassic-4', 'sample-jurassic', 'friend-chandler', 'friend-phoebe', now() - interval '22 days', now() - interval '20 days', 'New York', 'NY', 4, 'Could this book BE more about chaos theory? Loved it. Ross, your margins are longer than the chapters.'),
+  ('sample-jurassic-5', 'sample-jurassic', 'friend-phoebe', 'friend-rachel', now() - interval '6 hours', null, null, null, 5, 'I think the dinosaurs had a point. Also I let the bookmark go free. It wanted to.'),
+  ('sample-shining-1', 'sample-shining', null, 'friend-joey', now() - interval '80 days', now() - interval '80 days', 'Los Angeles', 'CA', null, null),
+  ('sample-shining-2', 'sample-shining', 'friend-joey', 'friend-rachel', now() - interval '45 days', now() - interval '41 days', 'New York', 'NY', 5, 'Heads up: it lives in the freezer between chapters. That''s normal. Don''t ask.'),
+  ('sample-french-1', 'sample-french', null, 'friend-monica', now() - interval '150 days', now() - interval '150 days', 'Westchester', 'NY', null, null),
+  ('sample-french-2', 'sample-french', 'friend-monica', 'friend-phoebe', now() - interval '130 days', now() - interval '127 days', 'New York', 'NY', 5, 'There is a ribbon. Use the ribbon. Do not dog-ear. I will know.'),
+  ('sample-french-3', 'sample-french', 'friend-phoebe', 'friend-rachel', now() - interval '90 days', now() - interval '88 days', 'New York', 'NY', 4, 'Made the boeuf bourguignon without the beef. So, just bourguignon. Still great.'),
+  ('sample-french-4', 'sample-french', 'friend-rachel', 'friend-monica', now() - interval '60 days', now() - interval '59 days', 'Westchester', 'NY', 4, 'Okay, I didn''t cook anything, but I read it in the bath and it was SO relaxing. Sorry about page 212.'),
+  ('sample-catch-1', 'sample-catch', null, 'friend-chandler', now() - interval '35 days', now() - interval '35 days', 'Westchester', 'NY', null, null),
+  ('sample-catch-2', 'sample-catch', 'friend-chandler', 'friend-ross', now() - interval '9 days', now() - interval '7 days', 'New York', 'NY', 5, 'The funniest sad book ever written. Or the saddest funny one. I''m told that''s my whole personality.'),
+  ('sample-bridget-jones-1', 'sample-bridget-jones', null, 'friend-rachel', now() - interval '3 days', now() - interval '3 days', 'New York', 'NY', null, null),
+  ('sample-seagull-1', 'sample-seagull', null, 'friend-phoebe', now() - interval '200 days', now() - interval '200 days', 'New York', 'NY', null, null),
+  ('sample-seagull-2', 'sample-seagull', 'friend-phoebe', 'friend-joey', now() - interval '170 days', now() - interval '165 days', 'Los Angeles', 'CA', 5, 'This seagull is my spirit animal. Well, one of them. My grandmother might also be a seagull.'),
+  ('sample-seagull-3', 'sample-seagull', 'friend-joey', 'friend-monica', now() - interval '140 days', now() - interval '138 days', 'Westchester', 'NY', 4, 'It''s about a bird who''s really, really into flying. I respect that.'),
+  ('sample-seagull-4', 'sample-seagull', 'friend-monica', 'friend-chandler', now() - interval '100 days', now() - interval '99 days', 'Westchester', 'NY', 3, 'Short and sweet. I alphabetised your shelf while I was over, Phoebe. You can thank me.'),
+  ('sample-seagull-5', 'sample-seagull', 'friend-chandler', 'friend-ross', now() - interval '70 days', now() - interval '66 days', 'New York', 'NY', 3, 'A bird finds himself. Mostly I found sand in it. Phoebe, why is there sand.'),
+  ('sample-seagull-6', 'sample-seagull', 'friend-ross', 'friend-phoebe', now() - interval '40 days', now() - interval '37 days', 'New York', 'NY', 4, 'Technically gulls can''t do most of this. But I cried at the end, so.'),
+  ('sample-tiffany-1', 'sample-tiffany', null, 'friend-blair', now() - interval '140 days', now() - interval '140 days', 'Manhattan', 'NY', null, null),
+  ('sample-tiffany-2', 'sample-tiffany', 'friend-blair', 'friend-serena', now() - interval '110 days', now() - interval '108 days', 'Southampton', 'NY', 5, 'First edition. Return it in the condition you received it in, which is flawless. XOXO, B.'),
+  ('sample-tiffany-3', 'sample-tiffany', 'friend-serena', 'friend-jenny', now() - interval '75 days', now() - interval '70 days', 'Hudson', 'NY', 5, 'Read it on the beach in Southampton. There may be a little sand. Don''t tell Blair.'),
+  ('sample-tiffany-4', 'sample-tiffany', 'friend-jenny', 'friend-nate', now() - interval '30 days', now() - interval '28 days', 'Manhattan', 'NY', 4, 'Holly Golightly would never wear the same thing twice. I made a dress inspired by chapter two.'),
+  ('sample-tiffany-5', 'sample-tiffany', 'friend-nate', 'friend-chuck', now() - interval '2 hours', null, null, null, 3, 'Didn''t totally finish it. Good though. Chuck, she wants it back by Friday.'),
+  ('sample-gatsby-1', 'sample-gatsby', null, 'friend-serena', now() - interval '90 days', now() - interval '90 days', 'Southampton', 'NY', null, null),
+  ('sample-gatsby-2', 'sample-gatsby', 'friend-serena', 'friend-dan', now() - interval '60 days', now() - interval '57 days', 'Brooklyn', 'NY', 5, 'Read it with the windows open. It''s basically a Hamptons party that goes on a little too long.'),
+  ('sample-gatsby-3', 'sample-gatsby', 'friend-dan', 'friend-blair', now() - interval '20 days', now() - interval '18 days', 'Manhattan', 'NY', 5, 'A book about outsiders who want in. I''ve annotated it, lightly. Fine: heavily.'),
+  ('sample-innocence-1', 'sample-innocence', null, 'friend-dan', now() - interval '200 days', now() - interval '200 days', 'Brooklyn', 'NY', null, null),
+  ('sample-innocence-2', 'sample-innocence', 'friend-dan', 'friend-blair', now() - interval '175 days', now() - interval '172 days', 'Manhattan', 'NY', 5, 'Old New York, written by someone who actually lived it. I think you''ll find yourself in here.'),
+  ('sample-innocence-3', 'sample-innocence', 'friend-blair', 'friend-serena', now() - interval '140 days', now() - interval '137 days', 'Southampton', 'NY', 5, 'I did not "find myself in it," Humphrey. But May deserved better. Fine. It''s perfect.'),
+  ('sample-innocence-4', 'sample-innocence', 'friend-serena', 'friend-jenny', now() - interval '100 days', now() - interval '96 days', 'Hudson', 'NY', 5, 'Ellen Olenska, forever and always.'),
+  ('sample-innocence-5', 'sample-innocence', 'friend-jenny', 'friend-dan', now() - interval '60 days', now() - interval '58 days', 'Brooklyn', 'NY', 4, 'Brought it home for you. Dad says come for dinner.'),
+  ('sample-dorian-1', 'sample-dorian', null, 'friend-chuck', now() - interval '50 days', now() - interval '50 days', 'Monaco', 'Monaco', null, null),
+  ('sample-dorian-2', 'sample-dorian', 'friend-chuck', 'friend-nate', now() - interval '26 days', now() - interval '21 days', 'Manhattan', 'NY', 5, 'A man who never ages and never apologises. Required reading.'),
+  ('sample-dorian-3', 'sample-dorian', 'friend-nate', 'friend-blair', now() - interval '6 days', now() - interval '4 days', 'Manhattan', 'NY', 4, 'Kind of messed up. Chuck underlined a lot of it, which is also kind of messed up.'),
+  ('sample-brideshead-1', 'sample-brideshead', null, 'friend-nate', now() - interval '1 days', now() - interval '1 days', 'Manhattan', 'NY', null, null),
+  ('sample-oldman-1', 'sample-oldman', null, 'friend-jay', now() - interval '130 days', now() - interval '130 days', 'Los Angeles', 'CA', null, null),
+  ('sample-oldman-2', 'sample-oldman', 'friend-jay', 'friend-manny', now() - interval '110 days', now() - interval '108 days', 'Los Angeles', 'CA', 5, 'Short. A man, a boat, a fish. No feelings talk. You''ll like it, kid.'),
+  ('sample-oldman-3', 'sample-oldman', 'friend-manny', 'friend-phil', now() - interval '80 days', now() - interval '77 days', 'Los Angeles', 'CA', 5, 'It is entirely about feelings, Jay. I wept twice: once for the marlin, once for the sunrise.'),
+  ('sample-oldman-4', 'sample-oldman', 'friend-phil', 'friend-cameron', now() - interval '45 days', now() - interval '43 days', 'Los Angeles', 'CA', 4, 'I also once caught a fish! Smaller. Same journey though. Phil''s-osophy: be the marlin.'),
+  ('sample-oldman-5', 'sample-oldman', 'friend-cameron', 'friend-jay', now() - interval '15 days', now() - interval '14 days', 'Los Angeles', 'CA', 5, 'Santiago never quits. I did a dramatic reading for Lily. She left halfway, but that was her loss.'),
+  ('sample-carnegie-1', 'sample-carnegie', null, 'friend-phil', now() - interval '70 days', now() - interval '70 days', 'Los Angeles', 'CA', null, null),
+  ('sample-carnegie-2', 'sample-carnegie', 'friend-phil', 'friend-claire', now() - interval '50 days', now() - interval '49 days', 'Los Angeles', 'CA', 5, 'Honey, I highlighted the good parts. Spoiler: it''s all good parts!'),
+  ('sample-carnegie-3', 'sample-carnegie', 'friend-claire', 'friend-mitchell', now() - interval '12 days', now() - interval '10 days', 'Los Angeles', 'CA', 3, 'Phil gave me this. Every page is highlighted. Every. Page.'),
+  ('sample-cholera-1', 'sample-cholera', null, 'friend-manny', now() - interval '100 days', now() - interval '100 days', 'Los Angeles', 'CA', null, null),
+  ('sample-cholera-2', 'sample-cholera', 'friend-manny', 'friend-gloria', now() - interval '70 days', now() - interval '64 days', 'Cartagena', 'Colombia', 5, 'Mamá, this one is about a love that waits fifty years. Read it slowly, on the balcony.'),
+  ('sample-cholera-3', 'sample-cholera', 'friend-gloria', 'friend-cameron', now() - interval '30 days', now() - interval '27 days', 'Los Angeles', 'CA', 5, 'I read it in Cartagena, where it happens! I cried on the balcony and the neighbours cried with me.'),
+  ('sample-cholera-4', 'sample-cholera', 'friend-cameron', 'friend-claire', now() - interval '5 hours', null, null, null, 5, 'Half a century of yearning. I felt every single year of it. Claire, please let yourself feel something.'),
+  ('sample-hawking-1', 'sample-hawking', null, 'friend-alex', now() - interval '60 days', now() - interval '60 days', 'Pasadena', 'CA', null, null),
+  ('sample-hawking-2', 'sample-hawking', 'friend-alex', 'friend-phil', now() - interval '40 days', now() - interval '38 days', 'Los Angeles', 'CA', 4, 'Dad, it''s not about time travel. Please stop asking.'),
+  ('sample-hawking-3', 'sample-hawking', 'friend-phil', 'friend-manny', now() - interval '14 days', now() - interval '12 days', 'Los Angeles', 'CA', 5, 'It''s a little bit about time travel.'),
+  ('sample-tuscan-1', 'sample-tuscan', null, 'friend-cameron', now() - interval '2 days', now() - interval '2 days', 'Los Angeles', 'CA', null, null)
+on conflict (id) do update
+  set happened_at = excluded.happened_at, received_at = excluded.received_at,
+      place_city = excluded.place_city, place_region = excluded.place_region,
+      rating = excluded.rating, note = excluded.note;
 
-  ('sample-room-1',   'sample-room',   null,             'friend-lena',    now() - interval '63 days',  now() - interval '63 days',  'Santorini',       'Greece', null, null),
-  ('sample-room-2',   'sample-room',   'friend-lena',    'friend-bridget', now() - interval '5 hours',  null,                        'Baja California', 'Mexico', 3, 'Slow to start, then it''s all sunlight. Lucy is so frustrating and so right.'),
+update public.sample_clock set anchored_at = now();
 
-  ('sample-little-1', 'sample-little', null,             'friend-tibby',   now() - interval '94 days',  now() - interval '94 days',  'Bethesda',        'MD',     null, null),
-  ('sample-little-2', 'sample-little', 'friend-tibby',   'friend-carmen',  now() - interval '38 days',  now() - interval '33 days',  'Charleston',      'SC',     4, 'Bring tissues. I mean it. Call me when you get to the end.'),
-  ('sample-little-3', 'sample-little', 'friend-carmen',  'friend-bridget', now() - interval '7 days',   now() - interval '3 days',   'Baja California', 'Mexico', 5, 'I underlined way too much, sorry not sorry.'),
-
-  ('sample-anne-1',   'sample-anne',   null,             'friend-bridget', now() - interval '121 days', now() - interval '121 days', 'Baja California', 'Mexico', null, null),
-  ('sample-anne-2',   'sample-anne',   'friend-bridget', 'friend-tibby',   now() - interval '88 days',  now() - interval '84 days',  'Bethesda',        'MD',     4, 'Anne talks a lot for the first fifty pages. You''ll love her anyway.'),
-  ('sample-anne-3',   'sample-anne',   'friend-tibby',   'friend-carmen',  now() - interval '59 days',  now() - interval '55 days',  'Charleston',      'SC',     5, 'Kindred spirits. That''s all I''ll say.'),
-  ('sample-anne-4',   'sample-anne',   'friend-carmen',  'friend-bridget', now() - interval '20 days',  now() - interval '16 days',  'Baja California', 'Mexico', 4, 'Thank you for lending me your copy. It''s a little sandier now.'),
-
-  ('sample-eyre-1',   'sample-eyre',   null,             'friend-lena',    now() - interval '200 days', now() - interval '200 days', 'Santorini',       'Greece', null, null),
-  ('sample-eyre-2',   'sample-eyre',   'friend-lena',    'friend-carmen',  now() - interval '170 days', now() - interval '163 days', 'Charleston',      'SC',     5, 'Reader, I mailed it. Tell me when you meet Mr. Rochester.'),
-  ('sample-eyre-3',   'sample-eyre',   'friend-carmen',  'friend-tibby',   now() - interval '140 days', now() - interval '136 days', 'Bethesda',        'MD',     4, 'Darker than I expected and better for it. Read the attic chapters at night.'),
-  ('sample-eyre-4',   'sample-eyre',   'friend-tibby',   'friend-bridget', now() - interval '110 days', now() - interval '104 days', 'Baja California', 'Mexico', 5, 'Jane would have been great at soccer. Stubborn, fast, never quits.'),
-  ('sample-eyre-5',   'sample-eyre',   'friend-bridget', 'friend-lena',    now() - interval '75 days',  now() - interval '68 days',  'Santorini',       'Greece', 5, 'Home it goes, with sand in the spine. Thank you for starting this one.')
-on conflict (id) do nothing;
-
--- Everyone already in the app is in the sample group too (new people are
+-- Everyone already in the app is in the sample groups too (new people are
 -- added as they join, by the trigger in schema.sql).
 insert into public.group_members (group_id, person_id)
-select 'group-pants', id from public.friends
+select g.id, f.id from public.groups g cross join public.friends f
+where g.is_sample
 on conflict do nothing;
 
 -- Covers from Open Library.
 update public.books b set cover_url = 'https://covers.openlibrary.org/b/id/' || c.cover_id || '-M.jpg'
 from (values
-  ('sample-pride',  '14348537'),
-  ('sample-room',   '1748132'),
+  ('sample-pride', '14348537'),
+  ('sample-room', '1748132'),
   ('sample-little', '8775559'),
-  ('sample-anne',   '14641084'),
-  ('sample-eyre',   '8235363')
+  ('sample-anne', '14641084'),
+  ('sample-eyre', '8235363')
 ) as c(book_id, cover_id)
 where b.id = c.book_id and b.cover_url is null;

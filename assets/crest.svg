@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 120" width="100" height="120">
+  <!-- The Traveling Books crest: an open book under the three stops of a journey, on a hunter-green shield. -->
+  <path d="M8 6 H92 V58 C92 88 72 106 50 115 C28 106 8 88 8 58 Z" fill="#1f3b2c"/>
+  <path d="M8 6 H92 V58 C92 88 72 106 50 115 C28 106 8 88 8 58 Z" fill="none" stroke="#b4925a" stroke-width="3.2"/>
+  <path d="M14.5 12.5 H85.5 V58 C85.5 84 68 100 50 108 C32 100 14.5 84 14.5 58 Z" fill="none" stroke="#b4925a" stroke-width="1.1"/>
+  <circle cx="31" cy="31" r="3.4" fill="#b4925a"/>
+  <circle cx="50" cy="24.5" r="3.4" fill="#b4925a"/>
+  <circle cx="69" cy="31" r="3.4" fill="#b4925a"/>
+  <path d="M24 49 C33 44 42 44 48.6 49 V80 C42 75.5 33 75.5 24 80 Z" fill="#f6f1e6"/>
+  <path d="M51.4 49 C58 44 67 44 76 49 V80 C67 75.5 58 75.5 51.4 80 Z" fill="#f6f1e6"/>
+  <path d="M29 55 C35 52.5 40 52.5 44 55 M29 61 C35 58.5 40 58.5 44 61 M29 67 C35 64.5 40 64.5 44 67 M56 55 C60 52.5 65 52.5 71 55 M56 61 C60 58.5 65 58.5 71 61" stroke="#b4925a" stroke-width="1.3" fill="none"/>
+  <path d="M47.6 76 V93 L50 89.5 L52.4 93 V76 Z" fill="#7d2532"/>
+</svg>
