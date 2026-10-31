@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import {
-  Image,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -11,13 +10,13 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Book, Group, RootStackParamList } from '../types';
 import { BookCard } from '../components/BookCard';
 import { ClubYearCard } from '../components/ClubYearCard';
 import { AboutSheet } from '../components/AboutSheet';
-import { homage, tagline } from '../content/about';
+import { Letterhead } from '../components/Letterhead';
+import { homage } from '../content/about';
 import { holderId, isInTransit, relativeTime } from '../lib/bookState';
 import { lately } from '../lib/lately';
 import { theme } from '../theme';
@@ -41,7 +40,6 @@ export function HomeScreen({
   refreshing,
   onRefresh,
 }: HomeScreenProps) {
-  const insets = useSafeAreaInsets();
   const [aboutOpen, setAboutOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterMode, setFilterMode] = useState<FilterMode>('all');
@@ -114,34 +112,27 @@ export function HomeScreen({
         />
       }
     >
-      <View style={[styles.headerWrap, { paddingTop: insets.top + 28 }]}>
-        <Image source={require('../../assets/crest.png')} style={styles.crest} accessibilityIgnoresInvertColors />
-        <Text style={styles.title}>The Traveling Books</Text>
-        <View style={styles.ornament}>
-          <View style={styles.ornamentRule} />
-          <View style={styles.ornamentDiamond} />
-          <View style={styles.ornamentRule} />
-        </View>
-        <Text style={styles.motto}>Lege · Scribe · Trade</Text>
-        <Text style={styles.subtitle}>{tagline}</Text>
-        <View style={styles.actions}>
-          <Pressable
-            style={({ pressed }) => [styles.addButton, pressed && styles.addButtonPressed]}
-            onPress={() => navigation.navigate('AddBook')}
-            accessibilityRole="button"
-          >
-            <Text style={styles.addButtonText}>Lend a new book</Text>
-          </Pressable>
-          <Pressable
-            style={styles.aboutButton}
-            onPress={() => setAboutOpen(true)}
-            accessibilityRole="button"
-            hitSlop={8}
-          >
-            <Text style={styles.aboutButtonText}>Rules & About</Text>
-          </Pressable>
-        </View>
-        <Text style={styles.homage}>{homage}</Text>
+      <View style={styles.headerWrap}>
+        <Letterhead>
+          <View style={styles.actions}>
+            <Pressable
+              style={({ pressed }) => [styles.addButton, pressed && styles.addButtonPressed]}
+              onPress={() => navigation.navigate('AddBook')}
+              accessibilityRole="button"
+            >
+              <Text style={styles.addButtonText}>Lend a new book</Text>
+            </Pressable>
+            <Pressable
+              style={styles.aboutButton}
+              onPress={() => setAboutOpen(true)}
+              accessibilityRole="button"
+              hitSlop={8}
+            >
+              <Text style={styles.aboutButtonText}>Rules & About</Text>
+            </Pressable>
+          </View>
+          <Text style={styles.homage}>{homage}</Text>
+        </Letterhead>
       </View>
 
       {/* Search and filters */}
@@ -332,14 +323,8 @@ const styles = StyleSheet.create({
 
 
   headerWrap: {
-    backgroundColor: theme.colors.letterhead,
     marginHorizontal: -20,
-    paddingHorizontal: 24,
-    paddingBottom: 22,
     marginBottom: 8,
-    alignItems: 'center',
-    borderBottomWidth: 3,
-    borderBottomColor: theme.colors.brass,
   },
 
 
@@ -355,59 +340,10 @@ const styles = StyleSheet.create({
   },
 
 
-  title: {
-    fontFamily: theme.fonts.serif,
-    fontSize: 32,
-    lineHeight: 38,
-    fontWeight: '400',
-    letterSpacing: 0.3,
-    color: theme.colors.onMasthead,
-    textAlign: 'center',
-    marginTop: 12,
-  },
 
 
-  subtitle: {
-    fontFamily: theme.fonts.serif,
-    fontStyle: 'italic',
-    fontSize: 16,
-    lineHeight: 22,
-    color: theme.colors.onMasthead,
-    opacity: 0.8,
-    textAlign: 'center',
-    marginTop: 8,
-  },
 
 
-  crest: {
-    width: 50,
-    height: 60,
-  },
-  ornament: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 12,
-    width: 180,
-  },
-  ornamentRule: {
-    flex: 1,
-    height: 1,
-    backgroundColor: theme.colors.brass,
-  },
-  ornamentDiamond: {
-    width: 6,
-    height: 6,
-    backgroundColor: theme.colors.brass,
-    transform: [{ rotate: '45deg' }],
-    marginHorizontal: 8,
-  },
-  motto: {
-    ...theme.caps,
-    fontSize: 11,
-    letterSpacing: 3,
-    color: theme.colors.brass,
-    marginTop: 10,
-  },
   lately: {
     marginTop: 26,
   },

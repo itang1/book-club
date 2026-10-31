@@ -1,18 +1,16 @@
 import { useEffect, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { theme } from '../theme';
-import { tagline } from '../content/about';
+import { Letterhead } from '../components/Letterhead';
 import { emailSignInLink } from '../lib/auth';
 import { groupPreview } from '../lib/bookClubService';
 import { inviteCodeFromUrl } from '../lib/invite';
 
 /** A new email simply gets an account, so this covers first-timers too. */
 export function SignInScreen() {
-  const insets = useSafeAreaInsets();
-  const [email, setEmail] = useState('');
+    const [email, setEmail] = useState('');
   const [sending, setSending] = useState(false);
   const [sentTo, setSentTo] = useState<string | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
@@ -45,13 +43,11 @@ export function SignInScreen() {
   return (
     <ScrollView
       style={styles.container}
-      contentContainerStyle={[styles.content, { paddingTop: insets.top + 40 }]}
+      contentContainerStyle={styles.scroll}
       keyboardShouldPersistTaps="handled"
     >
-      <Text style={styles.title}>The Traveling Books</Text>
-      <Text style={styles.subtitle}>
-        {tagline}
-      </Text>
+      <Letterhead />
+      <View style={styles.content}>
 
       {invitedTo && (
         <View style={styles.invite}>
@@ -61,7 +57,7 @@ export function SignInScreen() {
             {invitedTo.members > 0
               ? ` (${invitedTo.members} ${invitedTo.members === 1 ? 'member' : 'members'})`
               : ''}
-            . Sign in below to join.
+            . Sign in or create an account below to join.
           </Text>
         </View>
       )}
@@ -71,8 +67,8 @@ export function SignInScreen() {
           <>
             <Text style={styles.cardTitle}>Check your email</Text>
             <Text style={styles.body}>
-              We sent a sign-in link to {sentTo}. Open it on this device and you'll land
-              back here, signed in.
+              We sent a link to {sentTo}. Open it on this device and you'll land back
+              here, signed in. New accounts are set up as you arrive.
             </Text>
             <Pressable onPress={() => setSentTo(null)}>
               <Text style={styles.link}>Use a different email</Text>
@@ -80,9 +76,10 @@ export function SignInScreen() {
           </>
         ) : (
           <>
-            <Text style={styles.cardTitle}>Sign in</Text>
+            <Text style={styles.cardTitle}>Sign in or create an account</Text>
             <Text style={styles.body}>
-              We'll email you a link to sign in. New here? Welcome.
+              Enter your email and we'll send you a link. If you're new, the same link sets up
+              your account.
             </Text>
             <TextInput
               value={email}
@@ -101,46 +98,61 @@ export function SignInScreen() {
               onPress={send}
             >
               <Text style={styles.primaryButtonText}>
-                {sending ? 'Sending…' : 'Email me a sign-in link'}
+                {sending ? 'Sending…' : 'Email me a link'}
               </Text>
             </Pressable>
+            <Text style={styles.fine}>No password, now or ever.</Text>
             {problem && <Text style={styles.problem}>{problem}</Text>}
           </>
         )}
       </View>
 
+      <Text style={styles.footnote}>
+        One copy of a book travels around a group of friends, one reader at a time, and the app
+        keeps track of where it is and everywhere it's been.
+      </Text>
+      </View>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
+  scroll: {
+    paddingBottom: 40,
+  },
+  fine: {
+    marginTop: 10,
+    fontSize: 12,
+    color: theme.colors.muted,
+  },
+  footnote: {
+    fontFamily: theme.fonts.serif,
+    fontStyle: 'italic',
+    fontSize: 14,
+    lineHeight: 21,
+    color: theme.colors.muted,
+    textAlign: 'center',
+    marginTop: 22,
+    paddingHorizontal: 12,
+  },
   container: {
     flex: 1,
     backgroundColor: theme.colors.background,
   },
   content: {
-    padding: 24,
-    paddingBottom: 40,
-  },
-  title: {
-    fontFamily: theme.fonts.serif,
-    fontSize: 32,
-    lineHeight: 38,
-    fontWeight: '700',
-    color: theme.colors.text,
-    marginBottom: 10,
-  },
-  subtitle: {
-    fontSize: 16,
-    lineHeight: 24,
-    color: theme.colors.muted,
-    marginBottom: 24,
+    padding: 20,
+    paddingTop: 24,
+    width: '100%',
+    maxWidth: 480,
+    alignSelf: 'center',
   },
   invite: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: theme.colors.soft,
-    borderRadius: theme.radius.md,
+    borderLeftWidth: 3,
+    borderLeftColor: theme.colors.brass,
+    borderRadius: theme.radius.sm,
     padding: 14,
     marginBottom: 16,
   },
@@ -157,13 +169,16 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: theme.colors.card,
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: theme.colors.rule,
+    borderTopWidth: 3,
+    borderTopColor: theme.colors.accent,
     borderRadius: theme.radius.md,
-    padding: 18,
+    padding: 20,
   },
   cardTitle: {
     fontFamily: theme.fonts.serif,
-    fontSize: 20,
+    fontSize: 21,
+    lineHeight: 27,
     fontWeight: '700',
     color: theme.colors.text,
     marginBottom: 6,
@@ -175,12 +190,13 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   input: {
-    backgroundColor: theme.colors.soft,
-    borderRadius: theme.radius.md,
+    backgroundColor: theme.colors.background,
+    borderWidth: 1,
+    borderColor: theme.colors.rule,
+    borderRadius: theme.radius.sm,
     padding: 12,
     color: theme.colors.text,
-    fontSize: 15,
-    fontWeight: '600',
+    fontSize: 16,
     marginBottom: 10,
   },
   primaryButton: {

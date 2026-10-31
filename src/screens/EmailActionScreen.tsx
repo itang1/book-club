@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { theme } from '../theme';
-import { tagline } from '../content/about';
+import { Letterhead } from '../components/Letterhead';
 import { EmailAction, previewEmailAction, redeemEmailAction } from '../lib/bookClubService';
 import { bookLink } from '../lib/links';
 
@@ -14,7 +13,6 @@ type Outcome = 'done' | 'already' | 'expired' | 'unknown' | 'retry';
  * open links on their own; no sign-in needed, the link itself is the key.
  */
 export function EmailActionScreen({ token, onClose }: { token: string; onClose: () => void }) {
-  const insets = useSafeAreaInsets();
   const [preview, setPreview] = useState<EmailAction | null>(null);
   const [working, setWorking] = useState(false);
   const [outcome, setOutcome] = useState<Outcome | null>(null);
@@ -63,9 +61,9 @@ export function EmailActionScreen({ token, onClose }: { token: string; onClose: 
   const shown = state ? result[state] : null;
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={[styles.content, { paddingTop: insets.top + 40 }]}>
-      <Text style={styles.title}>The Traveling Books</Text>
-      <Text style={styles.subtitle}>{tagline}</Text>
+    <ScrollView style={styles.container} contentContainerStyle={styles.scroll}>
+      <Letterhead />
+      <View style={styles.content}>
 
       <View style={styles.card}>
         {!preview ? (
@@ -93,6 +91,7 @@ export function EmailActionScreen({ token, onClose }: { token: string; onClose: 
           </>
         )}
       </View>
+      </View>
     </ScrollView>
   );
 }
@@ -102,28 +101,22 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: theme.colors.background,
   },
-  content: {
-    padding: 24,
+  scroll: {
     paddingBottom: 40,
   },
-  title: {
-    fontFamily: theme.fonts.serif,
-    fontSize: 32,
-    lineHeight: 38,
-    fontWeight: '700',
-    color: theme.colors.text,
-    marginBottom: 10,
-  },
-  subtitle: {
-    fontSize: 16,
-    lineHeight: 24,
-    color: theme.colors.muted,
-    marginBottom: 24,
+  content: {
+    padding: 20,
+    paddingTop: 24,
+    width: '100%',
+    maxWidth: 480,
+    alignSelf: 'center',
   },
   card: {
     backgroundColor: theme.colors.card,
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: theme.colors.rule,
+    borderTopWidth: 3,
+    borderTopColor: theme.colors.accent,
     borderRadius: theme.radius.md,
     padding: 18,
   },

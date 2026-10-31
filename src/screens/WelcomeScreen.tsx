@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Friend } from '../types';
 import { theme } from '../theme';
+import { Letterhead } from '../components/Letterhead';
 import { tagline } from '../content/about';
 import { inviteCodeFromUrl } from '../lib/invite';
 import { groupPreview, unclaimedInGroup } from '../lib/bookClubService';
@@ -30,7 +30,6 @@ export function WelcomeScreen({
   email,
   onSignOut,
 }: WelcomeScreenProps) {
-  const insets = useSafeAreaInsets();
   const [name, setName] = useState('');
   const [city, setCity] = useState('');
   const [region, setRegion] = useState('');
@@ -53,13 +52,11 @@ export function WelcomeScreen({
   return (
     <ScrollView
       style={styles.container}
-      contentContainerStyle={[styles.content, { paddingTop: insets.top + 40 }]}
+      contentContainerStyle={styles.scroll}
       keyboardShouldPersistTaps="handled"
     >
-      <Text style={styles.title}>The Traveling Books</Text>
-      <Text style={styles.subtitle}>
-        {groupName ? `You're invited to ${groupName}. ${tagline}` : tagline}
-      </Text>
+      <Letterhead line={groupName ? `You're invited to ${groupName}.` : tagline} />
+      <View style={styles.content}>
 
       {claimable.length > 0 && (
         <View style={styles.card}>
@@ -129,6 +126,7 @@ export function WelcomeScreen({
         </Pressable>
       )}
 
+      </View>
     </ScrollView>
   );
 }
@@ -138,28 +136,22 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: theme.colors.background,
   },
-  content: {
-    padding: 24,
+  scroll: {
     paddingBottom: 40,
   },
-  title: {
-    fontFamily: theme.fonts.serif,
-    fontSize: 32,
-    lineHeight: 38,
-    fontWeight: '700',
-    color: theme.colors.text,
-    marginBottom: 10,
-  },
-  subtitle: {
-    fontSize: 16,
-    lineHeight: 24,
-    color: theme.colors.muted,
-    marginBottom: 24,
+  content: {
+    padding: 20,
+    paddingTop: 24,
+    width: '100%',
+    maxWidth: 480,
+    alignSelf: 'center',
   },
   card: {
     backgroundColor: theme.colors.card,
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: theme.colors.rule,
+    borderTopWidth: 3,
+    borderTopColor: theme.colors.accent,
     borderRadius: theme.radius.md,
     padding: 18,
     marginBottom: 16,
