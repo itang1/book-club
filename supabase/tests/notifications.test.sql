@@ -95,4 +95,19 @@ select test.expect('Got it untapped for six days: Pip is asked once',
 select test.expect('Oli had a reminder this month, so he waits',
   (select count(*) from notifications where person_id = 'n-oli' and kind = 'arrival_check'), 0);
 
+-- Retries: only rows that haven't used up their attempts and are due again are picked up.
+insert into notifications (person_id, kind, attempts, next_attempt_at, error)
+  values ('n-pip', 'friend_request', 1, now() + interval '5 minutes', 'smtp down');
+select test.expect('A failed send waits for its retry time',
+  (select count(*) from notifications where sent_at is null and attempts < 3
+     and (next_attempt_at is null or next_attempt_at <= now()) and error = 'smtp down'), 0);
+update notifications set next_attempt_at = now() - interval '1 minute' where error = 'smtp down';
+select test.expect('...and is picked up once due',
+  (select count(*) from notifications where sent_at is null and attempts < 3
+     and (next_attempt_at is null or next_attempt_at <= now()) and error = 'smtp down'), 1);
+update notifications set attempts = 3 where error = 'smtp down';
+select test.expect('...but not after three tries',
+  (select count(*) from notifications where sent_at is null and attempts < 3
+     and (next_attempt_at is null or next_attempt_at <= now()) and error = 'smtp down'), 0);
+
 select 'ALL NOTIFICATION TESTS PASSED';
