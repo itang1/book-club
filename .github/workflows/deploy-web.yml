@@ -129,18 +129,30 @@ jobs:
               APP_URL="https://itang1.github.io/book-club/"
           fi
           supabase functions deploy notify --project-ref "$REF"
-          # The sign-in email, in the house style (supabase/templates/sign-in.html).
-          # Supabase Management API; a failure here warns rather than stops the deploy.
-          jq -n --rawfile html supabase/templates/sign-in.html '{
+          # Sign-in emails, through the Supabase Management API: the house-style
+          # template (supabase/templates/sign-in.html) and, given SMTP secrets,
+          # delivery through that account rather than Supabase's shared sender
+          # (a few an hour, often spam). A failure warns rather than stops the deploy.
+          jq -n --rawfile html supabase/templates/sign-in.html \
+            --arg user "$SMTP_USER" --arg pass "$SMTP_PASS" '{
               mailer_subjects_magic_link: "Your link to The Traveling Books",
               mailer_templates_magic_link_content: $html,
               mailer_subjects_confirmation: "Your link to The Traveling Books",
               mailer_templates_confirmation_content: $html
-            }' > /tmp/auth-email.json
+            } + (if $user == "" then {} else {
+              smtp_host: "smtp.gmail.com",
+              smtp_port: "465",
+              smtp_user: $user,
+              smtp_pass: $pass,
+              smtp_admin_email: $user,
+              smtp_sender_name: "The Traveling Books",
+              rate_limit_email_sent: 60
+            } end)' > /tmp/auth-email.json
           curl -sS --fail-with-body -X PATCH "https://api.supabase.com/v1/projects/$REF/config/auth" \
             -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" -H "Content-Type: application/json" \
-            --data @/tmp/auth-email.json > /dev/null \
-            || echo "::warning::Couldn't update the sign-in email template; set it in Supabase → Authentication → Emails."
+            --data @/tmp/auth-email.json -o /tmp/auth-response.json \
+            || { echo "::warning::Couldn't update sign-in emails (Supabase → Authentication → Emails / SMTP)."; \
+                 jq 'del(.smtp_pass)' /tmp/auth-response.json 2>/dev/null || cat /tmp/auth-response.json; }
           # Shelf scanning: only once there's a key for it.
           if [ -n "$GEMINI_API_KEY" ]; then
             supabase secrets set --project-ref "$REF" GEMINI_API_KEY="$GEMINI_API_KEY"
