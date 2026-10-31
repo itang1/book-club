@@ -1,7 +1,7 @@
 {
   "name": "The Traveling Books",
   "short_name": "Traveling Books",
-  "description": "Read it. Write in it. Pass it on.",
+  "description": "Read it, write in it, and pass it on.",
   "start_url": "./",
   "display": "standalone",
   "background_color": "#f7f1ea",

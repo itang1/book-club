@@ -86,7 +86,7 @@ export const pantsCredit = {
 };
 
 /** The line under the title on Books, sign-in and welcome. One, everywhere. */
-export const tagline = 'Read it. Write in it. Pass it on.';
+export const tagline = 'Read it, write in it, and pass it on.';
 
 export const homage =
   'A fan homage to the Traveling Pants series by Ann Brashares. Not affiliated with the author or publisher.';
