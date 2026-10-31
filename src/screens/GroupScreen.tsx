@@ -30,6 +30,7 @@ type GroupScreenProps = {
   onRemoveMember: (groupId: string, personId: string) => void;
   onHandOver: (groupId: string, personId: string) => void;
   onResetInvite: (groupId: string) => void;
+  onSetPace: (groupId: string, weeks: number | null) => void;
 };
 
 export function GroupScreen({
@@ -45,6 +46,7 @@ export function GroupScreen({
   onRemoveMember,
   onHandOver,
   onResetInvite,
+  onSetPace,
 }: GroupScreenProps) {
   const [confirmLeave, setConfirmLeave] = useState(false);
   const group = groups.find((candidate) => candidate.id === route.params.groupId);
@@ -83,6 +85,9 @@ export function GroupScreen({
           {group.isSample
             ? "A sample group, already in motion, so you can see how a group comes together. It's for looking around: lending and lines happen in your own groups, and fellow visitors stay private."
             : "Members see each other's books and join their lines. It's all just for the group."}
+          {group.paceWeeks
+            ? ` The group's pace: about ${group.paceWeeks} weeks with each reader.`
+            : ''}
         </Text>
 
         <View style={styles.tiles}>
@@ -125,6 +130,7 @@ export function GroupScreen({
             onRemove={(personId) => onRemoveMember(group.id, personId)}
             onHandOver={(personId) => onHandOver(group.id, personId)}
             onResetInvite={() => onResetInvite(group.id)}
+            onSetPace={(weeks) => onSetPace(group.id, weeks)}
           />
         )}
 

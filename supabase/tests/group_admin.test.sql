@@ -52,12 +52,18 @@ select test.refused('Ben cannot rename it', $$select rename_group('g-a', 'Mine n
 select test.refused('Ben cannot remove Cy', $$select remove_from_group('g-a', 'a-cy')$$);
 select test.refused('Ben cannot take it over', $$select hand_over_group('g-a', 'a-ben')$$);
 select test.refused('Ben cannot reset the link', $$select reset_invite_code('g-a')$$);
+select test.refused('Ben cannot set the pace', $$select set_group_pace('g-a', 3::smallint)$$);
 select test.refused('Nobody calls the admin check directly', $$select require_group_admin('g-a')$$);
 
 select test.as_user('00000000-0000-0000-0000-000000000201');
 select rename_group('g-a', '  Porch & Paper  ');
 select test.check('Ann renames it', (select name from groups where id = 'g-a') = 'Porch & Paper');
 select test.refused('Not to nothing', $$select rename_group('g-a', '  ')$$);
+select set_group_pace('g-a', 4::smallint);
+select test.check('Ann sets a pace of about four weeks', (select pace_weeks from groups where id = 'g-a') = 4);
+select test.refused('Not a silly one', $$select set_group_pace('g-a', 52::smallint)$$);
+select set_group_pace('g-a', null);
+select test.check('...or none', (select pace_weeks from groups where id = 'g-a') is null);
 select reset_invite_code('g-a') as new_code \gset
 select test.check('A reset makes a new code', :'new_code' <> :'code');
 select test.check('...that the group has', (select invite_code from groups where id = 'g-a') = :'new_code');

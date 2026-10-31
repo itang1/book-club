@@ -88,6 +88,7 @@ type GroupRow = {
   invite_code: string;
   is_sample: boolean;
   admin_id: string | null;
+  pace_weeks: number | null;
 };
 
 type MemberRow = {
@@ -233,7 +234,10 @@ export async function fetchBookClubData(): Promise<BookClubData> {
       supabase.from('handoffs').select(HANDOFF_COLUMNS).order('happened_at', { ascending: true }),
       supabase.rpc('readable_letters'),
       supabase.from('friendships').select('friend_a, friend_b, requested_by, status'),
-      supabase.from('groups').select('id, name, invite_code, is_sample, admin_id').order('name'),
+      supabase
+        .from('groups')
+        .select('id, name, invite_code, is_sample, admin_id, pace_weeks')
+        .order('name'),
       supabase.from('group_members').select('group_id, person_id'),
     ]);
 
@@ -294,6 +298,7 @@ export async function fetchBookClubData(): Promise<BookClubData> {
         inviteCode: row.invite_code,
         isSample: row.is_sample,
         adminId: row.admin_id ?? undefined,
+        paceWeeks: row.pace_weeks ?? undefined,
         memberIds: ((membersRes.data ?? []) as MemberRow[])
           .filter((member) => member.group_id === row.id)
           .map((member) => member.person_id),
@@ -489,6 +494,9 @@ export const handOverGroup = (groupId: string, personId: string) =>
   save('handOverGroup', (db) =>
     db.rpc('hand_over_group', { p_group_id: groupId, p_person_id: personId }),
   );
+
+export const setGroupPace = (groupId: string, weeks: number | null) =>
+  save('setGroupPace', (db) => db.rpc('set_group_pace', { p_group_id: groupId, p_weeks: weeks }));
 
 export const resetInviteCode = (groupId: string) =>
   save('resetInviteCode', (db) => db.rpc('reset_invite_code', { p_group_id: groupId }));

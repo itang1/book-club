@@ -101,6 +101,16 @@ export const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 16,
   },
+  pace: { marginTop: 10 },
+  paceTrack: {
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: theme.colors.soft,
+    overflow: 'hidden',
+  },
+  paceFill: { height: 4, backgroundColor: theme.colors.accent },
+  paceFillOver: { backgroundColor: theme.colors.brass },
+  paceText: { fontSize: 13, lineHeight: 18, color: theme.colors.muted, marginTop: 6 },
   statusCard: {
     backgroundColor: theme.colors.card,
     borderWidth: 1,

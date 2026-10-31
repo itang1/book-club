@@ -290,3 +290,24 @@ export function formatDate(iso: string): string {
     year: 'numeric',
   });
 }
+
+/**
+ * How far along the current reader's stay is, against the group's gentle
+ * pace ("about N weeks"). Null when there's no pace, the copy is in the post,
+ * or it's with its owner (between readers, or before its first trip).
+ */
+export function stayProgress(
+  book: Book,
+  paceWeeks: number | null | undefined,
+  now: number = Date.now(),
+): { week: number; ofWeeks: number; days: number; over: boolean } | null {
+  const latest = latestHandoff(book);
+  if (!paceWeeks || !latest || isInTransit(book) || latest.toFriend === copyOwnerId(book)) {
+    return null;
+  }
+
+  const since = Date.parse(latest.receivedAt ?? latest.happenedAt);
+  const days = Math.max(0, Math.floor((now - since) / DAY_MS));
+  const week = Math.floor(days / 7) + 1;
+  return { week, ofWeeks: paceWeeks, days, over: week > paceWeeks };
+}
