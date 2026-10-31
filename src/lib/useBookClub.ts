@@ -41,6 +41,13 @@ import { clearReaderId, loadReaderId, saveReaderId } from './identity';
 import { isSupabaseConfigured, supabase } from './supabase';
 import type { OutboxEntry, OutboxOp } from './outbox';
 import { clubOutbox as outbox, listenToOutbox } from './clubOutbox';
+import { coalesce } from './coalesce';
+
+/** Realtime events this close together are one change. */
+const REFRESH_SETTLE_MS = 400;
+/** Without realtime, fetch every minute; with it, every fifth minute. */
+const POLL_MS = 60_000;
+const LIVE_POLL_EVERY = 5;
 
 export type NewProfile = { name: string; city: string; region: string };
 
@@ -230,26 +237,40 @@ export function useBookClub() {
 
   /**
    * Keep what's on screen current without anyone having to reload: fetch
-   * again on realtime changes, app focus, and every minute while open.
+   * again on realtime changes, app focus, and on a timer while open.
    */
-  const quietRefresh = React.useEffectEvent(() => {
+  const quietFetch = React.useEffectEvent(async () => {
     if (session !== null && currentUserId !== null) {
       // Send anything that was waiting for a connection before looking again.
-      outbox
-        .flush()
-        .then(fetchBookClubData)
-        .then((data) => {
-          // A failed background fetch shouldn't blank the screen or nag.
-          if (!data.error) {
-            applyDataFromEffect(data);
-          }
-        });
+      await outbox.flush();
+      const data = await fetchBookClubData();
+      // A failed background fetch shouldn't blank the screen or nag.
+      if (!data.error) {
+        applyDataFromEffect(data);
+      }
     }
   });
   React.useEffect(() => {
     if (!usesAccounts) {
       return;
     }
+
+    // One change arrives as several realtime events (a handoff, a queue row,
+    // the book), so they're collapsed into one fetch.
+    const fetcher = coalesce(() => quietFetch(), REFRESH_SETTLE_MS);
+    const quietRefresh = () => fetcher.schedule();
+
+    // While realtime is connected it brings changes as they happen, and the
+    // timer only catches what it doesn't carry (profile edits, new members).
+    let live = false;
+    let sinceLastPoll = 0;
+    const interval = setInterval(() => {
+      sinceLastPoll += 1;
+      if (!live || sinceLastPoll >= LIVE_POLL_EVERY) {
+        sinceLastPoll = 0;
+        quietRefresh();
+      }
+    }, POLL_MS);
 
     const channel = supabase
       ? supabase
@@ -267,10 +288,15 @@ export function useBookClub() {
           )
           .on('postgres_changes', { event: '*', schema: 'public', table: 'books' }, quietRefresh)
           .on('postgres_changes', { event: '*', schema: 'public', table: 'groups' }, quietRefresh)
-          .subscribe()
+          .subscribe((status) => {
+            const wasLive = live;
+            live = status === 'SUBSCRIBED';
+            // Coming back from a dropped connection: catch up on what was missed.
+            if (live && !wasLive) {
+              quietRefresh();
+            }
+          })
       : null;
-
-    const interval = setInterval(quietRefresh, 60_000);
     const appState = AppState.addEventListener('change', (state) => {
       if (state === 'active') {
         quietRefresh();
@@ -288,6 +314,7 @@ export function useBookClub() {
     }
 
     return () => {
+      fetcher.cancel();
       clearInterval(interval);
       appState.remove();
       if (Platform.OS === 'web' && typeof document !== 'undefined') {
