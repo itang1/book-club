@@ -96,7 +96,8 @@ export function ShelfScreen({ navigation, shelf, me, members, groups, books }: S
       <Text style={styles.heading}>Your shelf</Text>
       <Text style={styles.sub}>
         Photograph your shelves and we'll read the spines. People in your groups can see what you
-        have and ask to borrow it, and you can lend any book to a group.
+        have and ask to borrow it, and you can lend any book to a group. Photos are sent to Google's
+        Gemini to read the spines and aren't saved here.
       </Text>
 
       <View style={styles.buttons}>

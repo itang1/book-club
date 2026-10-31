@@ -1306,11 +1306,6 @@ exception when others then
   raise warning 'Reminders left unscheduled: %', sqlerrm;
 end $$;
 
--- ---------------------------------------------------------------
--- Tell the API about any new tables or columns straight away, rather than
--- waiting for it to notice ("not in the schema cache" errors otherwise).
--- ---------------------------------------------------------------
-notify pgrst, 'reload schema';
 
 -- ---------------------------------------------------------------
 -- Bookshelves. What a person owns, scanned from a photo or typed in. Seen by
@@ -1353,7 +1348,10 @@ $$;
 alter table public.shelf_books enable row level security;
 alter table public.shelf_requests enable row level security;
 revoke all on public.shelf_books, public.shelf_requests from anon, authenticated;
-grant select, insert, update, delete on public.shelf_books to authenticated;
+grant select, insert, delete on public.shelf_books to authenticated;
+-- Only the description is editable; lent_book_id is set by lend_from_shelf.
+revoke update on public.shelf_books from authenticated;
+grant update (title, author, cover_color) on public.shelf_books to authenticated;
 grant select on public.shelf_requests to authenticated;
 
 drop policy if exists "see shelves in your groups" on public.shelf_books;
@@ -1474,3 +1472,9 @@ revoke all on function public.shares_group(text), public.request_shelf_book(text
 grant execute on function public.shares_group(text), public.request_shelf_book(text, text),
   public.answer_shelf_request(text, boolean), public.lend_from_shelf(text, text, text, text)
   to authenticated;
+
+-- ---------------------------------------------------------------
+-- Tell the API about any new tables or columns straight away, rather than
+-- waiting for it to notice ("not in the schema cache" errors otherwise).
+-- ---------------------------------------------------------------
+notify pgrst, 'reload schema';
