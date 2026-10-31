@@ -65,6 +65,15 @@ type HandoffRow = {
   received_at: string | null;
 };
 
+/**
+ * Every handoffs column but the letter. The database refuses note and rating
+ * to the app (a `select *` fails); letters come from readable_letters().
+ */
+const HANDOFF_COLUMNS =
+  'id, book_id, from_friend, to_friend, happened_at, place_city, place_region, received_at';
+
+type LetterRow = { handoff_id: string; note: string | null; rating: number | null };
+
 type FriendshipRow = {
   friend_a: string;
   friend_b: string;
@@ -206,16 +215,25 @@ export async function fetchBookClubData(): Promise<BookClubData> {
   }
 
   try {
-    const [booksRes, friendsRes, queueRes, handoffsRes, friendshipsRes, groupsRes, membersRes] =
-      await Promise.all([
-        supabase.from('books').select('*').order('created_at', { ascending: false }),
-        supabase.from('friends').select('*').order('name', { ascending: true }),
-        supabase.from('reading_queue').select('*'),
-        supabase.from('handoffs').select('*').order('happened_at', { ascending: true }),
-        supabase.from('friendships').select('friend_a, friend_b, requested_by, status'),
-        supabase.from('groups').select('id, name, invite_code, is_sample').order('name'),
-        supabase.from('group_members').select('group_id, person_id'),
-      ]);
+    const [
+      booksRes,
+      friendsRes,
+      queueRes,
+      handoffsRes,
+      lettersRes,
+      friendshipsRes,
+      groupsRes,
+      membersRes,
+    ] = await Promise.all([
+      supabase.from('books').select('*').order('created_at', { ascending: false }),
+      supabase.from('friends').select('*').order('name', { ascending: true }),
+      supabase.from('reading_queue').select('*'),
+      supabase.from('handoffs').select(HANDOFF_COLUMNS).order('happened_at', { ascending: true }),
+      supabase.rpc('readable_letters'),
+      supabase.from('friendships').select('friend_a, friend_b, requested_by, status'),
+      supabase.from('groups').select('id, name, invite_code, is_sample').order('name'),
+      supabase.from('group_members').select('group_id, person_id'),
+    ]);
 
     const failure = [booksRes, friendsRes, queueRes, handoffsRes, groupsRes, membersRes].find(
       (res) => res.error,
@@ -226,6 +244,24 @@ export async function fetchBookClubData(): Promise<BookClubData> {
     }
 
     const friendRows = (friendsRes.data ?? []) as FriendRow[];
+
+    // Letters come separately, only the ones this person may open (see
+    // readable_letters() in schema.sql). Not fatal: without them the journey
+    // still shows, just with every letter sealed.
+    if (lettersRes.error) {
+      console.warn('Supabase letters fetch failed:', lettersRes.error.message);
+    }
+    const letters = new Map(
+      ((lettersRes.error ? [] : (lettersRes.data ?? [])) as LetterRow[]).map((row) => [
+        row.handoff_id,
+        row,
+      ]),
+    );
+    const handoffRows = ((handoffsRes.data ?? []) as HandoffRow[]).map((row) => ({
+      ...row,
+      note: letters.get(row.id)?.note ?? null,
+      rating: letters.get(row.id)?.rating ?? null,
+    }));
 
     // Not fatal: a database from before friendships existed still loads, and
     // everyone just starts with no friends until schema.sql is re-run.
@@ -241,7 +277,7 @@ export async function fetchBookClubData(): Promise<BookClubData> {
         (booksRes.data ?? []) as BookRow[],
         friendRows,
         (queueRes.data ?? []) as QueueRow[],
-        (handoffsRes.data ?? []) as HandoffRow[],
+        handoffRows,
       ),
       friends: friendRows.map(toFriend),
       friendships: friendshipRows.map((row): Friendship => ({

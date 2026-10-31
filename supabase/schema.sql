@@ -109,8 +109,8 @@ create table if not exists public.handoffs (
 );
 
 -- The letter the passer leaves in the book. Written once with the leg and,
--- like the leg, never edited. The app keeps it sealed from anyone who hasn't
--- finished the book yet.
+-- like the leg, never edited. Sealed from anyone who hasn't finished the book
+-- yet: see readable_letters() and the column grants on handoffs.
 alter table public.handoffs add column if not exists note text;
 alter table public.handoffs add column if not exists rating smallint
   check (rating between 1 and 5);
@@ -391,7 +391,14 @@ grant select on public.books to authenticated;
 grant select, insert, update, delete on public.reading_queue to authenticated;
 -- No insert, update or delete on handoffs at all: the journey log is written
 -- only by pass_on() and lend_book(), and history can't be rewritten.
-grant select on public.handoffs to authenticated;
+--
+-- Every column but the letter (note and rating). Row security can only hide
+-- whole rows, and anyone who can see a book must see its journey, so the
+-- letters are kept out by column and served by readable_letters() instead,
+-- which applies the sealing rule. Without this, a sealed letter was hidden
+-- only on screen and anyone in the group could read it through the API.
+grant select (id, book_id, from_friend, to_friend, happened_at, received_at,
+  place_city, place_region) on public.handoffs to authenticated;
 grant select, insert, update, delete on public.friendships to authenticated;
 -- Groups are created, joined and left through functions only.
 grant select on public.groups, public.group_members to authenticated;
@@ -957,6 +964,29 @@ begin
 end;
 $$;
 
+-- ---------------------------------------------------------------
+-- The letters (note and stars) this person may open: the ones they wrote,
+-- and every letter in a copy they've finished themselves (passed on at least
+-- once), so nobody's opinion colours their read. The same rule as
+-- canReadLetter() in src/lib/bookState.ts; the database is what enforces it.
+-- ---------------------------------------------------------------
+create or replace function public.readable_letters()
+returns table (handoff_id text, note text, rating smallint)
+language sql stable security definer set search_path = public
+as $$
+  select h.id, h.note, h.rating
+  from public.handoffs h
+  where (h.note is not null or h.rating is not null)
+    and public.can_see_book(h.book_id)
+    and (
+      h.from_friend = public.me()
+      or exists (
+        select 1 from public.handoffs mine
+        where mine.book_id = h.book_id and mine.from_friend = public.me()
+      )
+    )
+$$;
+
 revoke all on function public.me(), public.is_member(text), public.can_see_book(text),
   public.is_sample_group(text), public.is_sample_book(text), public.has_account(text),
   public.is_character(text), public.accepts_requests(text),
@@ -970,7 +1000,7 @@ revoke all on function public.me(), public.is_member(text), public.can_see_book(
   public.retire_book(text), public.unretire_book(text),
   public.call_home(text), public.cancel_call_home(text),
   public.pass_on(text, text, text, text, smallint),
-  public.mark_received(text)
+  public.mark_received(text), public.readable_letters()
   from public, anon;
 grant execute on function public.me(), public.is_member(text), public.can_see_book(text),
   public.is_sample_group(text), public.is_sample_book(text), public.has_account(text),
@@ -985,7 +1015,7 @@ grant execute on function public.me(), public.is_member(text), public.can_see_bo
   public.retire_book(text), public.unretire_book(text),
   public.call_home(text), public.cancel_call_home(text),
   public.pass_on(text, text, text, text, smallint),
-  public.mark_received(text)
+  public.mark_received(text), public.readable_letters()
   to authenticated;
 
 -- Someone opening an invite link isn't signed in yet, so the sign-in screen
