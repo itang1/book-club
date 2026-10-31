@@ -1,0 +1,41 @@
+# Daily error check. Lists any errors the app reported in the last day
+# (public.client_errors, see src/lib/monitoring.ts) and fails if there were
+# any, so GitHub emails the repo owner about a failed run. Open the run to read
+# them. A quiet day is a green run.
+name: Error report
+
+on:
+  schedule:
+    - cron: '41 15 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  errors:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Errors reported in the last 24 hours
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          if [ -z "$SUPABASE_DB_URL" ]; then
+            echo "::notice::SUPABASE_DB_URL isn't set, so there's nothing to check."
+            exit 0
+          fi
+          count=$(psql "$SUPABASE_DB_URL" -At -c \
+            "select count(*) from public.client_errors where at > now() - interval '24 hours'")
+          if [ "$count" = "0" ]; then
+            echo "No errors reported in the last 24 hours."
+            exit 0
+          fi
+          psql "$SUPABASE_DB_URL" -c "
+            select to_char(min(at), 'Mon DD HH24:MI') as first, count(*) as times,
+                   count(distinct person_id) as people, left(message, 120) as message,
+                   max(screen) as screen
+            from public.client_errors
+            where at > now() - interval '24 hours'
+            group by message order by count(*) desc limit 30"
+          echo "::error::$count error report(s) in the last 24 hours. Details above."
+          exit 1
