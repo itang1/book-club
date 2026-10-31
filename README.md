@@ -48,12 +48,14 @@ npm start          # your own Supabase project (.env); sign in by emailed link
 
 ```bash
 npm run check      # types, lint, formatting, unit tests
+npm run test:e2e   # the production build in a browser: lend, send, Got it, call home
 npm run test:db    # who can see and do what, as real users, against a local Postgres
 npm run sample:sql # regenerate supabase/sample.sql from src/data/sampleClubs.ts
 npm run icons      # render the icons and share card from assets/*.svg
 ```
 
-CI runs the checks, the database tests and a web build on every pull request.
+CI runs all of these and a web build on every pull request, and `main` only
+takes changes through pull requests that pass them.
 See [CONTRIBUTING.md](CONTRIBUTING.md) for how the code is laid out and the
 conventions it keeps, and [SECURITY.md](SECURITY.md) to report a problem.
 
@@ -94,7 +96,10 @@ while the two disagree.
 Sign-in links need **Authentication → URL Configuration** to allow
 `https://itang1.github.io/book-club/**` (and `http://localhost:8081/**` for
 local development). The sign-in email itself is `supabase/templates/sign-in.html`,
-installed in the house style by every deploy.
+installed in the house style by every deploy. When the `SMTP_USER` and
+`SMTP_PASS` secrets are set, the deploy also points Supabase's sign-in emails at
+that Gmail account, so they aren't limited to Supabase's shared sender (a few
+an hour, often in spam).
 
 ## Emails
 
@@ -141,6 +146,20 @@ One-time setup: add a `GEMINI_API_KEY` repo secret (from Google AI Studio). The
 deploy then sets it as a function secret and deploys `scan-shelf`. Optionally set
 `GEMINI_MODEL` on the function (default `gemini-2.5-flash`). Without the key the
 Shelf still works; scanning says it isn't set up and you can add books by hand.
+
+## Errors
+
+If something breaks in someone's app, it shows a calm "Something went wrong"
+page and reports the error (message, stack and screen; never book contents or
+notes) to `client_errors`. `.github/workflows/errors.yml` checks every day and
+fails when there are new ones, so GitHub emails you; the run lists them. Reports
+are rate-limited and kept 90 days.
+
+## Privacy
+
+The privacy policy is `public/privacy.html`, served at
+https://itang1.github.io/book-club/privacy.html and linked from sign-in,
+Profile and every email. Keep it in step with what the app does with data.
 
 ## Backups
 
