@@ -26,6 +26,11 @@ export type Group = {
    * and real members can't see each other through it.
    */
   isSample?: boolean;
+  /**
+   * Who runs the group (rename, remove members, hand over, reset the link):
+   * whoever started it, or after they leave, its longest-standing member.
+   */
+  adminId?: string;
 };
 
 export type FriendStatus = 'waiting' | 'reading' | 'done';

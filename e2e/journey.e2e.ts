@@ -70,6 +70,36 @@ test('a friend request can be accepted', async ({ page }) => {
   await expect(page.getByText('wants to be friends')).toHaveCount(0);
 });
 
+test('whoever runs a group can rename it and remove a member', async ({ page }) => {
+  await page.getByText('Friends & Groups', { exact: true }).last().click();
+  await page
+    .getByLabel('The Traveling Pants group', { exact: true })
+    .filter({ visible: true })
+    .last()
+    .click();
+  await expect(seen(page, 'Running the group')).toBeVisible();
+
+  await page.getByLabel('Group name').filter({ visible: true }).fill('The Sisterhood');
+  await seen(page, 'Save').click();
+  await expect(seen(page, 'The Sisterhood')).toBeVisible();
+
+  await page.getByLabel('Remove Bridget Vreeland from the group').click();
+  await page.getByRole('button', { name: 'Remove', exact: true }).click();
+  await expect(page.getByLabel('Remove Bridget Vreeland from the group')).toHaveCount(0);
+});
+
+test('other members do not see the controls', async ({ page }) => {
+  await becomes(page, 'Tibby Rollins');
+  await page.getByText('Friends & Groups', { exact: true }).last().click();
+  await page
+    .getByLabel('The Traveling Pants group', { exact: true })
+    .filter({ visible: true })
+    .last()
+    .click();
+  await expect(seen(page, 'Runs it')).toBeVisible();
+  await expect(page.getByText('Running the group')).toHaveCount(0);
+});
+
 test('the privacy policy is a page of its own', async ({ page }) => {
   await page.goto('/privacy.html');
   await expect(page.getByRole('heading', { name: 'Privacy' })).toBeVisible();

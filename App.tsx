@@ -210,6 +210,10 @@ function FriendsStack({ club }: { club: BookClub }) {
               navigation.getParent()?.navigate('Home', { screen: 'BookDetail', params: { bookId } })
             }
             onLeave={club.leaveGroup}
+            onRename={club.renameGroup}
+            onRemoveMember={club.removeFromGroup}
+            onHandOver={club.handOverGroup}
+            onResetInvite={club.resetInviteLink}
             onLeft={() => navigation.navigate('FriendsHome')}
           />
         )}

@@ -90,4 +90,5 @@ export const groupsSeed: Group[] = sampleClubs.map((club) => ({
   inviteCode: club === pants ? 'pants-demo' : club.inviteCode,
   memberIds: club === pants ? pantsIds : [...club.people.map((person) => person.id), ...pantsIds],
   isSample: club !== pants,
+  adminId: club === pants ? pantsIds[0] : undefined,
 }));

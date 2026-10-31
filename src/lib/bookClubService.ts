@@ -86,6 +86,7 @@ type GroupRow = {
   name: string;
   invite_code: string;
   is_sample: boolean;
+  admin_id: string | null;
 };
 
 type MemberRow = {
@@ -231,7 +232,7 @@ export async function fetchBookClubData(): Promise<BookClubData> {
       supabase.from('handoffs').select(HANDOFF_COLUMNS).order('happened_at', { ascending: true }),
       supabase.rpc('readable_letters'),
       supabase.from('friendships').select('friend_a, friend_b, requested_by, status'),
-      supabase.from('groups').select('id, name, invite_code, is_sample').order('name'),
+      supabase.from('groups').select('id, name, invite_code, is_sample, admin_id').order('name'),
       supabase.from('group_members').select('group_id, person_id'),
     ]);
 
@@ -291,6 +292,7 @@ export async function fetchBookClubData(): Promise<BookClubData> {
         name: row.name,
         inviteCode: row.invite_code,
         isSample: row.is_sample,
+        adminId: row.admin_id ?? undefined,
         memberIds: ((membersRes.data ?? []) as MemberRow[])
           .filter((member) => member.group_id === row.id)
           .map((member) => member.person_id),
@@ -472,6 +474,23 @@ export const joinGroup = (inviteCode: string) =>
 
 export const leaveGroup = (groupId: string) =>
   save('leaveGroup', (db) => db.rpc('leave_group', { p_group_id: groupId }));
+
+// Running a group; the database checks it's you who runs it.
+export const renameGroup = (groupId: string, name: string) =>
+  save('renameGroup', (db) => db.rpc('rename_group', { p_group_id: groupId, p_name: name }));
+
+export const removeFromGroup = (groupId: string, personId: string) =>
+  save('removeFromGroup', (db) =>
+    db.rpc('remove_from_group', { p_group_id: groupId, p_person_id: personId }),
+  );
+
+export const handOverGroup = (groupId: string, personId: string) =>
+  save('handOverGroup', (db) =>
+    db.rpc('hand_over_group', { p_group_id: groupId, p_person_id: personId }),
+  );
+
+export const resetInviteCode = (groupId: string) =>
+  save('resetInviteCode', (db) => db.rpc('reset_invite_code', { p_group_id: groupId }));
 
 /** The group behind an invite code, for "You're invited to …". */
 export async function groupPreview(

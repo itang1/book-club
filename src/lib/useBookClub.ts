@@ -14,6 +14,10 @@ import {
   joinGroup,
   joinLine,
   leaveGroup,
+  renameGroup,
+  removeFromGroup,
+  handOverGroup,
+  resetInviteCode,
   leaveLine,
   removeFriendship,
   requestFriend,
@@ -632,6 +636,49 @@ export function useBookClub() {
     );
   };
 
+  /** Change one group on screen now; the database has the last word on refresh. */
+  const patchGroup = (groupId: string, change: (group: Group) => Group) =>
+    setGroups((current) => current.map((group) => (group.id === groupId ? change(group) : group)));
+
+  /** Save a group change, then load what the database made of it. */
+  const trackGroup = (action: string, write: Promise<SaveError>) =>
+    track(
+      action,
+      write.then((reason) => {
+        if (!reason && usesAccounts) {
+          fetchBookClubData().then(applyData);
+        }
+        return reason;
+      }),
+    );
+
+  const handleRenameGroup = (groupId: string, name: string) => {
+    const trimmed = name.trim();
+    if (!trimmed) {
+      return;
+    }
+    patchGroup(groupId, (group) => ({ ...group, name: trimmed }));
+    trackGroup(`rename the group`, renameGroup(groupId, trimmed));
+  };
+
+  const handleRemoveFromGroup = (groupId: string, personId: string) => {
+    patchGroup(groupId, (group) => ({
+      ...group,
+      memberIds: group.memberIds.filter((id) => id !== personId),
+    }));
+    trackGroup(`remove ${nameOf(personId)}`, removeFromGroup(groupId, personId));
+  };
+
+  const handleHandOverGroup = (groupId: string, personId: string) => {
+    patchGroup(groupId, (group) => ({ ...group, adminId: personId }));
+    trackGroup(`hand the group to ${nameOf(personId)}`, handOverGroup(groupId, personId));
+  };
+
+  /** The new code is made by the database; it arrives with the refresh. */
+  const handleResetInviteLink = (groupId: string) => {
+    trackGroup('reset the invite link', resetInviteCode(groupId));
+  };
+
   /**
    * Someone new joins: their own profile, made by them and tied to their
    * account. If they came from an invite link, they join that group too.
@@ -738,6 +785,10 @@ export function useBookClub() {
     createGroup: handleCreateGroup,
     joinGroup: handleJoinGroup,
     leaveGroup: handleLeaveGroup,
+    renameGroup: handleRenameGroup,
+    removeFromGroup: handleRemoveFromGroup,
+    handOverGroup: handleHandOverGroup,
+    resetInviteLink: handleResetInviteLink,
     addBook: handleAddBook,
     changeCover: handleChangeCover,
     updateBookDetails: handleUpdateBookDetails,
