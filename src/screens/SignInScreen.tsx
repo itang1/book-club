@@ -82,6 +82,7 @@ export function SignInScreen() {
                 your account.
               </Text>
               <TextInput
+                accessibilityLabel="Email address"
                 value={email}
                 onChangeText={setEmail}
                 onSubmitEditing={send}

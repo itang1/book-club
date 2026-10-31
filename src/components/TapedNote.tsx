@@ -101,7 +101,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   credit: {
-    fontSize: 11,
+    fontSize: 12,
     color: theme.colors.muted,
     textDecorationLine: 'underline',
     marginTop: 14,

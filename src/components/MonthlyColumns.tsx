@@ -102,7 +102,7 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.border,
   },
   value: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '600',
     color: theme.colors.text,
     marginBottom: 3,
@@ -114,7 +114,7 @@ const styles = StyleSheet.create({
   tick: {
     flex: 1,
     textAlign: 'center',
-    fontSize: 10,
+    fontSize: 12,
     color: theme.colors.muted,
   },
 });

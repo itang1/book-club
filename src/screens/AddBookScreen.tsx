@@ -142,6 +142,7 @@ export function AddBookScreen({
         </Text>
         <View style={styles.lookupRow}>
           <TextInput
+            accessibilityLabel="ISBN"
             value={isbn}
             onChangeText={(text) => {
               setIsbn(text);
@@ -169,6 +170,7 @@ export function AddBookScreen({
       <View style={styles.formCard}>
         <Text style={styles.fieldLabel}>Title</Text>
         <TextInput
+          accessibilityLabel="Title"
           value={title}
           onChangeText={setTitle}
           placeholder="The Secret Life of Bees"
@@ -178,6 +180,7 @@ export function AddBookScreen({
 
         <Text style={styles.fieldLabel}>Author</Text>
         <TextInput
+          accessibilityLabel="Author"
           value={author}
           onChangeText={setAuthor}
           placeholder="Sue Monk Kidd"
@@ -192,6 +195,7 @@ export function AddBookScreen({
               Books are lent within a group. Start one for the friends you'll pass this to.
             </Text>
             <TextInput
+              accessibilityLabel="Group name"
               value={newGroupName}
               onChangeText={setNewGroupName}
               placeholder="Group name, e.g. Sunday Book Club"
@@ -254,6 +258,7 @@ export function AddBookScreen({
         {isGift && (
           <View>
             <TextInput
+              accessibilityLabel="Who gave it to you"
               value={giftedBy}
               onChangeText={setGiftedBy}
               placeholder="Who gave it to you?"

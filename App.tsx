@@ -91,7 +91,7 @@ const tabStyles = StyleSheet.create({
   bannerHint: {
     color: theme.colors.card,
     opacity: 0.75,
-    fontSize: 11,
+    fontSize: 12,
     marginTop: 6,
   },
   loadingCrest: {

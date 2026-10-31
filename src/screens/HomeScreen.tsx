@@ -200,6 +200,7 @@ export function HomeScreen({
       <View style={styles.searchRow}>
         <Ionicons name="search" size={16} color={theme.colors.faint} style={styles.searchIcon} />
         <TextInput
+          accessibilityLabel="Search by title or author"
           value={searchQuery}
           onChangeText={setSearchQuery}
           placeholder="Search by title or author…"
@@ -208,7 +209,12 @@ export function HomeScreen({
           returnKeyType="search"
         />
         {searchQuery.length > 0 && (
-          <Pressable onPress={() => setSearchQuery('')} hitSlop={8} accessibilityRole="button">
+          <Pressable
+            onPress={() => setSearchQuery('')}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel="Clear search"
+          >
             <Ionicons name="close-circle" size={16} color={theme.colors.faint} />
           </Pressable>
         )}
@@ -390,7 +396,7 @@ const styles = StyleSheet.create({
   },
 
   homage: {
-    fontSize: 11,
+    fontSize: 12,
     lineHeight: 15,
     color: theme.colors.onMasthead,
     opacity: 0.75,
@@ -437,7 +443,7 @@ const styles = StyleSheet.create({
   },
   latelyWhen: {
     ...theme.caps,
-    fontSize: 10,
+    fontSize: 12,
     color: theme.colors.faint,
     marginLeft: 12,
   },
@@ -454,7 +460,7 @@ const styles = StyleSheet.create({
   },
   startKicker: {
     ...theme.caps,
-    fontSize: 10,
+    fontSize: 11,
     letterSpacing: 2,
     color: theme.colors.stamp,
   },
@@ -555,7 +561,7 @@ const styles = StyleSheet.create({
 
   groupMeta: {
     ...theme.caps,
-    fontSize: 11,
+    fontSize: 12,
     color: theme.colors.muted,
     marginTop: 3,
   },

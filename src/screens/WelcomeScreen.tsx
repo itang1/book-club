@@ -83,6 +83,7 @@ export function WelcomeScreen({
             {claimable.length > 0 ? 'New here? Join the circle' : 'Join the circle'}
           </Text>
           <TextInput
+            accessibilityLabel="Your name"
             value={name}
             onChangeText={setName}
             placeholder="Your name"
@@ -90,6 +91,7 @@ export function WelcomeScreen({
             style={styles.input}
           />
           <TextInput
+            accessibilityLabel="City"
             value={city}
             onChangeText={setCity}
             placeholder="City"
@@ -98,6 +100,7 @@ export function WelcomeScreen({
           />
           {/* Free text, not a two-letter code: the club isn't all in the US. */}
           <TextInput
+            accessibilityLabel="State or country"
             value={region}
             onChangeText={setRegion}
             placeholder="State or country (optional)"
