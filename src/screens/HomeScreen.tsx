@@ -589,8 +589,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
   },
   clearSearchButtonText: {
+    ...theme.caps,
     color: theme.colors.onAccent,
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '700',
   },
   restedSection: {

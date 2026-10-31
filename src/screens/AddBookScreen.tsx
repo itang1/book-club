@@ -463,9 +463,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   lookupButtonText: {
+    ...theme.caps,
     color: theme.colors.onAccent,
     fontWeight: '700',
-    fontSize: 13,
+    fontSize: 12,
   },
   lookupMessage: {
     marginTop: 10,

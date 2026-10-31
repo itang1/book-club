@@ -13,6 +13,23 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="Traveling Books" />
+    <!-- How a shared link looks: invite links are how people arrive. -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="The Traveling Books" />
+    <meta property="og:title" content="The Traveling Books" />
+    <meta
+      property="og:description"
+      content="Read it, write in it, and pass it on. One copy of a book travels around a group of friends, and the app keeps its journey."
+    />
+    <meta property="og:url" content="https://itang1.github.io/book-club/" />
+    <meta property="og:image" content="https://itang1.github.io/book-club/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta
+      property="og:image:alt"
+      content="The Traveling Books crest, with the motto Lege, Scribe, Trade"
+    />
+    <meta name="twitter:card" content="summary_large_image" />
     <link rel="apple-touch-icon" href="icon.png" />
     <link rel="manifest" href="manifest.json" />
     <!-- The `react-native-web` recommended style reset: https://necolas.github.io/react-native-web/docs/setup/#root-element -->
@@ -21,6 +38,10 @@
       html,
       body {
         height: 100%;
+      }
+      /* The letterhead green until the app paints, so loading never flashes white. */
+      body {
+        background: #1f3b2c;
       }
       /* These styles disable body scrolling if you are using <ScrollView> */
       body {

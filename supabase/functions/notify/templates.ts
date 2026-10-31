@@ -40,7 +40,8 @@ export type EmailFacts = {
 
 export type Email = { subject: string; html: string; text: string };
 
-const first = (name: string) => name.trim().split(/\s+/)[0] ?? name;
+/** People are named in full everywhere, emails included. */
+const fullName = (name: string) => name.trim().replace(/\s+/g, ' ');
 
 const unescape = (value: string) =>
   value
@@ -71,7 +72,7 @@ type Content = {
  * are escaped here: a name is never markup.
  */
 function content(facts: EmailFacts): Content {
-  const otherText = first(facts.other);
+  const otherText = fullName(facts.other);
   const titleText = facts.book?.title ?? 'a book';
   const other = escape(otherText);
   const title = escape(titleText);
@@ -228,7 +229,7 @@ export function renderEmail(facts: EmailFacts): Email {
     )
     .join('');
   const aside = c.aside
-    ? `<div style="border:1px dashed #d8c9bc;border-radius:3px;padding:12px 14px;margin:4px 0 18px;font-size:14px;line-height:20px;color:#575046;">${c.aside}</div>`
+    ? `<div style="border:1px dashed #d6c9b1;border-radius:3px;padding:12px 14px;margin:4px 0 18px;font-size:14px;line-height:20px;color:#575046;">${c.aside}</div>`
     : '';
 
   const html = `<!doctype html><html><head><meta charset="utf-8"><title>${escape(c.subject)}</title></head>
@@ -237,14 +238,18 @@ export function renderEmail(facts: EmailFacts): Email {
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f6f1e6;">
 <tr><td align="center" style="padding:20px 16px 32px;">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;">
-<tr><td style="padding:0 4px 14px;font-family:Georgia,'Times New Roman',serif;font-size:13px;letter-spacing:1px;text-transform:uppercase;color:#1f3b2c;">The Traveling Books</td></tr>
-<tr><td style="background:#fffdf7;border:1px solid #eaded3;border-radius:4px;padding:22px;font-family:-apple-system,Helvetica,Arial,sans-serif;">
+<tr><td align="center" style="background:#1f3b2c;border-bottom:3px solid #b4925a;border-radius:4px 4px 0 0;padding:22px 16px 18px;font-family:Georgia,'Times New Roman',serif;">
+  <img src="${escape(root)}crest.png" width="40" height="48" alt="" style="display:block;margin:0 auto 10px;border:0;">
+  <div style="font-size:20px;color:#f6f1e6;">The Traveling Books</div>
+  <div style="font-size:10px;letter-spacing:3px;color:#b4925a;margin-top:6px;">LEGE &middot; SCRIBE &middot; TRADE</div>
+</td></tr>
+<tr><td style="background:#fffdf7;border:1px solid #d6c9b1;border-top:0;border-radius:0 0 4px 4px;padding:22px;font-family:-apple-system,Helvetica,Arial,sans-serif;">
   ${cover}
   <h1 style="font-family:Georgia,'Times New Roman',serif;font-size:24px;line-height:30px;color:#1c1b17;margin:22px 0 12px;">${escape(c.heading)}</h1>
   ${paragraphs}
   ${aside}
   <table role="presentation" cellpadding="0" cellspacing="0" style="margin-top:8px;"><tr><td style="background:#1f3b2c;border-radius:3px;">
-    <a href="${escape(action ? action.url : target)}" style="display:inline-block;padding:13px 22px;color:#fffdf7;font-weight:bold;font-size:15px;text-decoration:none;">${escape(action ? action.label : c.button)}</a>
+    <a href="${escape(action ? action.url : target)}" style="display:inline-block;padding:13px 22px;color:#fffdf7;font-family:Georgia,'Times New Roman',serif;font-weight:bold;font-size:13px;letter-spacing:2px;text-transform:uppercase;text-decoration:none;">${escape(action ? action.label : c.button)}</a>
   </td></tr></table>
   ${
     action

@@ -142,6 +142,9 @@ const styles = StyleSheet.create({
     maxWidth: 420,
     maxHeight: '90%',
     backgroundColor: theme.colors.card,
+    // The house edge: every pop-up carries the letterhead green.
+    borderTopWidth: 4,
+    borderTopColor: theme.colors.letterhead,
     borderRadius: theme.radius.md,
     padding: 22,
   },

@@ -62,7 +62,9 @@ export function TabBar({ state, descriptors, navigation }: BottomTabBarProps) {
                 </View>
               )}
             </View>
-            <Text style={[styles.label, focused && styles.labelActive]}>{label}</Text>
+            <Text style={[styles.label, focused && styles.labelActive]} numberOfLines={1}>
+              {label}
+            </Text>
           </Pressable>
         );
       })}
@@ -76,14 +78,14 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.card,
     borderTopWidth: 1,
     borderTopColor: theme.colors.rule,
-    paddingHorizontal: 8,
+    paddingHorizontal: 4,
   },
   item: {
     flex: 1,
     alignItems: 'center',
     paddingTop: 10,
     paddingBottom: 4,
-    marginHorizontal: 6,
+    marginHorizontal: 2,
     borderTopWidth: 2,
     borderTopColor: 'transparent',
     marginTop: -1,
@@ -100,8 +102,9 @@ const styles = StyleSheet.create({
   },
   iconWrapActive: {},
   label: {
-    fontSize: 12,
-    fontWeight: '600',
+    ...theme.caps,
+    fontSize: 10,
+    letterSpacing: 0.3,
     color: theme.colors.faint,
   },
   labelActive: {

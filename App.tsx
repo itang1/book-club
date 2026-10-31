@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -49,6 +49,14 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 const FriendsNav = createNativeStackNavigator<FriendsStackParamList>();
 const ShelfNav = createNativeStackNavigator<ShelfStackParamList>();
 
+/** Inner pages (a book, a group, lending) wear the letterhead green too. */
+const stackHeader = {
+  headerStyle: { backgroundColor: theme.colors.letterhead },
+  headerTintColor: theme.colors.onMasthead,
+  headerTitleStyle: { color: theme.colors.onMasthead, fontFamily: theme.fonts.serif },
+  headerShadowVisible: false,
+} as const;
+
 const tabStyles = StyleSheet.create({
   root: {
     flex: 1,
@@ -59,7 +67,9 @@ const tabStyles = StyleSheet.create({
     left: 16,
     right: 16,
     bottom: 104,
-    backgroundColor: theme.colors.text,
+    backgroundColor: theme.colors.letterhead,
+    borderLeftWidth: 4,
+    borderLeftColor: theme.colors.brass,
     borderRadius: theme.radius.md,
     paddingVertical: 12,
     paddingHorizontal: 14,
@@ -81,10 +91,16 @@ const tabStyles = StyleSheet.create({
     fontSize: 11,
     marginTop: 6,
   },
+  loadingCrest: {
+    width: 60,
+    height: 72,
+    marginBottom: 20,
+  },
   loading: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: theme.colors.letterhead,
   },
 });
 
@@ -98,10 +114,7 @@ function HomeStack({ club }: { club: BookClub }) {
   return (
     <Stack.Navigator
       screenOptions={{
-        headerStyle: { backgroundColor: theme.colors.background },
-        headerTintColor: theme.colors.accent,
-        headerTitleStyle: { color: theme.colors.text, fontFamily: theme.fonts.serif },
-        headerShadowVisible: false,
+        ...stackHeader,
       }}
     >
       <Stack.Screen name="Home" options={{ headerShown: false }}>
@@ -162,10 +175,7 @@ function FriendsStack({ club }: { club: BookClub }) {
   return (
     <FriendsNav.Navigator
       screenOptions={{
-        headerStyle: { backgroundColor: theme.colors.background },
-        headerTintColor: theme.colors.accent,
-        headerTitleStyle: { color: theme.colors.text, fontFamily: theme.fonts.serif },
-        headerShadowVisible: false,
+        ...stackHeader,
       }}
     >
       <FriendsNav.Screen name="FriendsHome" options={{ headerShown: false }}>
@@ -215,10 +225,7 @@ function ShelfStack({ club }: { club: BookClub }) {
   return (
     <ShelfNav.Navigator
       screenOptions={{
-        headerStyle: { backgroundColor: theme.colors.background },
-        headerTintColor: theme.colors.accent,
-        headerTitleStyle: { color: theme.colors.text, fontFamily: theme.fonts.serif },
-        headerShadowVisible: false,
+        ...stackHeader,
       }}
     >
       <ShelfNav.Screen name="ShelfHome" options={{ headerShown: false }}>
@@ -323,7 +330,12 @@ function Root() {
   } else if (!club.loaded) {
     body = (
       <View style={tabStyles.loading}>
-        <ActivityIndicator color={theme.colors.accent} />
+        <Image
+          source={require('./assets/crest.png')}
+          style={tabStyles.loadingCrest}
+          accessibilityLabel="The Traveling Books"
+        />
+        <ActivityIndicator color={theme.colors.brass} />
       </View>
     );
   } else if (club.usesAccounts && !club.signedIn) {

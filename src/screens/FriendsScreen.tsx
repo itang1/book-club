@@ -557,9 +557,10 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   addButtonText: {
+    ...theme.caps,
     color: theme.colors.accent,
     fontWeight: '700',
-    fontSize: 13,
+    fontSize: 12,
   },
   requested: {
     borderWidth: 1,
@@ -580,18 +581,20 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   primarySmallText: {
+    ...theme.caps,
     color: theme.colors.onAccent,
     fontWeight: '700',
-    fontSize: 13,
+    fontSize: 12,
   },
   plainButton: {
     paddingHorizontal: 12,
     paddingVertical: 8,
   },
   plainButtonText: {
+    ...theme.caps,
     color: theme.colors.muted,
     fontWeight: '700',
-    fontSize: 13,
+    fontSize: 12,
   },
   disabled: {
     opacity: 0.45,
@@ -603,14 +606,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   secondaryButtonText: {
+    ...theme.caps,
     color: theme.colors.text,
     fontWeight: '700',
-    fontSize: 14,
+    fontSize: 12,
   },
   dangerButtonText: {
+    ...theme.caps,
     color: theme.colors.text,
     fontWeight: '700',
-    fontSize: 14,
+    fontSize: 12,
   },
   backdrop: {
     flex: 1,
@@ -623,6 +628,9 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 380,
     backgroundColor: theme.colors.card,
+    // The house edge: every pop-up carries the letterhead green.
+    borderTopWidth: 4,
+    borderTopColor: theme.colors.letterhead,
     borderRadius: theme.radius.md,
     padding: 22,
   },

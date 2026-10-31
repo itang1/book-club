@@ -195,9 +195,10 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   claimButtonText: {
+    ...theme.caps,
     color: theme.colors.onAccent,
     fontWeight: '700',
-    fontSize: 13,
+    fontSize: 12,
   },
   input: {
     backgroundColor: theme.colors.soft,

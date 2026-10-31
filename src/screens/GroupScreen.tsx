@@ -398,17 +398,19 @@ const styles = StyleSheet.create({
     paddingVertical: 7,
   },
   dangerButtonText: {
+    ...theme.caps,
     color: theme.colors.text,
     fontWeight: '700',
-    fontSize: 14,
+    fontSize: 12,
   },
   plainButton: {
     paddingHorizontal: 12,
     paddingVertical: 8,
   },
   plainButtonText: {
+    ...theme.caps,
     color: theme.colors.muted,
     fontWeight: '700',
-    fontSize: 13,
+    fontSize: 12,
   },
 });

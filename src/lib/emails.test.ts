@@ -16,7 +16,7 @@ describe('emails', () => {
       hasLetter: true,
       appUrl,
     });
-    expect(email.subject).toBe('Carmen sent you Circe');
+    expect(email.subject).toBe('Carmen Lowell sent you Circe');
     expect(email.html).toContain('left a note about the book');
     expect(email.text).toContain('tap Got it');
   });
@@ -103,7 +103,7 @@ describe('emails', () => {
     });
     expect(email.subject).toBe('New in The Traveling Pants: Circe');
     expect(email.text).toContain(
-      'Lena just added Circe by Madeline Miller to The Traveling Pants.',
+      'Lena Kaligaris just added Circe by Madeline Miller to The Traveling Pants.',
     );
     expect(email.text).toContain('Join the line: u');
   });
@@ -129,7 +129,7 @@ describe('emails', () => {
       appUrl,
     });
     expect(reading.subject).toBe("How's Circe going?");
-    expect(reading.text).toContain('Lena is next in line');
+    expect(reading.text).toContain('Lena Kaligaris is next in line');
     expect(reading.text).toContain('once a month at most');
   });
 
@@ -141,7 +141,7 @@ describe('emails', () => {
       book,
       appUrl,
     });
-    expect(email.subject).toBe(`Tia would like to borrow ${book.title}`);
+    expect(email.subject).toBe(`Tia Okafor would like to borrow ${book.title}`);
     expect(email.html).toContain(`${appUrl}shelf`);
     expect(email.html).toContain('on your shelf');
   });
@@ -155,7 +155,7 @@ describe('emails', () => {
       bookId: 'b1',
       appUrl,
     });
-    expect(email.subject).toBe(`Carmen has called ${book.title} home`);
+    expect(email.subject).toBe(`Carmen Lowell has called ${book.title} home`);
     expect(email.text).toContain('the line waits');
   });
 });

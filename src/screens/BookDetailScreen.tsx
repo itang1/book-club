@@ -902,9 +902,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   secondaryButtonText: {
+    ...theme.caps,
     color: theme.colors.text,
     fontWeight: '700',
-    fontSize: 14,
+    fontSize: 12,
   },
   backdrop: {
     flex: 1,
@@ -917,6 +918,9 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 380,
     backgroundColor: theme.colors.card,
+    // The house edge: every pop-up carries the letterhead green.
+    borderTopWidth: 4,
+    borderTopColor: theme.colors.letterhead,
     borderRadius: theme.radius.md,
     borderWidth: 1,
     borderColor: theme.colors.border,

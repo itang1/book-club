@@ -148,14 +148,14 @@ const styles = StyleSheet.create({
   topBar: {
     alignItems: 'center',
     paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
+    backgroundColor: theme.colors.letterhead,
+    borderBottomWidth: 3,
+    borderBottomColor: theme.colors.brass,
   },
   topBarTitle: {
     fontFamily: theme.fonts.serif,
-    fontSize: 15,
-    fontWeight: '700',
-    color: theme.colors.text,
+    fontSize: 16,
+    color: theme.colors.onMasthead,
   },
   done: {
     position: 'absolute',
@@ -164,9 +164,8 @@ const styles = StyleSheet.create({
   },
   doneText: {
     ...theme.caps,
-    color: theme.colors.accent,
-    fontWeight: '700',
-    fontSize: 13,
+    color: theme.colors.onMasthead,
+    fontSize: 12,
   },
   scroll: {
     paddingHorizontal: 20,

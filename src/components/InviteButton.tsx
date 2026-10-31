@@ -138,10 +138,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
   },
   buttonText: {
+    ...theme.caps,
     marginLeft: 6,
     color: theme.colors.onAccent,
     fontWeight: '700',
-    fontSize: 14,
+    fontSize: 12,
   },
   compactButton: {
     flexDirection: 'row',
@@ -169,6 +170,9 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 420,
     backgroundColor: theme.colors.card,
+    // The house edge: every pop-up carries the letterhead green.
+    borderTopWidth: 4,
+    borderTopColor: theme.colors.letterhead,
     borderRadius: theme.radius.md,
     padding: 22,
   },
