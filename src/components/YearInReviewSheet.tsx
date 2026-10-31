@@ -129,9 +129,7 @@ export function YearInReviewSheet({
                     }, with ${review.mine.lettersWritten} ${
                       review.mine.lettersWritten === 1 ? 'note' : 'notes'
                     } left in the app${
-                      review.mine.sentTo.length > 0
-                        ? `, to ${listOf(review.mine.sentTo)}`
-                        : ''
+                      review.mine.sentTo.length > 0 ? `, to ${listOf(review.mine.sentTo)}` : ''
                     }.`}
               </Text>
             </View>

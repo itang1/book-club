@@ -49,15 +49,15 @@ are already set: `SUPABASE_DB_URL`, `EXPO_PUBLIC_SUPABASE_URL`,
 
 ## Supabase
 
-| File | What it is | Runs |
-| --- | --- | --- |
-| `supabase/schema.sql` | Tables, access rules, functions | Automatically, on every deploy |
-| `supabase/sample.sql` | The sample groups (generated from `src/data/sampleClubs.ts`) | Automatically, after schema.sql |
-| `supabase/seed.local.sql` | Your real groups and books (gitignored) | By hand |
+| File                      | What it is                                                   | Runs                            |
+| ------------------------- | ------------------------------------------------------------ | ------------------------------- |
+| `supabase/schema.sql`     | Tables, access rules, functions                              | Automatically, on every deploy  |
+| `supabase/sample.sql`     | The sample groups (generated from `src/data/sampleClubs.ts`) | Automatically, after schema.sql |
+| `supabase/seed.local.sql` | Your real groups and books (gitignored)                      | By hand                         |
 
 **The sample groups.** Everyone is added to four when they join: The
-Traveling Pants, Central Perk Regulars (*Friends*), The Upper East Side
-(*Gossip Girl*) and The Pritchett-Dunphys (*Modern Family*). Each has books in
+Traveling Pants, Central Perk Regulars (_Friends_), The Upper East Side
+(_Gossip Girl_) and The Pritchett-Dunphys (_Modern Family_). Each has books in
 the post, notes on the way and lines waiting, so a newcomer walks into
 something already moving. They're read-only for real people, and real
 members can't see each other through them. The dates stay fresh: each deploy
@@ -100,7 +100,7 @@ One-time setup:
    password), and `SUPABASE_ACCESS_TOKEN` (Supabase → Account → Access
    Tokens). The next deploy sets up and deploys the function.
 3. **Database webhook** (Supabase → Database → Webhooks → Create): table
-   `notifications`, event Insert, type *Supabase Edge Functions*, function
+   `notifications`, event Insert, type _Supabase Edge Functions_, function
    `notify`. Emails then go out within seconds of being queued.
 
 ## Bookshelves
@@ -163,6 +163,6 @@ docs/                   plans
 
 - The free Supabase project is kept awake by
   [`hub`](https://github.com/itang1/hub#supabase-keep-alive).
-- A fan homage to the *Traveling Pants* series by Ann Brashares.
+- A fan homage to the _Traveling Pants_ series by Ann Brashares.
   Not affiliated with the author or publisher.
 - Made by Irene. MIT licensed.

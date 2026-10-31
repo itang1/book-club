@@ -14,7 +14,12 @@ module.exports = defineConfig([
     // Node scripts and config files.
     files: ['scripts/**/*.js', '*.config.js'],
     languageOptions: {
-      globals: { __dirname: 'readonly', require: 'readonly', module: 'writable', process: 'readonly' },
+      globals: {
+        __dirname: 'readonly',
+        require: 'readonly',
+        module: 'writable',
+        process: 'readonly',
+      },
     },
   },
   {

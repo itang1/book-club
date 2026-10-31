@@ -67,7 +67,7 @@ export function GroupScreen({
       <View style={styles.column}>
         <Text style={styles.title}>
           {group.name}
-          {group.isSample ? <Text style={styles.sampleTag}>  Sample</Text> : null}
+          {group.isSample ? <Text style={styles.sampleTag}> Sample</Text> : null}
         </Text>
         <Text style={styles.subtitle}>
           {group.isSample

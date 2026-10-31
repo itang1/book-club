@@ -102,7 +102,11 @@ async function factsFor(row: Row): Promise<{ to: string; facts: EmailFacts } | n
       .eq('id', row.shelf_book_id)
       .maybeSingle();
     if (shelved) {
-      facts.book = { title: shelved.title, author: shelved.author, coverColor: shelved.cover_color };
+      facts.book = {
+        title: shelved.title,
+        author: shelved.author,
+        coverColor: shelved.cover_color,
+      };
     }
   }
 

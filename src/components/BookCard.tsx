@@ -44,7 +44,9 @@ function whereLine(book: Book, currentUserId: string | null): string {
 function nextLine(book: Book, currentUserId: string | null): string {
   const owner = copyOwnerId(book);
   if (book.calledHomeAt && owner && holderId(book) !== owner) {
-    return owner === currentUserId ? "You've called it home" : `Called home by ${friendNameIn(book, owner)}`;
+    return owner === currentUserId
+      ? "You've called it home"
+      : `Called home by ${friendNameIn(book, owner)}`;
   }
   const myPlace = placeInLine(book, currentUserId);
   if (myPlace === 1) {
@@ -62,7 +64,10 @@ export function BookCard({ book, currentUserId, isSample, groupName, onPress }: 
   const withMe = currentUserId !== null && holderId(book) === currentUserId;
 
   return (
-    <Pressable style={({ pressed }) => [styles.row, pressed && styles.pressed]} onPress={() => onPress?.(book)}>
+    <Pressable
+      style={({ pressed }) => [styles.row, pressed && styles.pressed]}
+      onPress={() => onPress?.(book)}
+    >
       <BookCover
         title={book.title}
         author={book.author}
@@ -82,7 +87,9 @@ export function BookCard({ book, currentUserId, isSample, groupName, onPress }: 
           {book.author}
         </Text>
 
-        <Text style={[styles.line, withMe && styles.lineMine]}>{whereLine(book, currentUserId)}</Text>
+        <Text style={[styles.line, withMe && styles.lineMine]}>
+          {whereLine(book, currentUserId)}
+        </Text>
         <Text style={styles.lineQuiet}>{nextLine(book, currentUserId)}</Text>
 
         <View style={styles.footer}>

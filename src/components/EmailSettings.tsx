@@ -10,9 +10,17 @@ type EmailSettingsProps = {
 
 const OPTIONS: { key: keyof EmailPrefs; label: string; detail: string }[] = [
   { key: 'newBook', label: 'New books in your groups', detail: 'With a button to join the line.' },
-  { key: 'bookSent', label: 'A book is on its way to you', detail: 'When someone sends you a copy.' },
+  {
+    key: 'bookSent',
+    label: 'A book is on its way to you',
+    detail: 'When someone sends you a copy.',
+  },
   { key: 'bookArrived', label: 'A book you sent arrived', detail: 'When they tap Got it.' },
-  { key: 'nextInLine', label: "You're next in line", detail: 'When the person before you gets it.' },
+  {
+    key: 'nextInLine',
+    label: "You're next in line",
+    detail: 'When the person before you gets it.',
+  },
   { key: 'friendRequest', label: 'Friend requests', detail: 'When someone asks to be friends.' },
   {
     key: 'reminders',
@@ -32,7 +40,9 @@ export function EmailSettings({ prefs, onChange }: EmailSettingsProps) {
         <View style={styles.text}>
           <Text style={styles.allLabel}>All emails</Text>
           <Text style={styles.detail}>
-            {anyOn ? 'Switch off to pause every email at once.' : 'All paused. Switch on to hear about every one.'}
+            {anyOn
+              ? 'Switch off to pause every email at once.'
+              : 'All paused. Switch on to hear about every one.'}
           </Text>
         </View>
         <Switch

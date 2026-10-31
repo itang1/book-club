@@ -56,8 +56,8 @@ export function EditProfileSheet({ me, visible, onClose, onSave }: EditProfileSh
             style={styles.input}
           />
           <Text style={styles.note}>
-            Moved, or reading somewhere else for a while? Change your city here. Books
-            you receive from now on count there; places they've already been stay put.
+            Moved, or reading somewhere else for a while? Change your city here. Books you receive
+            from now on count there; places they've already been stay put.
           </Text>
 
           <Pressable

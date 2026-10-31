@@ -12,7 +12,12 @@ type ShelfRow = {
   cover_color: string;
   lent_book_id: string | null;
 };
-type RequestRow = { id: string; shelf_book_id: string; requester_id: string; status: ShelfRequest['status'] };
+type RequestRow = {
+  id: string;
+  shelf_book_id: string;
+  requester_id: string;
+  status: ShelfRequest['status'];
+};
 
 const toBook = (row: ShelfRow): ShelfBook => ({
   id: row.id,
@@ -115,7 +120,10 @@ export function useShelf(enabled: boolean) {
 
   const requestBook = (shelfBookId: string): Outcome =>
     change(() =>
-      supabase!.rpc('request_shelf_book', { p_request_id: newId('ask'), p_shelf_book_id: shelfBookId }),
+      supabase!.rpc('request_shelf_book', {
+        p_request_id: newId('ask'),
+        p_shelf_book_id: shelfBookId,
+      }),
     );
 
   const answerRequest = (requestId: string, accept: boolean): Outcome =>
@@ -133,7 +141,18 @@ export function useShelf(enabled: boolean) {
       }),
     );
 
-  return { books, requests, loading, error, reload, addBooks, removeBook, requestBook, answerRequest, lendToGroup };
+  return {
+    books,
+    requests,
+    loading,
+    error,
+    reload,
+    addBooks,
+    removeBook,
+    requestBook,
+    answerRequest,
+    lendToGroup,
+  };
 }
 
 export type ShelfState = ReturnType<typeof useShelf>;
@@ -150,7 +169,7 @@ export async function scanShelfPhoto(
   });
   if (error) {
     // The function's own message is in the response body, when there is one.
-    let message = 'The scanner isn\'t available right now.';
+    let message = "The scanner isn't available right now.";
     try {
       const body = await (error as { context?: Response }).context?.json();
       if (body?.error) message = body.error;

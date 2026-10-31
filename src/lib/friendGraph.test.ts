@@ -58,7 +58,9 @@ describe('the sample club', () => {
 
 describe('people who take no requests', () => {
   it('are not suggested', () => {
-    const quiet = members.map((p) => (p.id === 'cat' ? { ...p, friendRequestsFrom: 'nobody' as const } : p));
+    const quiet = members.map((p) =>
+      p.id === 'cat' ? { ...p, friendRequestsFrom: 'nobody' as const } : p,
+    );
     expect(suggestionsFor('ana', quiet, friendships, [], groups)).toEqual([]);
   });
 });

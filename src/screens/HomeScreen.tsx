@@ -98,7 +98,10 @@ export function HomeScreen({
     (book) => !sections.some((section) => section.books.includes(book)),
   );
 
-  const recent = lately(books.filter((book) => !book.archivedAt), 6);
+  const recent = lately(
+    books.filter((book) => !book.archivedAt),
+    6,
+  );
 
   const open = (book: Book) =>
     navigation.navigate('BookDetail', { bookId: book.id, bookTitle: book.title });
@@ -232,14 +235,20 @@ export function HomeScreen({
             <Pressable
               key={event.id}
               style={({ pressed }) => [styles.latelyRow, pressed && styles.latelyPressed]}
-              onPress={() => navigation.navigate('BookDetail', { bookId: event.bookId, bookTitle: event.title })}
+              onPress={() =>
+                navigation.navigate('BookDetail', { bookId: event.bookId, bookTitle: event.title })
+              }
               accessibilityRole="button"
             >
               <Text style={styles.latelyText}>
                 <Text style={styles.latelyWho}>{event.who}</Text>
                 {event.verb === 'lent' ? ' put ' : event.verb === 'sent' ? ' sent ' : ' received '}
                 <Text style={styles.latelyTitle}>{event.title}</Text>
-                {event.verb === 'lent' ? ' into circulation' : event.verb === 'sent' ? ` to ${event.to}` : ''}
+                {event.verb === 'lent'
+                  ? ' into circulation'
+                  : event.verb === 'sent'
+                    ? ` to ${event.to}`
+                    : ''}
               </Text>
               <Text style={styles.latelyWhen}>{relativeTime(event.at)}</Text>
             </Pressable>
@@ -312,9 +321,7 @@ export function HomeScreen({
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Home shelf</Text>
           </View>
-          <Text style={styles.restedSubtitle}>
-            Resting copies, kept safe after their journeys.
-          </Text>
+          <Text style={styles.restedSubtitle}>Resting copies, kept safe after their journeys.</Text>
           {rested.map((book) => (
             <BookCard key={book.id} book={book} currentUserId={currentUserId} onPress={open} />
           ))}
@@ -341,7 +348,6 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
 
-
   aboutButton: {
     marginLeft: 22,
     borderBottomWidth: 1,
@@ -349,19 +355,16 @@ const styles = StyleSheet.create({
     paddingBottom: 2,
   },
 
-
   aboutButtonText: {
     ...theme.caps,
     color: theme.colors.onMasthead,
     fontSize: 12,
   },
 
-
   headerWrap: {
     marginHorizontal: -20,
     marginBottom: 8,
   },
-
 
   homage: {
     fontFamily: theme.fonts.serif,
@@ -373,11 +376,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 20,
   },
-
-
-
-
-
 
   lately: {
     marginTop: 26,
@@ -422,7 +420,6 @@ const styles = StyleSheet.create({
     color: theme.colors.faint,
     marginLeft: 12,
   },
-
 
   scanHint: {
     fontSize: 13,
@@ -475,7 +472,6 @@ const styles = StyleSheet.create({
     paddingBottom: 8,
     marginTop: 28,
   },
-
 
   groupHeaderText: {
     flex: 1,
@@ -608,5 +604,4 @@ const styles = StyleSheet.create({
     color: theme.colors.muted,
     marginTop: 8,
   },
-
 });

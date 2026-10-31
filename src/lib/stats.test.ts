@@ -1,7 +1,14 @@
 import { describe, expect, it } from 'vitest';
 
 import type { Book } from '../types';
-import { clubYear, finishesByMonth, groupTotals, placesForOwner, routeOf, yearInReview } from './stats';
+import {
+  clubYear,
+  finishesByMonth,
+  groupTotals,
+  placesForOwner,
+  routeOf,
+  yearInReview,
+} from './stats';
 
 const book: Book = {
   id: 'book',
@@ -46,7 +53,7 @@ describe('routeOf', () => {
 });
 
 describe('routeOf while in the post', () => {
-  it("shows the recipient as arriving, with no day count", () => {
+  it('shows the recipient as arriving, with no day count', () => {
     const inPost: Book = {
       ...book,
       handoffs: [book.handoffs[0], { ...book.handoffs[1], receivedAt: undefined }],
@@ -112,7 +119,10 @@ describe('yearInReview', () => {
     const once: Book = { ...book, handoffs: [...book.handoffs, rated('c', 5, 'cat')] };
     expect(yearInReview([once], 2026, 'ana').bestLoved).toBeNull();
     const twice: Book = { ...once, handoffs: [...once.handoffs, rated('d', 4, 'bea')] };
-    expect(yearInReview([twice], 2026, 'ana').bestLoved).toMatchObject({ average: 4.5, ratings: 2 });
+    expect(yearInReview([twice], 2026, 'ana').bestLoved).toMatchObject({
+      average: 4.5,
+      ratings: 2,
+    });
   });
 
   it('is empty for a year with nothing in it', () => {
@@ -124,7 +134,13 @@ describe('yearInReview', () => {
 
 describe('groupTotals', () => {
   it('counts passes (not the first leg), letters, readers and places', () => {
-    expect(groupTotals([book])).toEqual({ books: 1, handoffs: 1, letters: 1, readers: 2, places: 2 });
+    expect(groupTotals([book])).toEqual({
+      books: 1,
+      handoffs: 1,
+      letters: 1,
+      readers: 2,
+      places: 2,
+    });
     expect(groupTotals([])).toEqual({ books: 0, handoffs: 0, letters: 0, readers: 0, places: 0 });
   });
 });

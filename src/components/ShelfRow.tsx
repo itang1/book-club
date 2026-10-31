@@ -56,7 +56,12 @@ const styles = StyleSheet.create({
   },
   spine: { width: 8, borderRadius: theme.radius.sm },
   text: { flex: 1 },
-  title: { fontFamily: theme.fonts.serif, fontSize: 16, fontWeight: '700', color: theme.colors.text },
+  title: {
+    fontFamily: theme.fonts.serif,
+    fontSize: 16,
+    fontWeight: '700',
+    color: theme.colors.text,
+  },
   author: { fontSize: 13, color: theme.colors.muted, marginTop: 2 },
   status: { fontSize: 12, color: theme.colors.muted, marginTop: 6, fontStyle: 'italic' },
   actions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 10 },

@@ -37,12 +37,7 @@ export function AboutSheet({ visible, onClose }: AboutSheetProps) {
       <View style={styles.container}>
         <View style={[styles.topBar, { paddingTop: insets.top + 10 }]}>
           <Text style={styles.topBarTitle}>Rules & About</Text>
-          <Pressable
-            style={styles.done}
-            onPress={onClose}
-            accessibilityRole="button"
-            hitSlop={8}
-          >
+          <Pressable style={styles.done} onPress={onClose} accessibilityRole="button" hitSlop={8}>
             <Text style={styles.doneText}>Done</Text>
           </Pressable>
         </View>
@@ -66,54 +61,54 @@ export function AboutContent() {
 
   const rulesOfTheBooks = (
     <>
-        <Text style={styles.heading}>The Rules of the Books</Text>
-        <View style={styles.card}>
-          {rules.map((rule, index) => (
-            <View key={rule} style={[styles.rule, index > 0 && styles.ruleDivider]}>
-              <Text style={styles.ruleNumber}>{index + 1}</Text>
-              <Text style={styles.ruleText}>{rule}</Text>
-            </View>
-          ))}
-        </View>
+      <Text style={styles.heading}>The Rules of the Books</Text>
+      <View style={styles.card}>
+        {rules.map((rule, index) => (
+          <View key={rule} style={[styles.rule, index > 0 && styles.ruleDivider]}>
+            <Text style={styles.ruleNumber}>{index + 1}</Text>
+            <Text style={styles.ruleText}>{rule}</Text>
+          </View>
+        ))}
+      </View>
     </>
   );
   const about = (
     <>
-        <Text style={styles.heading}>{noteTitle}</Text>
-        <View style={styles.card}>
-          <View style={styles.polaroid}>
-            {photo ? (
-              <Image source={photo} style={styles.photo} resizeMode="cover" />
-            ) : (
-              <View style={[styles.photo, styles.photoPlaceholder]}>
-                <Text style={styles.exLibris}>Ex Libris</Text>
-                <Text style={styles.exLibrisName}>{authorName}</Text>
-              </View>
-            )}
-            <Text style={styles.caption}>{photoCaption}</Text>
-            {photo && <Text style={styles.credit}>{photoCredit}</Text>}
-          </View>
-
-          {bio.map((paragraph, index) => (
-            <Text key={index} style={styles.bio}>
-              {paragraph.map((run, runIndex) =>
-                typeof run === 'string' ? (
-                  run
-                ) : (
-                  <Text
-                    key={runIndex}
-                    style={[run.italic && styles.italic, run.href && styles.link]}
-                    onPress={run.href ? () => Linking.openURL(run.href as string) : undefined}
-                    accessibilityRole={run.href ? 'link' : undefined}
-                  >
-                    {run.text}
-                  </Text>
-                ),
-              )}
-            </Text>
-          ))}
-          <Text style={styles.signature}>— {authorName}</Text>
+      <Text style={styles.heading}>{noteTitle}</Text>
+      <View style={styles.card}>
+        <View style={styles.polaroid}>
+          {photo ? (
+            <Image source={photo} style={styles.photo} resizeMode="cover" />
+          ) : (
+            <View style={[styles.photo, styles.photoPlaceholder]}>
+              <Text style={styles.exLibris}>Ex Libris</Text>
+              <Text style={styles.exLibrisName}>{authorName}</Text>
+            </View>
+          )}
+          <Text style={styles.caption}>{photoCaption}</Text>
+          {photo && <Text style={styles.credit}>{photoCredit}</Text>}
         </View>
+
+        {bio.map((paragraph, index) => (
+          <Text key={index} style={styles.bio}>
+            {paragraph.map((run, runIndex) =>
+              typeof run === 'string' ? (
+                run
+              ) : (
+                <Text
+                  key={runIndex}
+                  style={[run.italic && styles.italic, run.href && styles.link]}
+                  onPress={run.href ? () => Linking.openURL(run.href as string) : undefined}
+                  accessibilityRole={run.href ? 'link' : undefined}
+                >
+                  {run.text}
+                </Text>
+              ),
+            )}
+          </Text>
+        ))}
+        <Text style={styles.signature}>— {authorName}</Text>
+      </View>
     </>
   );
 

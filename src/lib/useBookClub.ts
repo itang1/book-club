@@ -76,9 +76,7 @@ export function useBookClub() {
   const [friendships, setFriendships] = React.useState<Friendship[]>(
     isSupabaseConfigured ? [] : demoData.friendships,
   );
-  const [groups, setGroups] = React.useState<Group[]>(
-    isSupabaseConfigured ? [] : demoData.groups,
-  );
+  const [groups, setGroups] = React.useState<Group[]>(isSupabaseConfigured ? [] : demoData.groups);
   const [currentUserId, setCurrentUserId] = React.useState<string | null>(null);
   const [loaded, setLoaded] = React.useState(false);
   const [refreshing, setRefreshing] = React.useState(false);
@@ -116,10 +114,9 @@ export function useBookClub() {
     } else {
       saveCachedClubData(data);
     }
-  };  // Effects (startup, the session listener, background refreshes) outlive the
+  }; // Effects (startup, the session listener, background refreshes) outlive the
   // render they were set up in; this lets them apply data with today's state.
   const applyDataFromEffect = React.useEffectEvent(applyData);
-
 
   React.useEffect(() => {
     let active = true;
@@ -221,8 +218,16 @@ export function useBookClub() {
       ? supabase
           .channel('club-realtime')
           .on('postgres_changes', { event: '*', schema: 'public', table: 'handoffs' }, quietRefresh)
-          .on('postgres_changes', { event: '*', schema: 'public', table: 'reading_queue' }, quietRefresh)
-          .on('postgres_changes', { event: '*', schema: 'public', table: 'friendships' }, quietRefresh)
+          .on(
+            'postgres_changes',
+            { event: '*', schema: 'public', table: 'reading_queue' },
+            quietRefresh,
+          )
+          .on(
+            'postgres_changes',
+            { event: '*', schema: 'public', table: 'friendships' },
+            quietRefresh,
+          )
           .on('postgres_changes', { event: '*', schema: 'public', table: 'books' }, quietRefresh)
           .on('postgres_changes', { event: '*', schema: 'public', table: 'groups' }, quietRefresh)
           .subscribe()
@@ -486,7 +491,9 @@ export function useBookClub() {
     }
 
     setMembers((current) =>
-      current.map((person) => (person.id === currentUserId ? { ...person, emails: prefs } : person)),
+      current.map((person) =>
+        person.id === currentUserId ? { ...person, emails: prefs } : person,
+      ),
     );
     track('save your email settings', updateEmailPrefs(currentUserId, prefs));
   };
@@ -549,7 +556,9 @@ export function useBookClub() {
 
     setFriendships((current) =>
       current.map((friendship) =>
-        samePair(friendship, currentUserId, otherId) ? { ...friendship, status: 'accepted' } : friendship,
+        samePair(friendship, currentUserId, otherId)
+          ? { ...friendship, status: 'accepted' }
+          : friendship,
       ),
     );
     track(`accept ${nameOf(otherId)}`, acceptFriend(currentUserId, otherId));
@@ -696,7 +705,9 @@ export function useBookClub() {
       ),
     );
     track(
-      calling ? `call ${book?.title ?? 'the book'} home` : `let ${book?.title ?? 'the book'} keep travelling`,
+      calling
+        ? `call ${book?.title ?? 'the book'} home`
+        : `let ${book?.title ?? 'the book'} keep travelling`,
       calling ? callHome(bookId) : cancelCallHome(bookId),
     );
   };

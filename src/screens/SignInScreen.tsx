@@ -10,7 +10,7 @@ import { inviteCodeFromUrl } from '../lib/invite';
 
 /** A new email simply gets an account, so this covers first-timers too. */
 export function SignInScreen() {
-    const [email, setEmail] = useState('');
+  const [email, setEmail] = useState('');
   const [sending, setSending] = useState(false);
   const [sentTo, setSentTo] = useState<string | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
@@ -48,69 +48,68 @@ export function SignInScreen() {
     >
       <Letterhead />
       <View style={styles.content}>
-
-      {invitedTo && (
-        <View style={styles.invite}>
-          <Ionicons name="people" size={18} color={theme.colors.accent} />
-          <Text style={styles.inviteText}>
-            You're invited to <Text style={styles.inviteName}>{invitedTo.name}</Text>
-            {invitedTo.members > 0
-              ? ` (${invitedTo.members} ${invitedTo.members === 1 ? 'member' : 'members'})`
-              : ''}
-            . Sign in or create an account below to join.
-          </Text>
-        </View>
-      )}
-
-      <View style={styles.card}>
-        {sentTo ? (
-          <>
-            <Text style={styles.cardTitle}>Check your email</Text>
-            <Text style={styles.body}>
-              We sent a link to {sentTo}. Open it on this device and you'll land back
-              here, signed in. New accounts are set up as you arrive.
+        {invitedTo && (
+          <View style={styles.invite}>
+            <Ionicons name="people" size={18} color={theme.colors.accent} />
+            <Text style={styles.inviteText}>
+              You're invited to <Text style={styles.inviteName}>{invitedTo.name}</Text>
+              {invitedTo.members > 0
+                ? ` (${invitedTo.members} ${invitedTo.members === 1 ? 'member' : 'members'})`
+                : ''}
+              . Sign in or create an account below to join.
             </Text>
-            <Pressable onPress={() => setSentTo(null)}>
-              <Text style={styles.link}>Use a different email</Text>
-            </Pressable>
-          </>
-        ) : (
-          <>
-            <Text style={styles.cardTitle}>Sign in or create an account</Text>
-            <Text style={styles.body}>
-              Enter your email and we'll send you a link. If you're new, the same link sets up
-              your account.
-            </Text>
-            <TextInput
-              value={email}
-              onChangeText={setEmail}
-              onSubmitEditing={send}
-              placeholder="you@example.com"
-              placeholderTextColor={theme.colors.faint}
-              autoCapitalize="none"
-              autoComplete="email"
-              keyboardType="email-address"
-              style={styles.input}
-            />
-            <Pressable
-              style={[styles.primaryButton, (!valid || sending) && styles.disabled]}
-              disabled={!valid || sending}
-              onPress={send}
-            >
-              <Text style={styles.primaryButtonText}>
-                {sending ? 'Sending…' : 'Email me a link'}
-              </Text>
-            </Pressable>
-            <Text style={styles.fine}>No password, now or ever.</Text>
-            {problem && <Text style={styles.problem}>{problem}</Text>}
-          </>
+          </View>
         )}
-      </View>
 
-      <Text style={styles.footnote}>
-        One copy of a book travels around a group of friends, one reader at a time, and the app
-        keeps track of where it is and everywhere it's been.
-      </Text>
+        <View style={styles.card}>
+          {sentTo ? (
+            <>
+              <Text style={styles.cardTitle}>Check your email</Text>
+              <Text style={styles.body}>
+                We sent a link to {sentTo}. Open it on this device and you'll land back here, signed
+                in. New accounts are set up as you arrive.
+              </Text>
+              <Pressable onPress={() => setSentTo(null)}>
+                <Text style={styles.link}>Use a different email</Text>
+              </Pressable>
+            </>
+          ) : (
+            <>
+              <Text style={styles.cardTitle}>Sign in or create an account</Text>
+              <Text style={styles.body}>
+                Enter your email and we'll send you a link. If you're new, the same link sets up
+                your account.
+              </Text>
+              <TextInput
+                value={email}
+                onChangeText={setEmail}
+                onSubmitEditing={send}
+                placeholder="you@example.com"
+                placeholderTextColor={theme.colors.faint}
+                autoCapitalize="none"
+                autoComplete="email"
+                keyboardType="email-address"
+                style={styles.input}
+              />
+              <Pressable
+                style={[styles.primaryButton, (!valid || sending) && styles.disabled]}
+                disabled={!valid || sending}
+                onPress={send}
+              >
+                <Text style={styles.primaryButtonText}>
+                  {sending ? 'Sending…' : 'Email me a link'}
+                </Text>
+              </Pressable>
+              <Text style={styles.fine}>No password, now or ever.</Text>
+              {problem && <Text style={styles.problem}>{problem}</Text>}
+            </>
+          )}
+        </View>
+
+        <Text style={styles.footnote}>
+          One copy of a book travels around a group of friends, one reader at a time, and the app
+          keeps track of where it is and everywhere it's been.
+        </Text>
       </View>
     </ScrollView>
   );

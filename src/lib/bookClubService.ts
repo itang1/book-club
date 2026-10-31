@@ -195,9 +195,7 @@ function assembleBooks(
       archivedAt: row.archived_at ?? undefined,
       calledHomeAt: row.called_home_at ?? undefined,
       queue,
-      handoffs: handoffRows
-        .filter((entry) => entry.book_id === row.id)
-        .map(toHandoff),
+      handoffs: handoffRows.filter((entry) => entry.book_id === row.id).map(toHandoff),
     };
   });
 }
@@ -210,14 +208,14 @@ export async function fetchBookClubData(): Promise<BookClubData> {
   try {
     const [booksRes, friendsRes, queueRes, handoffsRes, friendshipsRes, groupsRes, membersRes] =
       await Promise.all([
-      supabase.from('books').select('*').order('created_at', { ascending: false }),
-      supabase.from('friends').select('*').order('name', { ascending: true }),
-      supabase.from('reading_queue').select('*'),
-      supabase.from('handoffs').select('*').order('happened_at', { ascending: true }),
-      supabase.from('friendships').select('friend_a, friend_b, requested_by, status'),
-      supabase.from('groups').select('id, name, invite_code, is_sample').order('name'),
-      supabase.from('group_members').select('group_id, person_id'),
-    ]);
+        supabase.from('books').select('*').order('created_at', { ascending: false }),
+        supabase.from('friends').select('*').order('name', { ascending: true }),
+        supabase.from('reading_queue').select('*'),
+        supabase.from('handoffs').select('*').order('happened_at', { ascending: true }),
+        supabase.from('friendships').select('friend_a, friend_b, requested_by, status'),
+        supabase.from('groups').select('id, name, invite_code, is_sample').order('name'),
+        supabase.from('group_members').select('group_id, person_id'),
+      ]);
 
     const failure = [booksRes, friendsRes, queueRes, handoffsRes, groupsRes, membersRes].find(
       (res) => res.error,
@@ -246,14 +244,12 @@ export async function fetchBookClubData(): Promise<BookClubData> {
         (handoffsRes.data ?? []) as HandoffRow[],
       ),
       friends: friendRows.map(toFriend),
-      friendships: friendshipRows.map(
-        (row): Friendship => ({
-          a: row.friend_a,
-          b: row.friend_b,
-          status: row.status,
-          requestedBy: row.requested_by ?? row.friend_a,
-        }),
-      ),
+      friendships: friendshipRows.map((row): Friendship => ({
+        a: row.friend_a,
+        b: row.friend_b,
+        status: row.status,
+        requestedBy: row.requested_by ?? row.friend_a,
+      })),
       groups: ((groupsRes.data ?? []) as GroupRow[]).map((row) => ({
         id: row.id,
         name: row.name,
@@ -466,7 +462,13 @@ export type EmailAction = {
 export async function previewEmailAction(token: string): Promise<EmailAction> {
   if (!supabase) {
     const book = booksSeed[0];
-    return { state: 'ready', action: 'join_line', bookId: book.id, title: book.title, about: 'Lena' };
+    return {
+      state: 'ready',
+      action: 'join_line',
+      bookId: book.id,
+      title: book.title,
+      about: 'Lena',
+    };
   }
 
   const { data, error } = await supabase.rpc('email_action_preview', { p_token: token });
@@ -540,10 +542,7 @@ export async function leaveLine(
 
   try {
     const query = supabase.from('reading_queue');
-    const { error } = await (readBefore
-      ? query.update({ status: 'done' })
-      : query.delete()
-    )
+    const { error } = await (readBefore ? query.update({ status: 'done' }) : query.delete())
       .eq('book_id', bookId)
       .eq('friend_id', friendId)
       .eq('status', 'waiting');

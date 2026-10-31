@@ -36,7 +36,12 @@ const person = (id: string, position: number, status: ReadingQueueEntry['status'
 
 let legCount = 0;
 /** A leg that has arrived (Got it) the moment it was sent, unless overridden. */
-const leg = (from: string | null, to: string, day: number, extra: Partial<Handoff> = {}): Handoff => {
+const leg = (
+  from: string | null,
+  to: string,
+  day: number,
+  extra: Partial<Handoff> = {},
+): Handoff => {
   const at = new Date(Date.UTC(2026, 0, day)).toISOString();
   return {
     id: `leg-${(legCount += 1)}`,

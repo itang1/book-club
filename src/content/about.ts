@@ -1,6 +1,5 @@
 import type { ImageSourcePropType } from 'react-native';
 
-
 /**
  * Middle-school me, reading in a tree. Cropped to the polaroid's 200:230
  * shape with metadata stripped; the full-size original is kept beside it as
@@ -33,7 +32,7 @@ export const bio: BioRun[][] = [
   [
     'I read the ',
     { text: 'Traveling Pants', italic: true, href: SERIES_URL },
-    ' series by Ann Brashares in middle school. It\'s about four best friends who spend their first summer apart during their junior year of high school and mail a pair of thrift store jeans (which somehow fits every one of them) back and forth with letters about everything that happens.',
+    " series by Ann Brashares in middle school. It's about four best friends who spend their first summer apart during their junior year of high school and mail a pair of thrift store jeans (which somehow fits every one of them) back and forth with letters about everything that happens.",
   ],
   [
     'My twelve-year-old self wanted so badly to have the life those fictional girls had, with the summer happenings and friends who stayed close across an ocean. I never found that life, or jeans that fit as well as that, but I did find the friends to pass books around by USPS Media Mail (a ritual that spawned out of an annual long-distance Secret Santa tradition). This webapp helps keep the books alive by logging where they have been.',
@@ -50,7 +49,7 @@ export const rules = [
   'You must never say "I\'m not a reader" while it\'s in your hands.',
   'You must never spoil the ending.',
   'If you read it in the bath, you must confess in your handwritten letter.',
-  'You must write a letter by hand and mail it along with the book (a paragraph will suffice, and it needn\'t be about the book).',
+  "You must write a letter by hand and mail it along with the book (a paragraph will suffice, and it needn't be about the book).",
   'You must write in the margins. A clean copy is a lonely copy.',
   'You must not keep it longer than needed.',
   'You must ship it USPS Media Mail for best value.',

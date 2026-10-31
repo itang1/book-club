@@ -49,7 +49,10 @@ export function BookCover({
             {title}
           </Text>
           {author && width >= 70 ? (
-            <Text style={[styles.author, { fontSize: Math.max(8, titleSize * 0.62) }]} numberOfLines={2}>
+            <Text
+              style={[styles.author, { fontSize: Math.max(8, titleSize * 0.62) }]}
+              numberOfLines={2}
+            >
               {author}
             </Text>
           ) : null}

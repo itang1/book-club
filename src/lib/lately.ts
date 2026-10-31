@@ -27,7 +27,13 @@ export function lately(books: Book[], limit = 6): LatelyEvent[] {
     for (const leg of book.handoffs) {
       const base = { bookId: book.id, title: book.title };
       if (!leg.fromFriend) {
-        events.push({ ...base, id: `${leg.id}:lent`, at: leg.happenedAt, who: first(book, leg.toFriend), verb: 'lent' });
+        events.push({
+          ...base,
+          id: `${leg.id}:lent`,
+          at: leg.happenedAt,
+          who: first(book, leg.toFriend),
+          verb: 'lent',
+        });
         continue;
       }
       events.push({
@@ -40,7 +46,13 @@ export function lately(books: Book[], limit = 6): LatelyEvent[] {
       });
       // Tapping Got it the moment it's sent is a hand-to-hand pass: one event, not two.
       if (leg.receivedAt && leg.receivedAt !== leg.happenedAt) {
-        events.push({ ...base, id: `${leg.id}:got`, at: leg.receivedAt, who: first(book, leg.toFriend), verb: 'got' });
+        events.push({
+          ...base,
+          id: `${leg.id}:got`,
+          at: leg.receivedAt,
+          who: first(book, leg.toFriend),
+          verb: 'got',
+        });
       }
     }
   }

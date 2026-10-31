@@ -12,7 +12,12 @@ import { sampleClubs, samplePeople, sampleQueue } from './sampleClubs';
 const daysAgo = (days: number): string =>
   new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
 
-export const friends: Friend[] = samplePeople.map(({ id, name, city, state }) => ({ id, name, city, state }));
+export const friends: Friend[] = samplePeople.map(({ id, name, city, state }) => ({
+  id,
+  name,
+  city,
+  state,
+}));
 
 const byId = (id: string): Friend => {
   const friend = friends.find((candidate) => candidate.id === id);
@@ -31,7 +36,11 @@ export const booksSeed: Book[] = sampleClubs.flatMap((club) =>
     coverUrl: book.cover ? `https://covers.openlibrary.org/b/id/${book.cover}-M.jpg` : undefined,
     giftedBy: book.giftedBy,
     groupId: club.id,
-    queue: sampleQueue(book).map(({ friendId, position, status }) => ({ ...byId(friendId), position, status })),
+    queue: sampleQueue(book).map(({ friendId, position, status }) => ({
+      ...byId(friendId),
+      position,
+      status,
+    })),
     handoffs: book.journey.map((stop, index) => {
       const to = byId(stop.to);
       const got = stop.got === undefined ? stop.sent : stop.got;

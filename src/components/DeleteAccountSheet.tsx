@@ -34,12 +34,12 @@ export function DeleteAccountSheet({ visible, onClose, onDelete }: DeleteAccount
             undone.
           </Text>
           <Text style={styles.body}>
-            The journeys you were part of stay whole for everyone else: each of your stops
-            remains on the map as "a reader" in your city, with no name.
+            The journeys you were part of stay whole for everyone else: each of your stops remains
+            on the map as "a reader" in your city, with no name.
           </Text>
           <Text style={styles.body}>
-            If a copy is in your hands, or one you lent is still travelling, pass it on or
-            rest it first.
+            If a copy is in your hands, or one you lent is still travelling, pass it on or rest it
+            first.
           </Text>
           {problem && <Text style={styles.problem}>{problem}</Text>}
 

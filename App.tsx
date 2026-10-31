@@ -9,7 +9,12 @@ import {
   useSafeAreaInsets,
 } from 'react-native-safe-area-context';
 
-import { FriendsStackParamList, RootStackParamList, RootTabParamList, ShelfStackParamList } from './src/types';
+import {
+  FriendsStackParamList,
+  RootStackParamList,
+  RootTabParamList,
+  ShelfStackParamList,
+} from './src/types';
 import { BookClub, useBookClub } from './src/lib/useBookClub';
 import { friendIdsOf, incomingRequests } from './src/lib/friendGraph';
 import { holderId, isInTransit } from './src/lib/bookState';
@@ -203,7 +208,8 @@ function ShelfStack({ club }: { club: BookClub }) {
   const me = club.members.find((person) => person.id === club.currentUserId) ?? null;
   const shelf = useShelf(club.usesAccounts && me !== null);
   const myGroups = club.groups.filter(
-    (group) => !group.isSample && club.currentUserId && group.memberIds.includes(club.currentUserId),
+    (group) =>
+      !group.isSample && club.currentUserId && group.memberIds.includes(club.currentUserId),
   );
 
   return (
@@ -229,7 +235,13 @@ function ShelfStack({ club }: { club: BookClub }) {
       </ShelfNav.Screen>
       <ShelfNav.Screen name="PersonShelf" options={{ title: '' }}>
         {(props) => (
-          <PersonShelfScreen {...props} shelf={shelf} me={me} members={club.members} books={club.books} />
+          <PersonShelfScreen
+            {...props}
+            shelf={shelf}
+            me={me}
+            members={club.members}
+            books={club.books}
+          />
         )}
       </ShelfNav.Screen>
     </ShelfNav.Navigator>
@@ -327,9 +339,7 @@ function Root() {
       />
     );
   } else if (ASK_TO_AGREE_TO_RULES && me && !me.agreedRulesAt) {
-    body = (
-      <RulesAgreementScreen firstName={me.name.split(' ')[0]} onAgree={club.agreeToRules} />
-    );
+    body = <RulesAgreementScreen firstName={me.name.split(' ')[0]} onAgree={club.agreeToRules} />;
   } else {
     body = (
       <>

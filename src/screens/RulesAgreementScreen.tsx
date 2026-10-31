@@ -2,11 +2,7 @@ import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } fr
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { theme } from '../theme';
-import {
-  AboutContent,
-  SIDE_BY_SIDE_MIN_WIDTH,
-  SIDE_BY_SIDE_WIDTH,
-} from '../components/AboutSheet';
+import { AboutContent, SIDE_BY_SIDE_MIN_WIDTH, SIDE_BY_SIDE_WIDTH } from '../components/AboutSheet';
 
 type RulesAgreementScreenProps = {
   firstName: string;
@@ -22,9 +18,7 @@ export function RulesAgreementScreen({ firstName, onAgree }: RulesAgreementScree
       <ScrollView contentContainerStyle={[styles.scroll, { paddingTop: insets.top + 28 }]}>
         <View style={[styles.intro, wide && { maxWidth: SIDE_BY_SIDE_WIDTH }]}>
           <Text style={styles.welcome}>Welcome, {firstName}.</Text>
-          <Text style={styles.lede}>
-            Before your first book, here are the rules we all go by.
-          </Text>
+          <Text style={styles.lede}>Before your first book, here are the rules we all go by.</Text>
         </View>
         <AboutContent />
       </ScrollView>

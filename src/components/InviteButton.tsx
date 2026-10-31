@@ -109,7 +109,8 @@ export function InviteButton({ group, compact = false }: { group: Group; compact
                   </View>
                 ))}
                 <Text style={styles.warning}>
-                  This link welcomes in whoever has it, so share it with the people you'd love to have.
+                  This link welcomes in whoever has it, so share it with the people you'd love to
+                  have.
                 </Text>
               </>
             ) : (

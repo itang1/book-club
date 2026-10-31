@@ -8,16 +8,23 @@ export function sampleSql(clubs: SampleClub[] = sampleClubs): string {
   const q = (value: string | null | undefined) =>
     value === null || value === undefined ? 'null' : `'${value.replace(/'/g, "''")}'`;
   const ago = (days: number) =>
-    days < 1 ? `now() - interval '${Math.round(days * 24)} hours'` : `now() - interval '${days} days'`;
+    days < 1
+      ? `now() - interval '${Math.round(days * 24)} hours'`
+      : `now() - interval '${days} days'`;
   const rows = (lines: string[]) => lines.join(',\n');
 
-  const groups = clubs.map((club) => `  (${q(club.id)}, ${q(club.name)}, ${q(club.inviteCode)}, true)`);
+  const groups = clubs.map(
+    (club) => `  (${q(club.id)}, ${q(club.name)}, ${q(club.inviteCode)}, true)`,
+  );
   const people = clubs.flatMap((club) =>
-    club.people.map((p) => `  (${q(p.id)}, ${q(p.name)}, ${q(p.city)}, ${q(p.state)}, now(), true)`),
+    club.people.map(
+      (p) => `  (${q(p.id)}, ${q(p.name)}, ${q(p.city)}, ${q(p.state)}, now(), true)`,
+    ),
   );
   const books = clubs.flatMap((club) =>
     club.books.map(
-      (b) => `  (${q(b.id)}, ${q(b.title)}, ${q(b.author)}, ${q(b.color)}, ${q(b.giftedBy)}, ${q(club.id)})`,
+      (b) =>
+        `  (${q(b.id)}, ${q(b.title)}, ${q(b.author)}, ${q(b.color)}, ${q(b.giftedBy)}, ${q(club.id)})`,
     ),
   );
   const queue = clubs.flatMap((club) =>
@@ -31,7 +38,8 @@ export function sampleSql(clubs: SampleClub[] = sampleClubs): string {
         const person = club.people.find((p) => p.id === stop.to);
         if (!person) throw new Error(`${b.id}: ${stop.to} isn't in ${club.name}`);
         const got = stop.got === undefined ? stop.sent : stop.got;
-        const [city, region] = got === null ? [null, null] : (stop.place ?? [person.city, person.state]);
+        const [city, region] =
+          got === null ? [null, null] : (stop.place ?? [person.city, person.state]);
         return (
           `  (${q(`${b.id}-${index + 1}`)}, ${q(b.id)}, ${q(index ? b.journey[index - 1].to : null)}, ${q(stop.to)}, ` +
           `${ago(stop.sent)}, ${got === null ? 'null' : ago(got)}, ${q(city)}, ${q(region)}, ` +

@@ -3,8 +3,8 @@
 Built (October 2026), with the decisions below: one group per copy, anyone
 can start a group, and you join by invite link only. "Who can send me
 friend requests" is a switch on You (people in my groups, or nobody). What follows is the
-reasoning it was built from. It answers one question per copy, *who can see this book
-and sign up for it?*, and makes the database enforce the answer.
+reasoning it was built from. It answers one question per copy, _who can see this book
+and sign up for it?_, and makes the database enforce the answer.
 
 ## Principles
 
@@ -17,11 +17,11 @@ and sign up for it?*, and makes the database enforce the answer.
 
 ## The pieces
 
-| Piece | What it is | How you get in | How you get out |
-| --- | --- | --- | --- |
-| **Friend** | A mutual connection between two people | Request → accepted | Either side unfriends, silently |
-| **Group** | A named circle, e.g. "Our Book Club", "The Traveling Pants" | Invited by a member and accept, or ask to join and an admin approves | Leave any time |
-| **Book audience** | Who can see a copy and join its line | The owner picks one group when lending it | The owner can change it; the line keeps who's already in it |
+| Piece             | What it is                                                  | How you get in                                                       | How you get out                                             |
+| ----------------- | ----------------------------------------------------------- | -------------------------------------------------------------------- | ----------------------------------------------------------- |
+| **Friend**        | A mutual connection between two people                      | Request → accepted                                                   | Either side unfriends, silently                             |
+| **Group**         | A named circle, e.g. "Our Book Club", "The Traveling Pants" | Invited by a member and accept, or ask to join and an admin approves | Leave any time                                              |
+| **Book audience** | Who can see a copy and join its line                        | The owner picks one group when lending it                            | The owner can change it; the line keeps who's already in it |
 
 **Groups are the lending boundary. Friends are social.** Friendship lets you
 see each other's profile and activity and invite each other to groups. It
@@ -33,13 +33,13 @@ asks, because every audience type is another case for every rule below.)
 
 ## Who sees what
 
-| Thing | Visible to |
-| --- | --- |
-| A book, its line, its travel history | Members of its group, its owner, and whoever is holding it or waiting in its line |
-| Notes (stars and words about the book) | As above, and still sealed until you've finished the copy |
-| A person's name and city | Themselves, their friends, people they share a group with, and anyone they've sent a friend request to |
-| "People you may know" | Only people you already share a group with. Friends of friends are not shown, since that would reveal people who never shared anything with you |
-| Search for any user | Doesn't exist. You find people through groups and invite links |
+| Thing                                  | Visible to                                                                                                                                      |
+| -------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| A book, its line, its travel history   | Members of its group, its owner, and whoever is holding it or waiting in its line                                                               |
+| Notes (stars and words about the book) | As above, and still sealed until you've finished the copy                                                                                       |
+| A person's name and city               | Themselves, their friends, people they share a group with, and anyone they've sent a friend request to                                          |
+| "People you may know"                  | Only people you already share a group with. Friends of friends are not shown, since that would reveal people who never shared anything with you |
+| Search for any user                    | Doesn't exist. You find people through groups and invite links                                                                                  |
 
 ## Juhyae's case
 
@@ -53,7 +53,7 @@ asks, because every audience type is another case for every rule below.)
 - Nobody outside a group with her can see her profile at all. A stranger
   can't send her a friend request, because they can't find her.
 - A setting on her profile, **Who can send me friend requests**:
-  *People in my groups* (default) or *Nobody*.
+  _People in my groups_ (default) or _Nobody_.
 - If she does friend someone outside the club, that person still can't see her
   club books, because friendship doesn't open books (see above).
 
@@ -78,18 +78,18 @@ rules get taught **at the moment they matter, in one sentence, naming the
 actual people and groups involved**. Each line below replaces a paragraph of
 explanation nobody would read.
 
-| Where | What it says | Teaches |
-| --- | --- | --- |
-| Lend a new book | A **Who can borrow it?** picker of your groups, with one line under it that updates: "Only Our Book Club can see it and join the line." | Groups decide who borrows |
-| Book page, under the cover | A small chip: 👥 **Our Book Club**. Tap it: "Only members of Our Book Club can see this copy." | Every book has one circle |
-| Friends tab subtitle | "Friends see what you're reading. To lend to each other, share a group." | Friends are social only |
-| A friend you share no group with | "Not in any of your groups yet. **Invite to a group**" | How to get from friend to borrower |
-| After tapping Add on a suggestion | The button becomes **Requested** | Friendship needs a yes |
-| An incoming request | "Becky wants to be friends · **Accept** · Not now" | Same, from the other side |
-| Unfriending (from ⋯ on a friend) | "Unfriend Becky? She won't be told." | Either side can leave, quietly |
-| A group invite | "Lena invited you to **The Traveling Pants**. Members see each other's books and can join their lines. **Join** · Not now" | Invites need a yes, and what joining means |
-| Books tab with no groups | "Books live in groups. Start one, or ask a friend for an invite." | Where books come from |
-| Welcome screen, under the form | Three short lines: *Lend a book to a group. Friends in it sign up. It travels with a handwritten letter at every stop, then comes home.* | The whole idea, once |
+| Where                             | What it says                                                                                                                             | Teaches                                    |
+| --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------ |
+| Lend a new book                   | A **Who can borrow it?** picker of your groups, with one line under it that updates: "Only Our Book Club can see it and join the line."  | Groups decide who borrows                  |
+| Book page, under the cover        | A small chip: 👥 **Our Book Club**. Tap it: "Only members of Our Book Club can see this copy."                                           | Every book has one circle                  |
+| Friends tab subtitle              | "Friends see what you're reading. To lend to each other, share a group."                                                                 | Friends are social only                    |
+| A friend you share no group with  | "Not in any of your groups yet. **Invite to a group**"                                                                                   | How to get from friend to borrower         |
+| After tapping Add on a suggestion | The button becomes **Requested**                                                                                                         | Friendship needs a yes                     |
+| An incoming request               | "Becky wants to be friends · **Accept** · Not now"                                                                                       | Same, from the other side                  |
+| Unfriending (from ⋯ on a friend)  | "Unfriend Becky? She won't be told."                                                                                                     | Either side can leave, quietly             |
+| A group invite                    | "Lena invited you to **The Traveling Pants**. Members see each other's books and can join their lines. **Join** · Not now"               | Invites need a yes, and what joining means |
+| Books tab with no groups          | "Books live in groups. Start one, or ask a friend for an invite."                                                                        | Where books come from                      |
+| Welcome screen, under the form    | Three short lines: _Lend a book to a group. Friends in it sign up. It travels with a handwritten letter at every stop, then comes home._ | The whole idea, once                       |
 
 And one new entry in the Rules of the Books, so the principle has a
 memorable form too: **"What's lent in the group stays in the group."**

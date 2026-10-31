@@ -1,5 +1,13 @@
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 
 import { theme } from '../theme';
 import { Letterhead } from '../components/Letterhead';
@@ -42,55 +50,87 @@ export function EmailActionScreen({ token, onClose }: { token: string; onClose: 
   const title = preview?.title ?? 'the book';
   const about = preview?.about ?? 'them';
   const ask = {
-    got_it: { heading: `Has ${title} arrived?`, body: `${about} will know it made it.`, button: "Got it, it's here" },
-    accept_friend: { heading: `Be friends with ${about}?`, body: 'Friends see what each other is reading.', button: 'Accept' },
-    join_line: { heading: `Join the line for ${title}?`, body: `${about} is lending it. It comes to you in turn.`, button: 'Join the line' },
+    got_it: {
+      heading: `Has ${title} arrived?`,
+      body: `${about} will know it made it.`,
+      button: "Got it, it's here",
+    },
+    accept_friend: {
+      heading: `Be friends with ${about}?`,
+      body: 'Friends see what each other is reading.',
+      button: 'Accept',
+    },
+    join_line: {
+      heading: `Join the line for ${title}?`,
+      body: `${about} is lending it. It comes to you in turn.`,
+      button: 'Join the line',
+    },
   }[preview?.action ?? 'join_line'];
   const result: Record<Outcome, { heading: string; body: string }> = {
     done: {
-      got_it: { heading: 'Got it!', body: `${about} will see that ${title} made it to you. Happy reading.` },
-      accept_friend: { heading: `You and ${about} are friends`, body: "You'll see what each other is reading." },
-      join_line: { heading: `You're in line for ${title}`, body: "We'll email you when you're next." },
+      got_it: {
+        heading: 'Got it!',
+        body: `${about} will see that ${title} made it to you. Happy reading.`,
+      },
+      accept_friend: {
+        heading: `You and ${about} are friends`,
+        body: "You'll see what each other is reading.",
+      },
+      join_line: {
+        heading: `You're in line for ${title}`,
+        body: "We'll email you when you're next.",
+      },
     }[preview?.action ?? 'join_line'],
     already: { heading: 'All set', body: 'This one is already taken care of.' },
-    expired: { heading: 'This link has had its day', body: 'Open the club to pick up where you left off.' },
-    unknown: { heading: 'This link has wandered off', body: 'Open the club to pick up where you left off.' },
+    expired: {
+      heading: 'This link has had its day',
+      body: 'Open the club to pick up where you left off.',
+    },
+    unknown: {
+      heading: 'This link has wandered off',
+      body: 'Open the club to pick up where you left off.',
+    },
     retry: { heading: 'One more try', body: 'Give it another tap and it should go through.' },
   };
-  const state = outcome ?? (preview && preview.state !== 'ready' ? (preview.state === 'used' ? 'already' : preview.state) : null);
+  const state =
+    outcome ??
+    (preview && preview.state !== 'ready'
+      ? preview.state === 'used'
+        ? 'already'
+        : preview.state
+      : null);
   const shown = state ? result[state] : null;
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.scroll}>
       <Letterhead />
       <View style={styles.content}>
-
-      <View style={styles.card}>
-        {!preview ? (
-          <ActivityIndicator color={theme.colors.accent} />
-        ) : shown && state !== 'retry' ? (
-          <>
-            <Text style={styles.cardTitle}>{shown.heading}</Text>
-            <Text style={styles.body}>{shown.body}</Text>
-            <Pressable style={styles.primaryButton} onPress={open} accessibilityRole="button">
-              <Text style={styles.primaryButtonText}>Open the club</Text>
-            </Pressable>
-          </>
-        ) : (
-          <>
-            <Text style={styles.cardTitle}>{shown?.heading ?? ask.heading}</Text>
-            <Text style={styles.body}>{shown?.body ?? ask.body}</Text>
-            <Pressable
-              style={[styles.primaryButton, working && styles.disabled]}
-              disabled={working}
-              onPress={confirm}
-              accessibilityRole="button"
-            >
-              <Text style={styles.primaryButtonText}>{working ? 'One moment…' : ask.button}</Text>
-            </Pressable>
-          </>
-        )}
-      </View>
+        <View style={styles.card}>
+          {!preview ? (
+            <ActivityIndicator color={theme.colors.accent} />
+          ) : shown && state !== 'retry' ? (
+            <>
+              <Text style={styles.cardTitle}>{shown.heading}</Text>
+              <Text style={styles.body}>{shown.body}</Text>
+              <Pressable style={styles.primaryButton} onPress={open} accessibilityRole="button">
+                <Text style={styles.primaryButtonText}>Open the club</Text>
+              </Pressable>
+            </>
+          ) : (
+            <>
+              <Text style={styles.cardTitle}>{shown?.heading ?? ask.heading}</Text>
+              <Text style={styles.body}>{shown?.body ?? ask.body}</Text>
+              <Pressable
+                style={[styles.primaryButton, working && styles.disabled]}
+                disabled={working}
+                onPress={confirm}
+                accessibilityRole="button"
+              >
+                <Text style={styles.primaryButtonText}>{working ? 'One moment…' : ask.button}</Text>
+              </Pressable>
+            </>
+          )}
+        </View>
       </View>
     </ScrollView>
   );

@@ -43,7 +43,11 @@ export type Email = { subject: string; html: string; text: string };
 const first = (name: string) => name.trim().split(/\s+/)[0] ?? name;
 
 const unescape = (value: string) =>
-  value.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&amp;/g, '&');
+  value
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&amp;/g, '&');
 
 const escape = (value: string) =>
   value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -220,8 +224,7 @@ export function renderEmail(facts: EmailFacts): Email {
     : '';
   const paragraphs = c.paragraphs
     .map(
-      (p) =>
-        `<p style="margin:0 0 14px;font-size:16px;line-height:24px;color:#1c1b17;">${p}</p>`,
+      (p) => `<p style="margin:0 0 14px;font-size:16px;line-height:24px;color:#1c1b17;">${p}</p>`,
     )
     .join('');
   const aside = c.aside

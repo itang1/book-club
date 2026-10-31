@@ -77,7 +77,12 @@ export function PersonShelfScreen({ route, shelf, me, members, books }: PersonSh
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
   content: { paddingHorizontal: 20, paddingBottom: 32 },
-  heading: { fontFamily: theme.fonts.serif, fontSize: 26, fontWeight: '700', color: theme.colors.text },
+  heading: {
+    fontFamily: theme.fonts.serif,
+    fontSize: 26,
+    fontWeight: '700',
+    color: theme.colors.text,
+  },
   sub: { fontSize: 14, lineHeight: 20, color: theme.colors.muted, marginTop: 6, marginBottom: 16 },
   problem: { fontSize: 13, fontWeight: '600', color: theme.colors.text, marginBottom: 12 },
 });

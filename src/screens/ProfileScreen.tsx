@@ -51,13 +51,10 @@ export function ProfileScreen({
   const [deleting, setDeleting] = useState(false);
   // In your hands means arrived; a book in the post to you is coming, along
   // with any you're next in line for.
-  const withMe = me
-    ? books.filter((book) => holderId(book) === me.id && !isInTransit(book))
-    : [];
+  const withMe = me ? books.filter((book) => holderId(book) === me.id && !isInTransit(book)) : [];
   const comingToMe = me
     ? books.filter(
-        (book) =>
-          (holderId(book) === me.id && isInTransit(book)) || nextInLineId(book) === me.id,
+        (book) => (holderId(book) === me.id && isInTransit(book)) || nextInLineId(book) === me.id,
       )
     : [];
   // From the log, so a reread in progress doesn't un-finish the first read.
@@ -71,10 +68,7 @@ export function ProfileScreen({
     : 0;
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.content}
-    >
+    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <View style={[styles.header, { paddingTop: insets.top + 20 }]}>
         <View style={styles.avatar}>
           <Text style={styles.avatarText}>{me?.name.charAt(0) ?? '?'}</Text>
@@ -84,7 +78,8 @@ export function ProfileScreen({
           <Text style={styles.title}>{me?.name ?? 'You'}</Text>
           {me && (
             <Text style={styles.subtitle}>
-              {[me.city, me.state].filter((part) => part && part !== '—').join(', ')} · {friendCount} {friendCount === 1 ? 'friend' : 'friends'}
+              {[me.city, me.state].filter((part) => part && part !== '—').join(', ')} ·{' '}
+              {friendCount} {friendCount === 1 ? 'friend' : 'friends'}
             </Text>
           )}
         </View>
@@ -132,9 +127,7 @@ export function ProfileScreen({
               <View style={[styles.swatch, { backgroundColor: book.coverColor }]} />
               <View style={styles.bookInfo}>
                 <Text style={styles.bookTitle}>{book.title}</Text>
-                <Text style={styles.bookMeta}>
-                  Arrived {relativeTime(lastActivityAt(book))}
-                </Text>
+                <Text style={styles.bookMeta}>Arrived {relativeTime(lastActivityAt(book))}</Text>
               </View>
             </View>
           ))
@@ -199,7 +192,8 @@ export function ProfileScreen({
             <View style={styles.settingText}>
               <Text style={styles.settingLabel}>Let people in my groups ask</Text>
               <Text style={styles.settingDetail}>
-                On, people in your groups can ask to be friends. Either way, you can always ask them.
+                On, people in your groups can ask to be friends. Either way, you can always ask
+                them.
               </Text>
             </View>
             <Switch
@@ -219,7 +213,11 @@ export function ProfileScreen({
         </Pressable>
       )}
       {email && onDeleteAccount && (
-        <Pressable style={styles.signOut} onPress={() => setDeleting(true)} accessibilityRole="button">
+        <Pressable
+          style={styles.signOut}
+          onPress={() => setDeleting(true)}
+          accessibilityRole="button"
+        >
           <Text style={styles.signOutText}>Delete my account</Text>
         </Pressable>
       )}
@@ -265,7 +263,8 @@ const styles = StyleSheet.create({
     marginHorizontal: -20,
     paddingHorizontal: 20,
     paddingBottom: 20,
-    marginBottom: 20,    flexDirection: 'row',
+    marginBottom: 20,
+    flexDirection: 'row',
     alignItems: 'center',
   },
   headerText: {

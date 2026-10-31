@@ -32,7 +32,7 @@ const reply = (body: unknown, status = 200) =>
 
 Deno.serve(async (request) => {
   if (request.method === 'OPTIONS') return new Response('ok', { headers });
-  if (!KEY) return reply({ error: 'Shelf scanning isn\'t set up yet.' }, 503);
+  if (!KEY) return reply({ error: "Shelf scanning isn't set up yet." }, 503);
 
   let image: string;
   let mimeType: string;
@@ -54,7 +54,9 @@ Deno.serve(async (request) => {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-goog-api-key': KEY },
       body: JSON.stringify({
-        contents: [{ parts: [{ text: PROMPT }, { inline_data: { mime_type: mimeType, data: image } }] }],
+        contents: [
+          { parts: [{ text: PROMPT }, { inline_data: { mime_type: mimeType, data: image } }] },
+        ],
         generationConfig: {
           responseMimeType: 'application/json',
           responseSchema: {
@@ -88,8 +90,12 @@ Deno.serve(async (request) => {
     const seen = new Set<string>();
     const books = (JSON.parse(text).books ?? [])
       .map((book: { title?: string; author?: string }) => ({
-        title: String(book.title ?? '').trim().slice(0, 200),
-        author: String(book.author ?? '').trim().slice(0, 200),
+        title: String(book.title ?? '')
+          .trim()
+          .slice(0, 200),
+        author: String(book.author ?? '')
+          .trim()
+          .slice(0, 200),
       }))
       .filter((book: { title: string }) => {
         const key = book.title.toLowerCase();
@@ -100,6 +106,6 @@ Deno.serve(async (request) => {
       .slice(0, 60);
     return reply({ books });
   } catch {
-    return reply({ error: 'Couldn\'t read the scanner\'s answer. Try another photo.' }, 502);
+    return reply({ error: "Couldn't read the scanner's answer. Try another photo." }, 502);
   }
 });

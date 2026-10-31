@@ -4,9 +4,7 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 
 /** Handoffs oldest-first. The stored order is not trusted. */
 export function journey(book: Book): Handoff[] {
-  return [...book.handoffs].sort(
-    (a, b) => Date.parse(a.happenedAt) - Date.parse(b.happenedAt),
-  );
+  return [...book.handoffs].sort((a, b) => Date.parse(a.happenedAt) - Date.parse(b.happenedAt));
 }
 
 export function latestHandoff(book: Book): Handoff | undefined {
@@ -38,9 +36,7 @@ export function readingQueue(book: Book): ReadingQueueEntry[] {
 /** Everyone who has signed up and not had their turn yet, in sign-up order. */
 export function waitingList(book: Book): ReadingQueueEntry[] {
   const holder = holderId(book);
-  return readingQueue(book).filter(
-    (entry) => entry.status === 'waiting' && entry.id !== holder,
-  );
+  return readingQueue(book).filter((entry) => entry.status === 'waiting' && entry.id !== holder);
 }
 
 /**
@@ -84,7 +80,7 @@ export function isInTransit(book: Book): boolean {
 
 /** Who sent the book that's in the post, or null if nothing is. */
 export function senderId(book: Book): string | null {
-  return isInTransit(book) ? latestHandoff(book)?.fromFriend ?? null : null;
+  return isInTransit(book) ? (latestHandoff(book)?.fromFriend ?? null) : null;
 }
 
 /**
@@ -201,9 +197,7 @@ export function placeOf(book: Book, leg: Handoff): Place | null {
 
 /** City and region together, case-insensitive: two Springfields stay two. */
 export function placeKey(place: Place | null): string | null {
-  return place
-    ? `${place.city.trim().toLowerCase()}|${place.region.trim().toLowerCase()}`
-    : null;
+  return place ? `${place.city.trim().toLowerCase()}|${place.region.trim().toLowerCase()}` : null;
 }
 
 /** The longest any single reader has held this copy, in days. */

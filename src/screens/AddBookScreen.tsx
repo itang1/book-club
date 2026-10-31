@@ -112,8 +112,8 @@ export function AddBookScreen({
       keyboardShouldPersistTaps="handled"
     >
       <Text style={styles.subtitle}>
-        Send a copy out into the world. Friends sign up for it, read it, mail it
-        on with a handwritten letter, and eventually it comes home a little more loved.
+        Send a copy out into the world. Friends sign up for it, read it, mail it on with a
+        handwritten letter, and eventually it comes home a little more loved.
       </Text>
 
       <View style={styles.lookupCard}>
@@ -180,7 +180,11 @@ export function AddBookScreen({
               style={styles.input}
             />
             <Pressable
-              style={[styles.groupChip, styles.groupChipOn, !newGroupName.trim() && styles.primaryButtonDisabled]}
+              style={[
+                styles.groupChip,
+                styles.groupChipOn,
+                !newGroupName.trim() && styles.primaryButtonDisabled,
+              ]}
               disabled={!newGroupName.trim()}
               onPress={() => {
                 const id = onCreateGroup(newGroupName);
@@ -201,7 +205,9 @@ export function AddBookScreen({
                 style={[styles.groupChip, groupId === candidate.id && styles.groupChipOn]}
                 onPress={() => setGroupId(candidate.id)}
               >
-                <Text style={[styles.groupChipText, groupId === candidate.id && styles.groupChipTextOn]}>
+                <Text
+                  style={[styles.groupChipText, groupId === candidate.id && styles.groupChipTextOn]}
+                >
                   {candidate.name}
                 </Text>
               </Pressable>
@@ -209,7 +215,9 @@ export function AddBookScreen({
           </View>
         )}
         {group && (
-          <Text style={styles.hint}>Shared with {group.name}: they can see it and join the line.</Text>
+          <Text style={styles.hint}>
+            Shared with {group.name}: they can see it and join the line.
+          </Text>
         )}
 
         <Pressable
@@ -251,8 +259,8 @@ export function AddBookScreen({
 
         {owner && (
           <Text style={styles.hint}>
-            Your copy, starting with you in {owner.city}. It comes back to you once
-            everyone who signs up has read it.
+            Your copy, starting with you in {owner.city}. It comes back to you once everyone who
+            signs up has read it.
           </Text>
         )}
 

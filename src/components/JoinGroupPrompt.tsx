@@ -23,7 +23,10 @@ export function JoinGroupPrompt({ groups, currentUserId, onJoin }: JoinGroupProm
 
     groupPreview(code).then((group) => {
       const alreadyIn = groups.some(
-        (candidate) => candidate.id === group?.id && currentUserId && candidate.memberIds.includes(currentUserId),
+        (candidate) =>
+          candidate.id === group?.id &&
+          currentUserId &&
+          candidate.memberIds.includes(currentUserId),
       );
       if (group && !alreadyIn) {
         setInvite({ code, id: group.id, name: group.name });
@@ -46,8 +49,8 @@ export function JoinGroupPrompt({ groups, currentUserId, onJoin }: JoinGroupProm
         <View style={styles.sheet}>
           <Text style={styles.title}>Join {invite?.name}?</Text>
           <Text style={styles.body}>
-            Members see each other's books and can join their lines. You can leave any
-            time, and your invite link keeps working whenever you're ready.
+            Members see each other's books and can join their lines. You can leave any time, and
+            your invite link keeps working whenever you're ready.
           </Text>
           <Pressable
             style={styles.join}

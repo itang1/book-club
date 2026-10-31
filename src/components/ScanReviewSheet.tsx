@@ -21,7 +21,13 @@ type ScanReviewSheetProps = {
  * The scanner only guesses, so nothing is saved until the person has looked at
  * every row: tick the right ones, fix a title, drop a mistake.
  */
-export function ScanReviewSheet({ visible, found, isShelved, onClose, onAdd }: ScanReviewSheetProps) {
+export function ScanReviewSheet({
+  visible,
+  found,
+  isShelved,
+  onClose,
+  onAdd,
+}: ScanReviewSheetProps) {
   const [rows, setRows] = useState<Row[]>([]);
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
@@ -58,7 +64,8 @@ export function ScanReviewSheet({ visible, found, isShelved, onClose, onAdd }: S
             {found.length > 1 ? `We found ${found.length} books` : 'Add a book'}
           </Text>
           <Text style={styles.note}>
-            Tick the ones to keep and fix anything we got wrong. Nothing is saved until you add them.
+            Tick the ones to keep and fix anything we got wrong. Nothing is saved until you add
+            them.
           </Text>
           <ScrollView style={styles.list} keyboardShouldPersistTaps="handled">
             {rows.map((row, index) => (

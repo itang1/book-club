@@ -78,7 +78,9 @@ export function ShelfScreen({ navigation, shelf, me, members, groups, books }: S
     if (result.error) {
       setMessage(result.error);
     } else if (result.books.length === 0) {
-      setMessage('No titles could be read. Try a closer, brighter photo of a few shelves at a time.');
+      setMessage(
+        'No titles could be read. Try a closer, brighter photo of a few shelves at a time.',
+      );
     } else {
       setFound(result.books);
     }
@@ -97,8 +99,8 @@ export function ShelfScreen({ navigation, shelf, me, members, groups, books }: S
         <Text style={styles.eyebrow}>The Traveling Books</Text>
         <Text style={styles.heading}>Your shelf</Text>
         <Text style={styles.sub}>
-          Photograph your shelves and we'll read the spines. People in your groups can see what
-          you have and ask to borrow it, and you can lend any book to a group.
+          Photograph your shelves and we'll read the spines. People in your groups can see what you
+          have and ask to borrow it, and you can lend any book to a group.
         </Text>
       </View>
 
@@ -151,7 +153,11 @@ export function ShelfScreen({ navigation, shelf, me, members, groups, books }: S
                   status={`${first(nameOf(request.requesterId))} would like to read this.`}
                   actions={[
                     { label: 'Yes', onPress: () => shelf.answerRequest(request.id, true) },
-                    { label: 'Not now', quiet: true, onPress: () => shelf.answerRequest(request.id, false) },
+                    {
+                      label: 'Not now',
+                      quiet: true,
+                      onPress: () => shelf.answerRequest(request.id, false),
+                    },
                   ]}
                 />
               );
@@ -160,7 +166,9 @@ export function ShelfScreen({ navigation, shelf, me, members, groups, books }: S
       )}
 
       <Text style={styles.section}>
-        {mine.length === 0 ? 'Nothing here yet' : `${mine.length} ${mine.length === 1 ? 'book' : 'books'}`}
+        {mine.length === 0
+          ? 'Nothing here yet'
+          : `${mine.length} ${mine.length === 1 ? 'book' : 'books'}`}
       </Text>
       {mine.map((book) => {
         const lent = activeLentBook(book.lentBookId);
@@ -180,9 +188,23 @@ export function ShelfScreen({ navigation, shelf, me, members, groups, books }: S
             }
             actions={
               lent
-                ? [{ label: 'See its journey', onPress: () => navigation.getParent()?.navigate('Home', { screen: 'BookDetail', params: { bookId: lent.id } }) }]
+                ? [
+                    {
+                      label: 'See its journey',
+                      onPress: () =>
+                        navigation
+                          .getParent()
+                          ?.navigate('Home', { screen: 'BookDetail', params: { bookId: lent.id } }),
+                    },
+                  ]
                 : [
-                    { label: 'Lend to a group', onPress: () => { setLendProblem(null); setLending(book.id); } },
+                    {
+                      label: 'Lend to a group',
+                      onPress: () => {
+                        setLendProblem(null);
+                        setLending(book.id);
+                      },
+                    },
                     { label: 'Remove', quiet: true, onPress: () => shelf.removeBook(book.id) },
                   ]
             }
@@ -214,7 +236,9 @@ export function ShelfScreen({ navigation, shelf, me, members, groups, books }: S
         found={found ?? []}
         isShelved={(book) => mine.some((existing) => sameBook(existing, book))}
         onClose={() => setFound(null)}
-        onAdd={(chosen) => (me ? shelf.addBooks(me.id, chosen) : Promise.resolve('Make your profile first.'))}
+        onAdd={(chosen) =>
+          me ? shelf.addBooks(me.id, chosen) : Promise.resolve('Make your profile first.')
+        }
       />
       <PickGroupSheet
         title={lending_?.title ?? null}
@@ -244,8 +268,19 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
     marginBottom: 20,
   },
-  eyebrow: { ...theme.caps, fontSize: 10, letterSpacing: 2.4, color: theme.colors.brass, marginBottom: 6 },
-  heading: { fontFamily: theme.fonts.serif, fontSize: 30, lineHeight: 36, color: theme.colors.onMasthead },
+  eyebrow: {
+    ...theme.caps,
+    fontSize: 10,
+    letterSpacing: 2.4,
+    color: theme.colors.brass,
+    marginBottom: 6,
+  },
+  heading: {
+    fontFamily: theme.fonts.serif,
+    fontSize: 30,
+    lineHeight: 36,
+    color: theme.colors.onMasthead,
+  },
   sub: {
     fontFamily: theme.fonts.serif,
     fontStyle: 'italic',
@@ -267,7 +302,11 @@ const styles = StyleSheet.create({
     paddingVertical: 11,
   },
   primaryText: {
-    ...theme.caps, color: theme.colors.onAccent, fontWeight: '700', fontSize: 13 },
+    ...theme.caps,
+    color: theme.colors.onAccent,
+    fontWeight: '700',
+    fontSize: 13,
+  },
   secondary: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -278,7 +317,11 @@ const styles = StyleSheet.create({
     paddingVertical: 11,
   },
   secondaryText: {
-    ...theme.caps, color: theme.colors.accent, fontWeight: '700', fontSize: 13 },
+    ...theme.caps,
+    color: theme.colors.accent,
+    fontWeight: '700',
+    fontSize: 13,
+  },
   disabled: { opacity: 0.5 },
   message: { fontSize: 13, color: theme.colors.text, fontWeight: '600', marginTop: 10 },
   section: {

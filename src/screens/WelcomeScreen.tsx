@@ -57,75 +57,73 @@ export function WelcomeScreen({
     >
       <Letterhead line={groupName ? `You're invited to ${groupName}.` : tagline} />
       <View style={styles.content}>
-
-      {claimable.length > 0 && (
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Already in {groupName ?? 'the club'}?</Text>
-          <Text style={styles.note}>Find yourself and pick up where your friends left off.</Text>
-          {claimable.map((person) => (
-            <View key={person.id} style={styles.personRow}>
-              <View style={styles.personInfo}>
-                <Text style={styles.personName}>{person.name}</Text>
-                <Text style={styles.personCity}>{person.city}</Text>
+        {claimable.length > 0 && (
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>Already in {groupName ?? 'the club'}?</Text>
+            <Text style={styles.note}>Find yourself and pick up where your friends left off.</Text>
+            {claimable.map((person) => (
+              <View key={person.id} style={styles.personRow}>
+                <View style={styles.personInfo}>
+                  <Text style={styles.personName}>{person.name}</Text>
+                  <Text style={styles.personCity}>{person.city}</Text>
+                </View>
+                <Pressable
+                  style={styles.claimButton}
+                  onPress={() => onClaim(person.id, inviteCode)}
+                >
+                  <Text style={styles.claimButtonText}>That's me</Text>
+                </Pressable>
               </View>
-              <Pressable
-                style={styles.claimButton}
-                onPress={() => onClaim(person.id, inviteCode)}
-              >
-                <Text style={styles.claimButtonText}>That's me</Text>
-              </Pressable>
-            </View>
-          ))}
-        </View>
-      )}
+            ))}
+          </View>
+        )}
 
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>
-          {claimable.length > 0 ? 'New here? Join the circle' : 'Join the circle'}
-        </Text>
-        <TextInput
-          value={name}
-          onChangeText={setName}
-          placeholder="Your name"
-          placeholderTextColor={theme.colors.faint}
-          style={styles.input}
-        />
-        <TextInput
-          value={city}
-          onChangeText={setCity}
-          placeholder="City"
-          placeholderTextColor={theme.colors.faint}
-          style={styles.input}
-        />
-        {/* Free text, not a two-letter code: the club isn't all in the US. */}
-        <TextInput
-          value={region}
-          onChangeText={setRegion}
-          placeholder="State or country (optional)"
-          placeholderTextColor={theme.colors.faint}
-          style={styles.input}
-        />
-        <Text style={styles.note}>
-          Friends see your city so they know where their book has been.
-        </Text>
-
-        <Pressable
-          style={[styles.primaryButton, !ready && styles.disabled]}
-          disabled={!ready}
-          onPress={() => onCreate({ name, city, region }, inviteCode)}
-        >
-          <Text style={styles.primaryButtonText}>Join</Text>
-        </Pressable>
-      </View>
-
-      {email && onSignOut && (
-        <Pressable style={styles.footerLink} onPress={onSignOut}>
-          <Text style={styles.muted}>
-            Signed in as {email}. <Text style={styles.link}>Someone else? Sign out</Text>
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>
+            {claimable.length > 0 ? 'New here? Join the circle' : 'Join the circle'}
           </Text>
-        </Pressable>
-      )}
+          <TextInput
+            value={name}
+            onChangeText={setName}
+            placeholder="Your name"
+            placeholderTextColor={theme.colors.faint}
+            style={styles.input}
+          />
+          <TextInput
+            value={city}
+            onChangeText={setCity}
+            placeholder="City"
+            placeholderTextColor={theme.colors.faint}
+            style={styles.input}
+          />
+          {/* Free text, not a two-letter code: the club isn't all in the US. */}
+          <TextInput
+            value={region}
+            onChangeText={setRegion}
+            placeholder="State or country (optional)"
+            placeholderTextColor={theme.colors.faint}
+            style={styles.input}
+          />
+          <Text style={styles.note}>
+            Friends see your city so they know where their book has been.
+          </Text>
 
+          <Pressable
+            style={[styles.primaryButton, !ready && styles.disabled]}
+            disabled={!ready}
+            onPress={() => onCreate({ name, city, region }, inviteCode)}
+          >
+            <Text style={styles.primaryButtonText}>Join</Text>
+          </Pressable>
+        </View>
+
+        {email && onSignOut && (
+          <Pressable style={styles.footerLink} onPress={onSignOut}>
+            <Text style={styles.muted}>
+              Signed in as {email}. <Text style={styles.link}>Someone else? Sign out</Text>
+            </Text>
+          </Pressable>
+        )}
       </View>
     </ScrollView>
   );

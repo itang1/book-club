@@ -122,7 +122,9 @@ function GroupCard({
           </View>
         ))}
         <Text style={styles.facesNames} numberOfLines={1}>
-          {shown.map((person) => (person.id === currentUserId ? 'You' : person.name.split(' ')[0])).join(', ')}
+          {shown
+            .map((person) => (person.id === currentUserId ? 'You' : person.name.split(' ')[0]))
+            .join(', ')}
           {people.length > shown.length ? ` and ${people.length - shown.length} more` : ''}
         </Text>
       </View>
@@ -249,8 +251,8 @@ export function FriendsScreen({
       <Text style={styles.sectionTitle}>Your groups</Text>
       {!hasRealGroup && (
         <Text style={styles.empty}>
-          Books are lent within groups. Start one for the friends you pass books to, or ask a
-          friend for their group's invite link.
+          Books are lent within groups. Start one for the friends you pass books to, or ask a friend
+          for their group's invite link.
         </Text>
       )}
       {myGroups.map((group) => (
@@ -267,9 +269,7 @@ export function FriendsScreen({
 
       <Text style={styles.sectionTitle}>Friends</Text>
       {friends.length === 0 ? (
-        <Text style={styles.empty}>
-          Add someone from your groups below to get started.
-        </Text>
+        <Text style={styles.empty}>Add someone from your groups below to get started.</Text>
       ) : (
         friends.map((friend) => (
           <View key={friend.id} style={styles.card}>
@@ -282,9 +282,7 @@ export function FriendsScreen({
                 </Text>
                 <Text style={styles.activity}>{activityFor(friend, books)}</Text>
                 {!groupmates.has(friend.id) && (
-                  <Text style={styles.activity}>
-                    Share a group to lend each other books.
-                  </Text>
+                  <Text style={styles.activity}>Share a group to lend each other books.</Text>
                 )}
               </View>
               <Pressable

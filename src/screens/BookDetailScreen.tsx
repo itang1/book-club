@@ -132,23 +132,21 @@ export function BookDetailScreen({
     const latest = journey(book).slice(-1)[0];
     const place = latest ? placeOf(book, latest) : null;
     const where = place ? ` in ${place.city}` : '';
-    return isBackHome(book) ? `Back home with ${first(holder)}${where}` : `With ${first(holder)}${where}`;
+    return isBackHome(book)
+      ? `Back home with ${first(holder)}${where}`
+      : `With ${first(holder)}${where}`;
   })();
 
   const renderAction = () => {
     if (book.archivedAt) {
-      return (
-        <Text style={styles.actionNote}>
-          Resting on the home shelf after its travels.
-        </Text>
-      );
+      return <Text style={styles.actionNote}>Resting on the home shelf after its travels.</Text>;
     }
 
     if (isSample) {
       return (
         <Text style={styles.actionNote}>
-          This is a sample group: a look at a group in motion. Start your own
-          group, or ask a friend for an invite, to lend and borrow for real.
+          This is a sample group: a look at a group in motion. Start your own group, or ask a friend
+          for an invite, to lend and borrow for real.
         </Text>
       );
     }
@@ -166,9 +164,7 @@ export function BookDetailScreen({
 
     if (iSentIt) {
       return (
-        <Text style={styles.actionNote}>
-          It becomes {first(holder)}'s once they tap Got it.
-        </Text>
+        <Text style={styles.actionNote}>It becomes {first(holder)}'s once they tap Got it.</Text>
       );
     }
 
@@ -179,8 +175,8 @@ export function BookDetailScreen({
             <Text style={styles.primaryButtonText}>Send home to {first(owner)}</Text>
           </Pressable>
           <Text style={styles.actionNote}>
-            {first(owner)} has called this copy home. Send it back when you finish; the line
-            waits for it to travel again.
+            {first(owner)} has called this copy home. Send it back when you finish; the line waits
+            for it to travel again.
           </Text>
         </View>
       );
@@ -204,9 +200,7 @@ export function BookDetailScreen({
       }
 
       return (
-        <Text style={styles.actionNote}>
-          It's yours to enjoy until someone joins the line.
-        </Text>
+        <Text style={styles.actionNote}>It's yours to enjoy until someone joins the line.</Text>
       );
     }
 
@@ -252,7 +246,11 @@ export function BookDetailScreen({
     <>
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
         <View
-          style={[styles.cover, { backgroundColor: book.coverColor }, book.coverUrl && styles.coverWithImage]}
+          style={[
+            styles.cover,
+            { backgroundColor: book.coverColor },
+            book.coverUrl && styles.coverWithImage,
+          ]}
         >
           <View style={styles.coverSpine} />
           {book.coverUrl ? (
@@ -322,19 +320,22 @@ export function BookDetailScreen({
                 <Text style={styles.ownerActionText}>Rest this copy</Text>
               </Pressable>
             )}
-            {!book.archivedAt && !isSample && owner === currentUserId && holder !== currentUserId && (
-              <Pressable
-                style={styles.ownerAction}
-                onPress={() =>
-                  book.calledHomeAt ? onCancelCallHome?.(book.id) : onCallHome?.(book.id)
-                }
-                accessibilityRole="button"
-              >
-                <Text style={styles.ownerActionText}>
-                  {book.calledHomeAt ? 'Let it keep travelling' : 'Call it home'}
-                </Text>
-              </Pressable>
-            )}
+            {!book.archivedAt &&
+              !isSample &&
+              owner === currentUserId &&
+              holder !== currentUserId && (
+                <Pressable
+                  style={styles.ownerAction}
+                  onPress={() =>
+                    book.calledHomeAt ? onCancelCallHome?.(book.id) : onCallHome?.(book.id)
+                  }
+                  accessibilityRole="button"
+                >
+                  <Text style={styles.ownerActionText}>
+                    {book.calledHomeAt ? 'Let it keep travelling' : 'Call it home'}
+                  </Text>
+                </Pressable>
+              )}
             {book.archivedAt && onUnretireBook && (
               <Pressable
                 style={styles.ownerAction}
@@ -361,11 +362,7 @@ export function BookDetailScreen({
         )}
         <Text style={styles.ownership}>
           {first(owner)}'s copy
-          {isSample
-            ? ' · in a sample group'
-            : groupName
-              ? ` · shared with ${groupName}`
-              : ''}
+          {isSample ? ' · in a sample group' : groupName ? ` · shared with ${groupName}` : ''}
         </Text>
 
         <View style={styles.statusCard}>
@@ -428,22 +425,24 @@ export function BookDetailScreen({
                           ? ' · back home'
                           : ' · still reading'}
                   </Text>
-                  {leg.fromFriend && hasLetter(leg) && (
-                    canReadLetter(book, leg, currentUserId) ? (
+                  {leg.fromFriend &&
+                    hasLetter(leg) &&
+                    (canReadLetter(book, leg, currentUserId) ? (
                       <View style={styles.letter}>
                         {leg.rating ? <Stars value={leg.rating} size={13} /> : null}
                         {leg.note ? <Text style={styles.letterText}>“{leg.note}”</Text> : null}
-                        <Text style={styles.letterSign}>— {friendNameIn(book, leg.fromFriend)}</Text>
+                        <Text style={styles.letterSign}>
+                          — {friendNameIn(book, leg.fromFriend)}
+                        </Text>
                       </View>
                     ) : (
                       <View style={[styles.letter, styles.letterSealed]}>
                         <Text style={styles.letterSealedText}>
-                          ✉ Sealed note from {friendNameIn(book, leg.fromFriend)}. It opens
-                          once you've finished the book.
+                          ✉ Sealed note from {friendNameIn(book, leg.fromFriend)}. It opens once
+                          you've finished the book.
                         </Text>
                       </View>
-                    )
-                  )}
+                    ))}
                 </View>
               );
             })
@@ -465,8 +464,8 @@ export function BookDetailScreen({
               {goingHome ? 'Send it home?' : 'Send it on its way?'}
             </Text>
             <Text style={styles.sheetBody}>
-              Tap this once it's in the post. {first(confirmingTo)} taps Got it when it
-              arrives. The leg goes into the travel history for good.
+              Tap this once it's in the post. {first(confirmingTo)} taps Got it when it arrives. The
+              leg goes into the travel history for good.
             </Text>
 
             {/* The in-app note and stars are about the book. The handwritten
@@ -484,8 +483,8 @@ export function BookDetailScreen({
               style={styles.sheetInput}
             />
             <Text style={styles.sheetBody}>
-              Your handwritten letter doesn't go here. Tuck it in the package with the
-              book. It can be about anything.
+              Your handwritten letter doesn't go here. Tuck it in the package with the book. It can
+              be about anything.
             </Text>
 
             <Pressable
@@ -519,7 +518,8 @@ export function BookDetailScreen({
           <View style={styles.sheet}>
             <Text style={styles.sheetTitle}>Edit book details</Text>
             <Text style={styles.sheetBody}>
-              Fix typos in the title or author. The changes will show for everyone reading this copy.
+              Fix typos in the title or author. The changes will show for everyone reading this
+              copy.
             </Text>
             <Text style={styles.sheetLabel}>Title</Text>
             <TextInput
@@ -570,7 +570,8 @@ export function BookDetailScreen({
           <View style={styles.sheet}>
             <Text style={styles.sheetTitle}>Keep this copy home?</Text>
             <Text style={styles.sheetBody}>
-              Put this copy to rest on the home shelf. Its past travels, stamps, and notes stay safe to look back on, and the line will rest.
+              Put this copy to rest on the home shelf. Its past travels, stamps, and notes stay safe
+              to look back on, and the line will rest.
             </Text>
             <Pressable
               style={styles.sheetConfirm}

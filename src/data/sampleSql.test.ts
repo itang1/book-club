@@ -23,7 +23,8 @@ describe('sample groups', () => {
         }
         book.journey.forEach((stop, index) => {
           if (index > 0) expect(stop.sent, book.id).toBeLessThan(book.journey[index - 1].sent);
-          if (stop.got !== undefined && stop.got !== null) expect(stop.got, book.id).toBeLessThanOrEqual(stop.sent);
+          if (stop.got !== undefined && stop.got !== null)
+            expect(stop.got, book.id).toBeLessThanOrEqual(stop.sent);
           if (index > 0) expect(stop.note, `${book.id} leg ${index + 1}`).toBeTruthy();
         });
       }
@@ -33,7 +34,10 @@ describe('sample groups', () => {
   it('a line has one reader at a time, and a copy back home has none', () => {
     for (const book of sampleClubs.flatMap((club) => club.books)) {
       const queue = sampleQueue(book);
-      expect(queue.filter((entry) => entry.status === 'reading').length, book.id).toBeLessThanOrEqual(1);
+      expect(
+        queue.filter((entry) => entry.status === 'reading').length,
+        book.id,
+      ).toBeLessThanOrEqual(1);
       expect(new Set(queue.map((entry) => entry.friendId)).size).toBe(queue.length);
     }
   });

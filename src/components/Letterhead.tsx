@@ -14,7 +14,11 @@ export function Letterhead({ children, line = tagline }: { children?: ReactNode;
   const insets = useSafeAreaInsets();
   return (
     <View style={[styles.wrap, { paddingTop: insets.top + 28 }]}>
-      <Image source={require('../../assets/crest.png')} style={styles.crest} accessibilityIgnoresInvertColors />
+      <Image
+        source={require('../../assets/crest.png')}
+        style={styles.crest}
+        accessibilityIgnoresInvertColors
+      />
       <Text style={styles.title} accessibilityRole="header">
         The Traveling Books
       </Text>

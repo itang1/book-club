@@ -53,10 +53,9 @@ export const linking: LinkingOptions<RootTabParamList> = {
   getPathFromState: (state, options) => `${BASE_PATH}${getPathFromState(state, options)}`,
 };
 
-const APP_URL = (process.env.EXPO_PUBLIC_APP_URL?.trim() || 'https://itang1.github.io/book-club').replace(
-  /\/+$/,
-  '',
-);
+const APP_URL = (
+  process.env.EXPO_PUBLIC_APP_URL?.trim() || 'https://itang1.github.io/book-club'
+).replace(/\/+$/, '');
 
 /**
  * A book's own address. On web it uses the site you're on (so it works on
