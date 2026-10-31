@@ -5,6 +5,7 @@ import { Book, Friend, Group } from '../types';
 import { theme } from '../theme';
 import { InviteButton } from '../components/InviteButton';
 import { GroupAdminPanel } from '../components/GroupAdminPanel';
+import { WishlistSection } from '../components/WishlistSection';
 import {
   describeLeg,
   formatDate,
@@ -161,6 +162,16 @@ export function GroupScreen({
               </Pressable>
             ))}
           </View>
+        )}
+
+        {!group.isSample && (
+          <WishlistSection
+            key={group.id}
+            groupId={group.id}
+            currentUserId={currentUserId}
+            adminId={group.adminId}
+            members={people}
+          />
         )}
 
         <Text style={styles.heading}>History</Text>

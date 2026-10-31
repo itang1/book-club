@@ -166,3 +166,14 @@ export type ShelfStackParamList = {
   ShelfHome: undefined;
   PersonShelf: { personId: string };
 };
+
+/** A book a group would like to read that nobody in it owns yet. */
+export type Wish = {
+  id: string;
+  groupId: string;
+  title: string;
+  author: string;
+  suggestedBy: string | null;
+  /** Everyone who said "I'd read that", the suggester usually included. */
+  voters: string[];
+};
