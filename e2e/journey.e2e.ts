@@ -109,6 +109,21 @@ test('the year in review becomes a picture to share', async ({ page }) => {
   expect(download.suggestedFilename()).toMatch(/^traveling-books-\d{4}\.png$/);
 });
 
+test('a group keeps a wishlist of books nobody owns yet', async ({ page }) => {
+  await page.getByText('Friends & Groups', { exact: true }).last().click();
+  await page
+    .getByLabel('The Traveling Pants group', { exact: true })
+    .filter({ visible: true })
+    .last()
+    .click();
+  await page.getByLabel('Title of a book to wish for').fill('Middlemarch');
+  await page.getByLabel('Its author').fill('George Eliot');
+  await seen(page, 'Add to the wishlist').click();
+  await expect(seen(page, 'Wished by you · 1 would read it')).toBeVisible();
+  await page.getByLabel("You'd read Middlemarch. Tap to take it back.").click();
+  await expect(page.getByLabel("I'd read Middlemarch")).toBeVisible();
+});
+
 test('the privacy policy is a page of its own', async ({ page }) => {
   await page.goto('/privacy.html');
   await expect(page.getByRole('heading', { name: 'Privacy' })).toBeVisible();

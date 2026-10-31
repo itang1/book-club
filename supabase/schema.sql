@@ -1788,6 +1788,67 @@ revoke all on function public.report_error(text, text, text, text, text) from pu
 grant execute on function public.report_error(text, text, text, text, text) to anon, authenticated;
 
 -- ---------------------------------------------------------------
+-- A group's wishlist: books nobody in the group owns yet. A member suggests
+-- one, others say "I'd read that", and whoever finds a copy can see there's
+-- a line waiting before they lend it. Members only; not in sample groups.
+-- The suggester or whoever runs the group can take a wish down.
+-- ---------------------------------------------------------------
+create table if not exists public.wishes (
+  id text primary key,
+  group_id text not null references public.groups (id) on delete cascade,
+  suggested_by text references public.friends (id) on delete set null,
+  title text not null check (length(trim(title)) between 1 and 200),
+  author text not null default '' check (length(author) <= 200),
+  created_at timestamptz not null default now()
+);
+create index if not exists wishes_group_idx on public.wishes (group_id, created_at);
+
+create table if not exists public.wish_votes (
+  wish_id text not null references public.wishes (id) on delete cascade,
+  person_id text not null references public.friends (id) on delete cascade,
+  created_at timestamptz not null default now(),
+  primary key (wish_id, person_id)
+);
+
+alter table public.wishes enable row level security;
+alter table public.wish_votes enable row level security;
+revoke all on public.wishes, public.wish_votes from anon, authenticated;
+grant select, insert, delete on public.wishes, public.wish_votes to authenticated;
+
+drop policy if exists "members see their wishlist" on public.wishes;
+create policy "members see their wishlist"
+  on public.wishes for select to authenticated using (public.is_member(group_id));
+drop policy if exists "members add wishes" on public.wishes;
+create policy "members add wishes"
+  on public.wishes for insert to authenticated
+  with check (
+    suggested_by = public.me() and public.is_member(group_id)
+    and not public.is_sample_group(group_id)
+  );
+drop policy if exists "suggester or organiser takes a wish down" on public.wishes;
+create policy "suggester or organiser takes a wish down"
+  on public.wishes for delete to authenticated
+  using (suggested_by = public.me() or public.group_admin(group_id) = public.me());
+
+drop policy if exists "members see who'd read it" on public.wish_votes;
+create policy "members see who'd read it"
+  on public.wish_votes for select to authenticated
+  using (exists (select 1 from public.wishes w where w.id = wish_id and public.is_member(w.group_id)));
+drop policy if exists "say you'd read it" on public.wish_votes;
+create policy "say you'd read it"
+  on public.wish_votes for insert to authenticated
+  with check (
+    person_id = public.me()
+    and exists (
+      select 1 from public.wishes w
+      where w.id = wish_id and public.is_member(w.group_id) and not public.is_sample_group(w.group_id)
+    )
+  );
+drop policy if exists "take it back" on public.wish_votes;
+create policy "take it back"
+  on public.wish_votes for delete to authenticated using (person_id = public.me());
+
+-- ---------------------------------------------------------------
 -- Tell the API about any new tables or columns straight away, rather than
 -- waiting for it to notice ("not in the schema cache" errors otherwise).
 -- ---------------------------------------------------------------
