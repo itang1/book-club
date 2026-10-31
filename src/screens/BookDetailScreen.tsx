@@ -430,23 +430,22 @@ export function BookDetailScreen({
               arrives. The leg goes into the travel history for good.
             </Text>
 
-            {/* The in-app note and stars are about the book. The handwritten
-                letter travels in the package and never touches the app. Readers
-                who come after see the note only once they've finished too. */}
-            <Text style={styles.sheetLabel}>Rate it and leave a note about the book</Text>
+            {/* Optional. Sealed until the next reader finishes too. */}
+            <Text style={styles.sheetLabel}>Rate it, if you like</Text>
             <Stars value={rating} size={28} onChange={setRating} />
             <TextInput
               value={note}
               onChangeText={setNote}
-              placeholder={`Dear ${friendNameIn(book, confirmingTo).split(' ')[0]}, …`}
+              placeholder="A note about the book (optional)"
               placeholderTextColor={theme.colors.faint}
               multiline
               maxLength={500}
               style={styles.sheetInput}
             />
             <Text style={styles.sheetBody}>
-              Your handwritten letter doesn't go here. Tuck it in the package with the
-              book. It can be about anything.
+              No need to write anything here. Leave your thoughts in the margins for the
+              readers after you, and tuck in a handwritten letter or postcard for{' '}
+              {first(confirmingTo)}: brief, long, or just a doodle.
             </Text>
 
             <Pressable

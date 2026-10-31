@@ -2,6 +2,8 @@
 
 One copy of a book travels around a group of friends, one reader at a time. Live at https://itang1.github.io/book-club.
 
+Write your thoughts in the margins for the readers down the line, and tuck a handwritten letter or postcard in for the next person: brief, long, or just a doodle. The in-app note is optional.
+
 ## Run
 
 ```bash

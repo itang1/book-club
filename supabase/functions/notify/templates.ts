@@ -81,10 +81,10 @@ function content(facts: EmailFacts): Content {
         heading: `${titleText} is on its way to you`,
         paragraphs: [
           `${other} put it in the post. When it arrives, tap <b>Got it</b> so ${other} knows it made it.`,
-          "Take your time with it. Someone's next after you, so send it on when you're done.",
+          "Take your time with it and write in the margins as you go. Someone's next after you, so send it on with a letter, postcard or doodle when you're done.",
         ],
         aside: facts.hasLetter
-          ? `&#9993; ${other} left a note about the book. It opens once you've finished it. Look for their handwritten letter in the package.`
+          ? `&#9993; ${other} left a note about the book. It opens once you've finished it. Look for their letter or postcard in the package.`
           : undefined,
         button: `Open ${titleText}`,
         action: "Got it, it's here",

@@ -112,8 +112,8 @@ export function AddBookScreen({
       keyboardShouldPersistTaps="handled"
     >
       <Text style={styles.subtitle}>
-        Send a copy out into the world. Friends sign up for it, read it, mail it
-        on with a handwritten letter, and eventually it comes home a little more loved.
+        Send a copy out into the world. Friends sign up for it, write in the margins,
+        mail it on with a letter or postcard, and eventually it comes home a little more loved.
       </Text>
 
       <View style={styles.lookupCard}>
