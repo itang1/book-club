@@ -128,6 +128,6 @@ docs/                   plans
 
 - The free Supabase project is kept awake by
   [`hub`](https://github.com/itang1/hub#supabase-keep-alive).
-- A fan homage to the *Traveling Pants* books by Ann Brashares.
+- A fan homage to the *Traveling Pants* series by Ann Brashares.
   Not affiliated with the author or publisher.
 - Made by Irene. MIT licensed.

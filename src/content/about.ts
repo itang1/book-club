@@ -33,7 +33,7 @@ export const bio: BioRun[][] = [
   [
     'I read the ',
     { text: 'Traveling Pants', italic: true, href: SERIES_URL },
-    ' books by Ann Brashares in middle school. It\'s about four best friends who spend their first summer apart during their junior year of high school and mail a pair of thrift store jeans (which somehow fits every one of them) back and forth with letters about everything that happens.',
+    ' series by Ann Brashares in middle school. It\'s about four best friends who spend their first summer apart during their junior year of high school and mail a pair of thrift store jeans (which somehow fits every one of them) back and forth with letters about everything that happens.',
   ],
   [
     'My twelve-year-old self wanted so badly to have the life those fictional girls had, with the summer happenings and friends who stayed close across an ocean. I never found that life, or jeans that fit as well as that, but I did find the friends to pass books around by USPS Media Mail (a ritual that spawned out of an annual long-distance Secret Santa tradition). This webapp helps keep the books alive by logging where they have been.',
@@ -81,7 +81,7 @@ export const pantsPreamble =
   'We hereby instate the following rules to govern the use of the Traveling Pants:';
 
 export const pantsCredit = {
-  text: 'From the Traveling Pants books by Ann Brashares',
+  text: 'From the Traveling Pants series by Ann Brashares',
   href: SERIES_URL,
 };
 
@@ -89,4 +89,4 @@ export const pantsCredit = {
 export const tagline = 'Read it. Write in it. Pass it on.';
 
 export const homage =
-  'A fan homage to the Traveling Pants books by Ann Brashares. Not affiliated with the author or publisher.';
+  'A fan homage to the Traveling Pants series by Ann Brashares. Not affiliated with the author or publisher.';
