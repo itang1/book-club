@@ -14,7 +14,9 @@
 //   SMTP_USER, SMTP_PASS, APP_URL (default the GitHub Pages address)
 // SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are provided by Supabase.
 
-import { createClient } from 'npm:@supabase/supabase-js@2';
+// Exact versions, so a redeploy builds the same function. Keep supabase-js in
+// step with package.json when it's bumped there.
+import { createClient } from 'npm:@supabase/supabase-js@2.117.3';
 import { SMTPClient } from 'https://deno.land/x/denomailer@1.6.0/mod.ts';
 
 import { EmailFacts, EmailKind, renderEmail } from './templates.ts';
