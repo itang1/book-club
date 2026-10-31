@@ -8,9 +8,9 @@ everywhere it's been.
 
 ## How it works
 
-- **Lend a book.** You own the copy; it starts with you.
-- **Join the line.** Friends sign themselves up. Nobody is added for them.
-- **Pass it on.** The holder hands it to whoever's next and can leave a
+- **Lend a book.** You own the copy, so it starts with you.
+- **Join the line.** Friends sign themselves up to request a book.
+- **Pass it on.** The holder mails it to whoever's next in line and can leave a
   rating and a note about the book, sealed until the next reader finishes too.
   The handwritten letter is separate: tuck it in the package, about anything
   at all.
