@@ -12,11 +12,14 @@ begin
   if actual <> expected then raise exception 'FAIL %: got %, expected %', label, actual, expected; end if;
   return 'ok  ' || label;
 end $$;
-create or replace function test.refused(label text, stmt text) returns text
+create or replace function test.refused(label text, statement text) returns text
 language plpgsql as $$
 begin
-  begin execute stmt; exception when others then return 'ok  ' || label; end;
-  raise exception 'FAIL %: was allowed', label;
+  execute statement;
+  raise exception 'FAIL %: it was allowed', label;
+exception when others then
+  if sqlerrm like 'FAIL%' then raise; end if;
+  return 'ok  ' || label;
 end $$;
 grant usage on schema test to authenticated;
 grant execute on all functions in schema test to authenticated;

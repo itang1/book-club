@@ -115,6 +115,7 @@ jobs:
           SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
           SMTP_USER: ${{ secrets.SMTP_USER }}
           SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
           if [ -z "$SUPABASE_ACCESS_TOKEN" ]; then
             echo "::notice::SUPABASE_ACCESS_TOKEN isn't set, so the email function wasn't deployed."
@@ -128,6 +129,11 @@ jobs:
               APP_URL="https://itang1.github.io/book-club/"
           fi
           supabase functions deploy notify --project-ref "$REF"
+          # Shelf scanning: only once there's a key for it.
+          if [ -n "$GEMINI_API_KEY" ]; then
+            supabase secrets set --project-ref "$REF" GEMINI_API_KEY="$GEMINI_API_KEY"
+            supabase functions deploy scan-shelf --project-ref "$REF"
+          fi
 
   build:
     needs: schema

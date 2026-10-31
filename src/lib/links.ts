@@ -32,6 +32,13 @@ export const linking: LinkingOptions<RootTabParamList> = {
           AddBook: 'lend',
         },
       },
+      Shelf: {
+        initialRouteName: 'ShelfHome',
+        screens: {
+          ShelfHome: 'shelf',
+          PersonShelf: 'shelf/:personId',
+        },
+      },
       Friends: {
         initialRouteName: 'FriendsHome',
         screens: {

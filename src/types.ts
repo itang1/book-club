@@ -117,6 +117,7 @@ export type Book = {
 
 export type RootTabParamList = {
   Home: NavigatorScreenParams<RootStackParamList> | undefined;
+  Shelf: NavigatorScreenParams<ShelfStackParamList> | undefined;
   Friends: NavigatorScreenParams<FriendsStackParamList> | undefined;
   Profile: undefined;
 };
@@ -131,4 +132,30 @@ export type RootStackParamList = {
   /** bookTitle is a nicety when navigating in-app; a link carries only the id. */
   BookDetail: { bookId: string; bookTitle?: string };
   AddBook: undefined;
+};
+
+/** A book someone owns, on their shelf. Not in circulation until lent to a group. */
+export type ShelfBook = {
+  id: string;
+  ownerId: string;
+  title: string;
+  author: string;
+  coverColor: string;
+  /** The circulating book made from this one, once it has been lent. */
+  lentBookId: string | null;
+};
+
+export type ShelfRequest = {
+  id: string;
+  shelfBookId: string;
+  requesterId: string;
+  status: 'pending' | 'accepted' | 'declined';
+};
+
+/** What the scanner thinks it saw; nothing is saved until the person confirms it. */
+export type ScannedBook = { title: string; author: string };
+
+export type ShelfStackParamList = {
+  ShelfHome: undefined;
+  PersonShelf: { personId: string };
 };
