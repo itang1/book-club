@@ -12,13 +12,11 @@ import {
   demoData,
   fetchBookClubData,
   joinGroup,
-  joinLine,
   leaveGroup,
   renameGroup,
   removeFromGroup,
   handOverGroup,
   resetInviteCode,
-  leaveLine,
   removeFriendship,
   requestFriend,
   retireBook,
@@ -27,8 +25,6 @@ import {
   cancelCallHome,
   setCover,
   updateBookDetails,
-  markReceived,
-  recordHandoff,
   updateEmailPrefs,
   updateFriendRequestsFrom,
   updateProfile,
@@ -43,6 +39,8 @@ import { isDevMode } from './devMode';
 import { clearInviteFromUrl } from './invite';
 import { clearReaderId, loadReaderId, saveReaderId } from './identity';
 import { isSupabaseConfigured, supabase } from './supabase';
+import type { OutboxEntry, OutboxOp } from './outbox';
+import { clubOutbox as outbox, listenToOutbox } from './clubOutbox';
 
 export type NewProfile = { name: string; city: string; region: string };
 
@@ -92,6 +90,8 @@ export function useBookClub() {
    * and why, rather than let the screen and the stored data quietly disagree.
    */
   const [saveProblem, setSaveProblem] = React.useState<SaveProblem | null>(null);
+  /** Changes made without a connection, waiting on the device to go. */
+  const [pendingSaves, setPendingSaves] = React.useState(0);
   const track = (action: string, write: Promise<SaveError>) => {
     write.then((reason) => {
       if (reason) {
@@ -102,6 +102,9 @@ export function useBookClub() {
       }
     });
   };
+
+  /** Like track(), for changes that can wait for a connection if there isn't one. */
+  const trackOrQueue = (action: string, op: OutboxOp) => track(action, outbox.submit(action, op));
 
   const applyData = (data: BookClubData) => {
     // If an error occurred and we already have cached content on screen, keep it.
@@ -121,6 +124,31 @@ export function useBookClub() {
   }; // Effects (startup, the session listener, background refreshes) outlive the
   // render they were set up in; this lets them apply data with today's state.
   const applyDataFromEffect = React.useEffectEvent(applyData);
+
+  // Changes waiting for a connection: how many, and what became of them.
+  const onOutboxRefused = React.useEffectEvent((entry: OutboxEntry, reason: string) => {
+    setSaveProblem({ action: entry.label, reason: explain(reason) });
+    fetchBookClubData().then(applyData);
+  });
+  const onOutboxDrained = React.useEffectEvent(() => {
+    fetchBookClubData().then(applyData);
+  });
+  React.useEffect(
+    () =>
+      listenToOutbox({
+        pending: setPendingSaves,
+        refused: (entry, reason) => onOutboxRefused(entry, reason),
+        drained: () => onOutboxDrained(),
+      }),
+    [],
+  );
+
+  // Signed in (again): send whatever was left waiting, even from before a reload.
+  React.useEffect(() => {
+    if (session !== null && currentUserId !== null) {
+      outbox.flush();
+    }
+  }, [session, currentUserId]);
 
   React.useEffect(() => {
     let active = true;
@@ -171,6 +199,7 @@ export function useBookClub() {
 
       if (!next) {
         clearCachedClubData();
+        outbox.clear();
         applyDataFromEffect({ books: [], friends: [], friendships: [], groups: [] });
         setCurrentUserId(null);
         setLoaded(true);
@@ -205,12 +234,16 @@ export function useBookClub() {
    */
   const quietRefresh = React.useEffectEvent(() => {
     if (session !== null && currentUserId !== null) {
-      fetchBookClubData().then((data) => {
-        // A failed background fetch shouldn't blank the screen or nag.
-        if (!data.error) {
-          applyDataFromEffect(data);
-        }
-      });
+      // Send anything that was waiting for a connection before looking again.
+      outbox
+        .flush()
+        .then(fetchBookClubData)
+        .then((data) => {
+          // A failed background fetch shouldn't blank the screen or nag.
+          if (!data.error) {
+            applyDataFromEffect(data);
+          }
+        });
     }
   });
   React.useEffect(() => {
@@ -250,6 +283,8 @@ export function useBookClub() {
     };
     if (Platform.OS === 'web' && typeof document !== 'undefined') {
       document.addEventListener('visibilitychange', onVisible);
+      // Back online: send what was waiting straight away.
+      window.addEventListener('online', quietRefresh);
     }
 
     return () => {
@@ -257,6 +292,7 @@ export function useBookClub() {
       appState.remove();
       if (Platform.OS === 'web' && typeof document !== 'undefined') {
         document.removeEventListener('visibilitychange', onVisible);
+        window.removeEventListener('online', quietRefresh);
       }
       if (channel && supabase) {
         supabase.removeChannel(channel);
@@ -388,10 +424,10 @@ export function useBookClub() {
         { ...me, position, status: 'waiting' },
       ],
     }));
-    track(
-      `sign you up for ${book.title}`,
-      joinLine({ book_id: bookId, friend_id: me.id, position, status: 'waiting' }),
-    );
+    trackOrQueue(`sign you up for ${book.title}`, {
+      kind: 'joinLine',
+      entry: { book_id: bookId, friend_id: me.id, position, status: 'waiting' },
+    });
   };
 
   const handleLeaveLine = (bookId: string) => {
@@ -410,10 +446,12 @@ export function useBookClub() {
         return readBefore ? [{ ...entry, status: 'done' as const }] : [];
       }),
     }));
-    track(
-      `take you out of the line for ${book.title}`,
-      leaveLine(bookId, currentUserId, readBefore),
-    );
+    trackOrQueue(`take you out of the line for ${book.title}`, {
+      kind: 'leaveLine',
+      bookId,
+      friendId: currentUserId,
+      readBefore,
+    });
   };
 
   /**
@@ -466,7 +504,14 @@ export function useBookClub() {
       }),
     }));
 
-    track(`pass ${book.title} on`, recordHandoff(handoff));
+    trackOrQueue(`pass ${book.title} on`, {
+      kind: 'passOn',
+      handoffId: handoff.id,
+      bookId,
+      to: toFriend,
+      note: handoff.note ?? null,
+      rating: handoff.rating ?? null,
+    });
   };
 
   /** "Got it": the book posted to you has arrived, here, now. */
@@ -486,7 +531,7 @@ export function useBookClub() {
           : leg,
       ),
     }));
-    track(`mark ${book.title} as arrived`, markReceived(bookId));
+    trackOrQueue(`mark ${book.title} as arrived`, { kind: 'markReceived', bookId });
   };
 
   const handleUpdateEmailPrefs = (prefs: EmailPrefs) => {
@@ -771,6 +816,7 @@ export function useBookClub() {
     groups,
     currentUserId,
     saveProblem,
+    pendingSaves,
     dismissSaveProblem: () => setSaveProblem(null),
     refresh,
     chooseReader,
