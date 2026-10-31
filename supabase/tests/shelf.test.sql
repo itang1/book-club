@@ -24,23 +24,24 @@ end $$;
 grant usage on schema test to authenticated;
 grant execute on all functions in schema test to authenticated;
 
+-- Emails start off for everyone; these people have turned them on.
 insert into auth.users values
   ('00000000-0000-0000-0000-0000000000f1', 'sam@x'),
   ('00000000-0000-0000-0000-0000000000f2', 'tia@x'),
   ('00000000-0000-0000-0000-0000000000f3', 'uma@x');
 set role authenticated;
 select test.as_user('00000000-0000-0000-0000-0000000000f1');
-insert into friends (id, name, city, state, user_id) values ('s-sam', 'Sam', 'Salem', 'OR', '00000000-0000-0000-0000-0000000000f1');
+insert into friends (id, name, city, state, user_id, email_new_book, email_book_sent, email_book_arrived, email_next_in_line, email_friend_request, email_reminders) values ('s-sam', 'Sam', 'Salem', 'OR', '00000000-0000-0000-0000-0000000000f1', true, true, true, true, true, true);
 select create_group('g-s', 'Shelf club');
 reset role;
 select invite_code as code from groups where id = 'g-s' \gset
 set role authenticated;
 select test.as_user('00000000-0000-0000-0000-0000000000f2');
-insert into friends (id, name, city, state, user_id) values ('s-tia', 'Tia', 'Tulsa', 'OK', '00000000-0000-0000-0000-0000000000f2');
+insert into friends (id, name, city, state, user_id, email_new_book, email_book_sent, email_book_arrived, email_next_in_line, email_friend_request, email_reminders) values ('s-tia', 'Tia', 'Tulsa', 'OK', '00000000-0000-0000-0000-0000000000f2', true, true, true, true, true, true);
 select join_group(:'code');
 -- Uma shares no group with Sam.
 select test.as_user('00000000-0000-0000-0000-0000000000f3');
-insert into friends (id, name, city, state, user_id) values ('s-uma', 'Uma', 'Utica', 'NY', '00000000-0000-0000-0000-0000000000f3');
+insert into friends (id, name, city, state, user_id, email_new_book, email_book_sent, email_book_arrived, email_next_in_line, email_friend_request, email_reminders) values ('s-uma', 'Uma', 'Utica', 'NY', '00000000-0000-0000-0000-0000000000f3', true, true, true, true, true, true);
 
 select test.as_user('00000000-0000-0000-0000-0000000000f1');
 insert into shelf_books (id, owner_id, title, author) values ('sh-1', 's-sam', 'Middlemarch', 'George Eliot');

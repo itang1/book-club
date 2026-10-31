@@ -101,15 +101,15 @@ const styles = StyleSheet.create({
     marginBottom: 3,
   },
   iconWrapActive: {},
+  // Steady labels: the same face, size and weight whether or not the tab is
+  // active, so nothing shifts; only the colour and the rule above change.
   label: {
-    ...theme.caps,
-    fontSize: 10,
-    letterSpacing: 0.3,
+    fontFamily: theme.fonts.serif,
+    fontSize: 12,
     color: theme.colors.faint,
   },
   labelActive: {
     color: theme.colors.text,
-    fontWeight: '700',
   },
   badge: {
     position: 'absolute',

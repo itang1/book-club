@@ -995,7 +995,7 @@ grant execute on function public.group_preview(text) to anon;
 
 -- ---------------------------------------------------------------
 -- Email. Which emails each person wants (all on by default; they change
--- them under You → Emails), and an outbox the database fills when
+-- them under Profile → Emails), and an outbox the database fills when
 -- something worth an email happens. A Supabase Edge Function
 -- (supabase/functions/notify) sends what's in the outbox and stamps it
 -- sent. Nobody can read or write the outbox through the API.
@@ -1283,6 +1283,34 @@ grant execute on function public.email_action_preview(text), public.redeem_email
 -- ---------------------------------------------------------------
 alter table public.friends
   add column if not exists email_reminders boolean not null default true;
+
+-- Quiet by default (October 2026): every email starts off, for new people
+-- and, once, for everyone already here. People turn on what they want under
+-- Profile → Emails. applied_once records one-off data changes, so a deploy
+-- never repeats them and undoes someone's choice.
+alter table public.friends
+  alter column email_new_book set default false,
+  alter column email_book_sent set default false,
+  alter column email_book_arrived set default false,
+  alter column email_next_in_line set default false,
+  alter column email_friend_request set default false,
+  alter column email_reminders set default false;
+
+create table if not exists public.applied_once (
+  name text primary key,
+  applied_at timestamptz not null default now()
+);
+alter table public.applied_once enable row level security;
+revoke all on public.applied_once from anon, authenticated;
+
+with first_time as (
+  insert into public.applied_once (name) values ('emails-off-2026-10')
+  on conflict do nothing returning name
+)
+update public.friends
+set email_new_book = false, email_book_sent = false, email_book_arrived = false,
+    email_next_in_line = false, email_friend_request = false, email_reminders = false
+where exists (select 1 from first_time);
 alter table public.notifications drop constraint if exists notifications_kind_check;
 alter table public.notifications add constraint notifications_kind_check
   check (kind in ('book_sent', 'book_arrived', 'next_in_line', 'friend_request', 'new_book',

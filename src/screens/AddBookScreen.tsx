@@ -18,6 +18,8 @@ type AddBookScreenProps = {
   onAddBook: (book: Book) => void;
   /** Start a group from here, if you're not in one yet. Returns its id. */
   onCreateGroup: (name: string) => string | null;
+  /** Whether there's a Bookshelf tab to scan into (accounts only). */
+  canScanShelf?: boolean;
 };
 
 export function AddBookScreen({
@@ -27,6 +29,7 @@ export function AddBookScreen({
   groups,
   onAddBook,
   onCreateGroup,
+  canScanShelf = false,
 }: AddBookScreenProps) {
   const [isbn, setIsbn] = useState('');
   const [lookingUp, setLookingUp] = useState(false);
@@ -115,6 +118,22 @@ export function AddBookScreen({
         Send a copy out into the world. Friends sign up for it, read it, mail it on with a
         handwritten letter, and eventually it comes home a little more loved.
       </Text>
+
+      {canScanShelf && (
+        <Pressable
+          style={styles.scanCard}
+          onPress={() => navigation.getParent()?.navigate('Shelf')}
+          accessibilityRole="button"
+        >
+          <Ionicons name="camera-outline" size={22} color={theme.colors.onMasthead} />
+          <View style={styles.scanText}>
+            <Text style={styles.scanTitle}>Skip the typing: scan your bookshelf</Text>
+            <Text style={styles.scanHint}>
+              One photo of your shelves adds every book we can read. Lend any of them from there.
+            </Text>
+          </View>
+        </Pressable>
+      )}
 
       <View style={styles.lookupCard}>
         <Text style={styles.lookupTitle}>Have an ISBN or barcode?</Text>
@@ -280,6 +299,26 @@ export function AddBookScreen({
 }
 
 const styles = StyleSheet.create({
+  scanCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    backgroundColor: theme.colors.letterhead,
+    borderLeftWidth: 4,
+    borderLeftColor: theme.colors.brass,
+    borderRadius: theme.radius.md,
+    padding: 16,
+    marginBottom: 16,
+  },
+  scanText: { flex: 1 },
+  scanTitle: {
+    fontFamily: theme.fonts.serif,
+    fontSize: 17,
+    lineHeight: 22,
+    fontWeight: '700',
+    color: theme.colors.onMasthead,
+  },
+  scanHint: { fontSize: 14, lineHeight: 20, color: theme.colors.onMasthead, marginTop: 4 },
   container: {
     flex: 1,
     backgroundColor: theme.colors.background,

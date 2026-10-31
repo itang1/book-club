@@ -164,6 +164,7 @@ function HomeStack({ club }: { club: BookClub }) {
             groups={myGroups}
             onAddBook={club.addBook}
             onCreateGroup={club.createGroup}
+            canScanShelf={club.usesAccounts}
           />
         )}
       </Stack.Screen>
@@ -255,7 +256,7 @@ function ShelfStack({ club }: { club: BookClub }) {
   );
 }
 
-function Tabs({ club }: { club: BookClub }) {
+function Tabs({ club, justJoined = false }: { club: BookClub; justJoined?: boolean }) {
   const me = club.members.find((person) => person.id === club.currentUserId) ?? null;
   const incomingBookCount = club.books.filter(
     (book) => club.currentUserId && holderId(book) === club.currentUserId && isInTransit(book),
@@ -267,6 +268,8 @@ function Tabs({ club }: { club: BookClub }) {
   return (
     <NavigationContainer linking={linking}>
       <Tab.Navigator
+        // Someone who has just joined starts at their bookshelf: one photo fills it.
+        initialRouteName={justJoined && club.usesAccounts ? 'Shelf' : 'Home'}
         tabBar={(props) => <TabBar {...props} />}
         screenOptions={{ headerShown: false }}
       >
@@ -280,7 +283,7 @@ function Tabs({ club }: { club: BookClub }) {
           {() => <HomeStack club={club} />}
         </Tab.Screen>
         {club.usesAccounts && (
-          <Tab.Screen name="Shelf" options={{ title: 'Shelf' }}>
+          <Tab.Screen name="Shelf" options={{ title: 'Bookshelf' }}>
             {() => <ShelfStack club={club} />}
           </Tab.Screen>
         )}
@@ -293,7 +296,7 @@ function Tabs({ club }: { club: BookClub }) {
         >
           {() => <FriendsStack club={club} />}
         </Tab.Screen>
-        <Tab.Screen name="Profile" options={{ title: 'You' }}>
+        <Tab.Screen name="Profile" options={{ title: 'Profile' }}>
           {() => (
             <ProfileScreen
               books={club.books}
@@ -316,6 +319,7 @@ function Tabs({ club }: { club: BookClub }) {
 function Root() {
   const club = useBookClub();
   const [emailToken, setEmailToken] = React.useState(emailActionTokenFromUrl);
+  const [justJoined, setJustJoined] = React.useState(false);
   React.useEffect(() => {
     if (emailToken) {
       clearEmailActionFromUrl();
@@ -345,7 +349,10 @@ function Root() {
       <WelcomeScreen
         demoMembers={club.usesAccounts ? undefined : club.members}
         onClaim={club.claimExisting}
-        onCreate={club.createProfile}
+        onCreate={(profile, inviteCode) => {
+          setJustJoined(true);
+          club.createProfile(profile, inviteCode);
+        }}
         email={club.usesAccounts ? club.email : null}
         onSignOut={club.usesAccounts ? club.signOut : undefined}
       />
@@ -355,7 +362,7 @@ function Root() {
   } else {
     body = (
       <>
-        <Tabs club={club} />
+        <Tabs club={club} justJoined={justJoined} />
         <JoinGroupPrompt
           groups={club.groups}
           currentUserId={club.currentUserId}

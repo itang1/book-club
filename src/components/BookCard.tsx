@@ -62,6 +62,8 @@ function nextLine(book: Book, currentUserId: string | null): string {
 
 export function BookCard({ book, currentUserId, isSample, groupName, onPress }: BookCardProps) {
   const withMe = currentUserId !== null && holderId(book) === currentUserId;
+  const owner = copyOwnerId(book);
+  const mine = currentUserId !== null && owner === currentUserId;
 
   return (
     <Pressable
@@ -82,6 +84,9 @@ export function BookCard({ book, currentUserId, isSample, groupName, onPress }: 
             {groupName}
           </Text>
         ) : null}
+        <Text style={[styles.owner, mine && styles.ownerMine]} numberOfLines={1}>
+          {mine ? 'Your copy' : `${friendNameIn(book, owner)}'s copy`}
+        </Text>
         <Text style={styles.title}>{book.title}</Text>
         <Text style={styles.author} numberOfLines={1}>
           {book.author}
@@ -123,6 +128,17 @@ const styles = StyleSheet.create({
     color: theme.colors.accent,
     marginBottom: 4,
   },
+  owner: {
+    ...theme.caps,
+    fontSize: 10,
+    letterSpacing: 1.2,
+    color: theme.colors.faint,
+    marginBottom: 3,
+  },
+  ownerMine: {
+    color: theme.colors.stamp,
+    fontWeight: '700',
+  },
   title: {
     fontFamily: theme.fonts.serif,
     fontSize: 18,
@@ -132,7 +148,6 @@ const styles = StyleSheet.create({
   },
   author: {
     fontFamily: theme.fonts.serif,
-    fontStyle: 'italic',
     fontSize: 14,
     color: theme.colors.muted,
     marginTop: 1,

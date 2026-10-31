@@ -10,6 +10,8 @@ import { theme } from '../theme';
 import { PickGroupSheet } from '../components/PickGroupSheet';
 import { ScanReviewSheet } from '../components/ScanReviewSheet';
 import { ShelfRow } from '../components/ShelfRow';
+import { BookCard } from '../components/BookCard';
+import { copyOwnerId } from '../lib/bookState';
 import { scanShelfPhoto, type ShelfState } from '../lib/shelf';
 import { sameBook } from '../lib/shelfBooks';
 
@@ -34,6 +36,13 @@ export function ShelfScreen({ navigation, shelf, me, members, groups, books }: S
   const [lendProblem, setLendProblem] = useState<string | null>(null);
 
   const mine = shelf.books.filter((book) => book.ownerId === me?.id);
+  // Copies you own that are in circulation: lent to one of your (real) groups.
+  const ownedCopies = books.filter(
+    (book) =>
+      me !== null &&
+      copyOwnerId(book) === me.id &&
+      groups.some((group) => group.id === book.groupId),
+  );
   const lending_ = mine.find((book) => book.id === lending);
   const shelves = useMemo(
     () =>
@@ -97,10 +106,10 @@ export function ShelfScreen({ navigation, shelf, me, members, groups, books }: S
     >
       <View style={[styles.band, { paddingTop: insets.top + 20 }]}>
         <Text style={styles.eyebrow}>The Traveling Books</Text>
-        <Text style={styles.heading}>Your shelf</Text>
+        <Text style={styles.heading}>Your bookshelf at home</Text>
         <Text style={styles.sub}>
-          Photograph your shelves and we'll read the spines. People in your groups can see what you
-          have and ask to borrow it, and you can lend any book to a group.
+          The real books on your real shelves. Take one photo and we'll read every spine, so friends
+          in your groups can see what you own and ask to borrow it.
         </Text>
       </View>
 
@@ -165,10 +174,32 @@ export function ShelfScreen({ navigation, shelf, me, members, groups, books }: S
         </>
       )}
 
+      {ownedCopies.length > 0 && (
+        <>
+          <Text style={styles.section}>Your books out in the world</Text>
+          <Text style={styles.sectionNote}>
+            Copies you own and have lent to a group, and where each one is now.
+          </Text>
+          {ownedCopies.map((book) => (
+            <BookCard
+              key={book.id}
+              book={book}
+              currentUserId={me?.id ?? null}
+              groupName={groups.find((group) => group.id === book.groupId)?.name}
+              onPress={() =>
+                navigation
+                  .getParent()
+                  ?.navigate('Home', { screen: 'BookDetail', params: { bookId: book.id } })
+              }
+            />
+          ))}
+        </>
+      )}
+
       <Text style={styles.section}>
         {mine.length === 0
-          ? 'Nothing here yet'
-          : `${mine.length} ${mine.length === 1 ? 'book' : 'books'}`}
+          ? 'On your shelf at home: nothing yet'
+          : `On your shelf at home: ${mine.length} ${mine.length === 1 ? 'book' : 'books'}`}
       </Text>
       {mine.map((book) => {
         const lent = activeLentBook(book.lentBookId);
@@ -282,14 +313,12 @@ const styles = StyleSheet.create({
     color: theme.colors.onMasthead,
   },
   sub: {
-    fontFamily: theme.fonts.serif,
-    fontStyle: 'italic',
     fontSize: 15,
     lineHeight: 21,
     color: theme.colors.onMasthead,
-    opacity: 0.85,
     marginTop: 6,
   },
+  sectionNote: { fontSize: 14, lineHeight: 20, color: theme.colors.muted, marginBottom: 4 },
   privacy: { fontSize: 12, lineHeight: 17, color: theme.colors.muted, marginTop: 10 },
   buttons: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   primary: {

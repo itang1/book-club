@@ -202,7 +202,7 @@ function content(facts: EmailFacts): Content {
 export function renderEmail(facts: EmailFacts): Email {
   const c = content(facts);
   const root = facts.appUrl.endsWith('/') ? facts.appUrl : `${facts.appUrl}/`;
-  // The button opens the thing the email is about; settings live on You.
+  // The button opens the thing the email is about; settings live on Profile.
   const target =
     facts.kind === 'friend_request'
       ? `${root}friends`
@@ -259,7 +259,7 @@ export function renderEmail(facts: EmailFacts): Email {
 </td></tr>
 <tr><td style="padding:16px 6px 0;font-family:-apple-system,Helvetica,Arial,sans-serif;font-size:12px;line-height:18px;color:#575046;text-align:center;">
   ${escape(c.why)}<br><i style="font-family:Georgia,serif;">Read it, write in it, and pass it on.</i><br>
-  <a href="${escape(settings)}" style="color:#575046;">Choose which emails you get: You &rarr; Emails</a>
+  <a href="${escape(settings)}" style="color:#575046;">Choose which emails you get: Profile &rarr; Emails</a>
 </td></tr>
 </table></td></tr></table></body></html>`;
 

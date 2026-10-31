@@ -25,22 +25,23 @@ grant execute on all functions in schema test to authenticated;
 
 -- Ana lends a book in her group; Bea is next; Cat is in the group but not
 -- in line.
+-- Emails start off for everyone; these people have turned them on.
 insert into auth.users values
   ('00000000-0000-0000-0000-0000000000b1', 'ana@x'),
   ('00000000-0000-0000-0000-0000000000b2', 'bea@x'),
   ('00000000-0000-0000-0000-0000000000b3', 'cat@x');
 set role authenticated;
 select test.as_user('00000000-0000-0000-0000-0000000000b1');
-insert into friends (id, name, city, state, user_id) values ('h-ana', 'Ana', 'Austin', 'TX', '00000000-0000-0000-0000-0000000000b1');
+insert into friends (id, name, city, state, user_id, email_new_book, email_book_sent, email_book_arrived, email_next_in_line, email_friend_request, email_reminders) values ('h-ana', 'Ana', 'Austin', 'TX', '00000000-0000-0000-0000-0000000000b1', true, true, true, true, true, true);
 select create_group('g-h', 'Handoff club');
 reset role;
 select invite_code as code from groups where id = 'g-h' \gset
 set role authenticated;
 select test.as_user('00000000-0000-0000-0000-0000000000b2');
-insert into friends (id, name, city, state, user_id) values ('h-bea', 'Bea', 'Boston', 'MA', '00000000-0000-0000-0000-0000000000b2');
+insert into friends (id, name, city, state, user_id, email_new_book, email_book_sent, email_book_arrived, email_next_in_line, email_friend_request, email_reminders) values ('h-bea', 'Bea', 'Boston', 'MA', '00000000-0000-0000-0000-0000000000b2', true, true, true, true, true, true);
 select join_group(:'code');
 select test.as_user('00000000-0000-0000-0000-0000000000b3');
-insert into friends (id, name, city, state, user_id) values ('h-cat', 'Cat', 'Chicago', 'IL', '00000000-0000-0000-0000-0000000000b3');
+insert into friends (id, name, city, state, user_id, email_new_book, email_book_sent, email_book_arrived, email_next_in_line, email_friend_request, email_reminders) values ('h-cat', 'Cat', 'Chicago', 'IL', '00000000-0000-0000-0000-0000000000b3', true, true, true, true, true, true);
 select join_group(:'code');
 
 select test.as_user('00000000-0000-0000-0000-0000000000b1');

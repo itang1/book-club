@@ -394,10 +394,7 @@ const styles = StyleSheet.create({
     color: theme.colors.onMasthead,
   },
   subtitle: {
-    fontFamily: theme.fonts.serif,
-    fontStyle: 'italic',
     color: theme.colors.onMasthead,
-    opacity: 0.85,
     fontSize: 15,
     lineHeight: 21,
   },

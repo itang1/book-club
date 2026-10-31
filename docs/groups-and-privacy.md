@@ -2,7 +2,7 @@
 
 Built (October 2026), with the decisions below: one group per copy, anyone
 can start a group, and you join by invite link only. "Who can send me
-friend requests" is a switch on You (people in my groups, or nobody). What follows is the
+friend requests" is a switch on Profile (people in my groups, or nobody). What follows is the
 reasoning it was built from. It answers one question per copy, _who can see this book
 and sign up for it?_, and makes the database enforce the answer.
 

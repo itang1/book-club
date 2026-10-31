@@ -115,8 +115,6 @@ function listOf(names: string[]): string {
 
 const styles = StyleSheet.create({
   scope: {
-    fontFamily: theme.fonts.serif,
-    fontStyle: 'italic',
     fontSize: 14,
     color: theme.colors.muted,
     marginTop: 2,

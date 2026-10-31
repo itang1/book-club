@@ -17,7 +17,7 @@ import { ClubYearCard } from '../components/ClubYearCard';
 import { AboutSheet } from '../components/AboutSheet';
 import { Letterhead } from '../components/Letterhead';
 import { homage } from '../content/about';
-import { holderId, isInTransit, relativeTime } from '../lib/bookState';
+import { copyOwnerId, holderId, isInTransit, relativeTime } from '../lib/bookState';
 import { lately } from '../lib/lately';
 import { theme } from '../theme';
 
@@ -98,6 +98,10 @@ export function HomeScreen({
     (book) => !sections.some((section) => section.books.includes(book)),
   );
 
+  // Nothing of your own yet: the first thing to do is scan your shelf.
+  const ownsNothing =
+    currentUserId !== null &&
+    !books.some((book) => copyOwnerId(book) === currentUserId && !isSampleBook(book));
   const recent = lately(
     books.filter((book) => !book.archivedAt),
     6,
@@ -172,6 +176,25 @@ export function HomeScreen({
           <Text style={styles.homage}>{homage}</Text>
         </Letterhead>
       </View>
+
+      {canScanShelf && ownsNothing && (
+        <Pressable
+          style={styles.startCard}
+          onPress={() => navigation.getParent()?.navigate('Shelf')}
+          accessibilityRole="button"
+        >
+          <Text style={styles.startKicker}>Start here</Text>
+          <Text style={styles.startTitle}>Photograph your bookshelf</Text>
+          <Text style={styles.startBody}>
+            One picture of the shelves at home and we'll add every book we can read. No typing. Then
+            lend any of them to your group.
+          </Text>
+          <View style={styles.startButton}>
+            <Ionicons name="camera-outline" size={16} color={theme.colors.onAccent} />
+            <Text style={styles.startButtonText}>Scan my bookshelf</Text>
+          </View>
+        </Pressable>
+      )}
 
       {/* Search and filters */}
       <View style={styles.searchRow}>
@@ -367,12 +390,10 @@ const styles = StyleSheet.create({
   },
 
   homage: {
-    fontFamily: theme.fonts.serif,
-    fontStyle: 'italic',
     fontSize: 11,
     lineHeight: 15,
     color: theme.colors.onMasthead,
-    opacity: 0.55,
+    opacity: 0.75,
     textAlign: 'center',
     marginTop: 20,
   },
@@ -421,6 +442,53 @@ const styles = StyleSheet.create({
     marginLeft: 12,
   },
 
+  startCard: {
+    backgroundColor: theme.colors.card,
+    borderWidth: 1,
+    borderColor: theme.colors.rule,
+    borderTopWidth: 4,
+    borderTopColor: theme.colors.letterhead,
+    borderRadius: theme.radius.md,
+    padding: 18,
+    marginTop: 16,
+  },
+  startKicker: {
+    ...theme.caps,
+    fontSize: 10,
+    letterSpacing: 2,
+    color: theme.colors.stamp,
+  },
+  startTitle: {
+    fontFamily: theme.fonts.serif,
+    fontSize: 22,
+    lineHeight: 28,
+    fontWeight: '700',
+    color: theme.colors.text,
+    marginTop: 4,
+  },
+  startBody: {
+    fontSize: 15,
+    lineHeight: 22,
+    color: theme.colors.text,
+    marginTop: 6,
+  },
+  startButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    gap: 8,
+    backgroundColor: theme.colors.accent,
+    borderRadius: theme.radius.sm,
+    paddingVertical: 11,
+    paddingHorizontal: 16,
+    marginTop: 14,
+  },
+  startButtonText: {
+    ...theme.caps,
+    fontSize: 12,
+    fontWeight: '700',
+    color: theme.colors.onAccent,
+  },
   scanHint: {
     fontSize: 13,
     lineHeight: 19,
@@ -599,8 +667,6 @@ const styles = StyleSheet.create({
   },
 
   restedSubtitle: {
-    fontFamily: theme.fonts.serif,
-    fontStyle: 'italic',
     fontSize: 14,
     color: theme.colors.muted,
     marginTop: 8,

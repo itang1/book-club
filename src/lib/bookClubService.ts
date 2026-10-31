@@ -122,12 +122,12 @@ function toFriend(row: FriendRow): Friend {
     userId: row.user_id ?? undefined,
     agreedRulesAt: row.agreed_rules_at ?? undefined,
     emails: {
-      newBook: row.email_new_book ?? true,
-      bookSent: row.email_book_sent ?? true,
+      newBook: row.email_new_book ?? false,
+      bookSent: row.email_book_sent ?? false,
       bookArrived: row.email_book_arrived ?? false,
       nextInLine: row.email_next_in_line ?? false,
-      friendRequest: row.email_friend_request ?? true,
-      reminders: row.email_reminders ?? true,
+      friendRequest: row.email_friend_request ?? false,
+      reminders: row.email_reminders ?? false,
     },
     friendRequestsFrom: row.friend_requests_from ?? 'groups',
   };

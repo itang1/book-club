@@ -98,10 +98,11 @@ installed in the house style by every deploy.
 
 ## Emails
 
-People get an email when a new book joins their group, when a book is sent
-to them, and when someone asks to be friends. "A book you sent arrived" and
-"You're next in line" are opt-in. Each has its own switch under
-**You → Emails**, with one switch at the top for all of them.
+Every email starts **off**: the app is quiet until someone chooses
+otherwise. Under **Profile → Emails** each person can turn on any of: a new
+book joining their group, a book sent to them, a book they sent arriving,
+being next in line, friend requests, and gentle reminders, with one switch at
+the top for all of them.
 
 Reminders stay rare: at most one per person per 30 days. "Has it reached
 you?" goes once per trip, when Got it is untapped after 5 days; "How's it

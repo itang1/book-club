@@ -83,11 +83,9 @@ const styles = StyleSheet.create({
   },
   line: {
     fontFamily: theme.fonts.serif,
-    fontStyle: 'italic',
     fontSize: 16,
     lineHeight: 22,
     color: theme.colors.onMasthead,
-    opacity: 0.85,
     textAlign: 'center',
     marginTop: 8,
   },

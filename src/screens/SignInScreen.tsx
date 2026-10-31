@@ -125,8 +125,6 @@ const styles = StyleSheet.create({
     color: theme.colors.muted,
   },
   footnote: {
-    fontFamily: theme.fonts.serif,
-    fontStyle: 'italic',
     fontSize: 14,
     lineHeight: 21,
     color: theme.colors.muted,

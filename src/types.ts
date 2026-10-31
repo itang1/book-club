@@ -39,7 +39,7 @@ export type Friend = {
   userId?: string;
   /** When they agreed to the Rules of the Books; unset until they do. */
   agreedRulesAt?: string;
-  /** Which emails they want. All on unless they turn one off. */
+  /** Which emails they want. All off until they turn one on. */
   emails?: EmailPrefs;
   /** Who can send them friend requests: groupmates (default) or nobody. */
   friendRequestsFrom?: 'groups' | 'nobody';

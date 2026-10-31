@@ -15,22 +15,23 @@ end $$;
 grant usage on schema test to authenticated;
 grant execute on all functions in schema test to authenticated;
 
+-- Emails start off for everyone; these people have turned them on.
 insert into auth.users values
   ('00000000-0000-0000-0000-0000000000c1', 'nia@x'),
   ('00000000-0000-0000-0000-0000000000c2', 'oli@x'),
   ('00000000-0000-0000-0000-0000000000c3', 'pip@x');
 set role authenticated;
 select test.as_user('00000000-0000-0000-0000-0000000000c1');
-insert into friends (id, name, city, state, user_id, email_book_arrived) values ('n-nia', 'Nia', 'Denver', 'CO', '00000000-0000-0000-0000-0000000000c1', true);
+insert into friends (id, name, city, state, user_id, email_book_arrived, email_new_book, email_book_sent, email_next_in_line, email_friend_request, email_reminders) values ('n-nia', 'Nia', 'Denver', 'CO', '00000000-0000-0000-0000-0000000000c1', true, true, true, true, true, true);
 select create_group('g-n', 'Email club');
 reset role;
 select invite_code as code from groups where id = 'g-n' \gset
 set role authenticated;
 select test.as_user('00000000-0000-0000-0000-0000000000c2');
-insert into friends (id, name, city, state, user_id) values ('n-oli', 'Oli', 'Omaha', 'NE', '00000000-0000-0000-0000-0000000000c2');
+insert into friends (id, name, city, state, user_id, email_new_book, email_book_sent, email_book_arrived, email_next_in_line, email_friend_request, email_reminders) values ('n-oli', 'Oli', 'Omaha', 'NE', '00000000-0000-0000-0000-0000000000c2', true, true, true, true, true, true);
 select join_group(:'code');
 select test.as_user('00000000-0000-0000-0000-0000000000c3');
-insert into friends (id, name, city, state, user_id) values ('n-pip', 'Pip', 'Provo', 'UT', '00000000-0000-0000-0000-0000000000c3');
+insert into friends (id, name, city, state, user_id, email_new_book, email_book_sent, email_book_arrived, email_next_in_line, email_friend_request, email_reminders) values ('n-pip', 'Pip', 'Provo', 'UT', '00000000-0000-0000-0000-0000000000c3', true, true, true, false, true, true);
 select join_group(:'code');
 
 -- Nia lends; Oli and Pip sign up; Nia sends it to Oli; Oli says Got it.
@@ -109,5 +110,14 @@ update notifications set attempts = 3 where error = 'smtp down';
 select test.expect('...but not after three tries',
   (select count(*) from notifications where sent_at is null and attempts < 3
      and (next_attempt_at is null or next_attempt_at <= now()) and error = 'smtp down'), 0);
+
+-- Quiet by default: someone new has every email off until they choose.
+insert into friends (id, name, city, state) values ('n-new', 'Newcomer', 'Nome', 'AK');
+select test.expect('A newcomer starts with every email off',
+  (select count(*) from friends where id = 'n-new'
+     and not (email_new_book or email_book_sent or email_book_arrived
+              or email_next_in_line or email_friend_request or email_reminders)), 1);
+select test.expect('The one-time switch-off is recorded, so deploys never repeat it',
+  (select count(*) from applied_once where name = 'emails-off-2026-10'), 1);
 
 select 'ALL NOTIFICATION TESTS PASSED';
