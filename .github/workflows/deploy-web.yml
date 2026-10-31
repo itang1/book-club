@@ -106,9 +106,11 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
+      # Pinned, so a new CLI release can't change a deploy without a commit.
+      # Bump by hand (npm view supabase version) when there's a reason to.
       - uses: supabase/setup-cli@v1
         with:
-          version: latest
+          version: 2.122.0
       - name: Deploy the notify function
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
