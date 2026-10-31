@@ -21,6 +21,8 @@ import { holderId, isInTransit } from './src/lib/bookState';
 import { isDevMode } from './src/lib/devMode';
 import { clearEmailActionFromUrl, emailActionTokenFromUrl, linking } from './src/lib/links';
 import { theme } from './src/theme';
+import { countMilestone } from './src/lib/analytics';
+import { inviteCodeFromUrl } from './src/lib/invite';
 import { registerFonts } from './src/fonts';
 import { startMonitoring } from './src/lib/monitoring';
 import { ErrorBoundary } from './src/components/ErrorBoundary';
@@ -421,6 +423,13 @@ function Root() {
 }
 
 export default function App() {
+  // Anonymous, and once per arrival: how many invites get opened at all.
+  React.useEffect(() => {
+    if (inviteCodeFromUrl()) {
+      countMilestone('invite-opened');
+    }
+  }, []);
+
   return (
     <SafeAreaProvider>
       <ErrorBoundary>
