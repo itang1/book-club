@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Friend } from '../types';
 import { theme } from '../theme';
-import { tagline } from '../content/about';
+import { tagline } from '../about';
 import { inviteCodeFromUrl } from '../lib/invite';
 import { groupPreview, unclaimedInGroup } from '../lib/bookClubService';
 import type { NewProfile } from '../lib/useBookClub';

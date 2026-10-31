@@ -7,10 +7,10 @@ import type { ImageSourcePropType } from 'react-native';
  * me-original.jpg and gitignored. Set to null to show the Ex Libris
  * bookplate instead.
  */
-export const photo: ImageSourcePropType | null = require('../../assets/about/me.jpg');
+export const photo: ImageSourcePropType | null = require('../assets/about/me.jpg');
 
 /** The same photo cropped tight on the face, for small round avatars. */
-export const face: ImageSourcePropType | null = require('../../assets/about/me-face.jpg');
+export const face: ImageSourcePropType | null = require('../assets/about/me-face.jpg');
 
 export const photoCaption = 'Me, middle school.';
 

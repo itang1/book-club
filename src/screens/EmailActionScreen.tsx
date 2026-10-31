@@ -3,7 +3,7 @@ import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, Text, V
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { theme } from '../theme';
-import { tagline } from '../content/about';
+import { tagline } from '../about';
 import { EmailAction, previewEmailAction, redeemEmailAction } from '../lib/bookClubService';
 import { bookLink } from '../lib/links';
 

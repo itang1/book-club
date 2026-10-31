@@ -243,7 +243,7 @@ function Tabs({ club }: { club: BookClub }) {
     : 0;
 
   return (
-    <NavigationContainer linking={linking}>
+    <NavigationContainer linking={linking} documentTitle={{ enabled: false }}>
       <Tab.Navigator
         tabBar={(props) => <TabBar {...props} />}
         screenOptions={{ headerShown: false }}

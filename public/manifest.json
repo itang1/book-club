@@ -1,6 +1,6 @@
 {
   "name": "The Traveling Books",
-  "short_name": "Traveling Books",
+  "short_name": "The Traveling Books",
   "description": "Read it, write in it, and pass it on.",
   "start_url": "./",
   "display": "standalone",

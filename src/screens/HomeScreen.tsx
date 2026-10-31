@@ -17,7 +17,7 @@ import { Book, Group, RootStackParamList } from '../types';
 import { BookCard } from '../components/BookCard';
 import { ClubYearCard } from '../components/ClubYearCard';
 import { AboutSheet } from '../components/AboutSheet';
-import { homage, tagline } from '../content/about';
+import { homage, tagline } from '../about';
 import { holderId, isInTransit, relativeTime } from '../lib/bookState';
 import { lately } from '../lib/lately';
 import { theme } from '../theme';

@@ -4,7 +4,7 @@ import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { theme } from '../theme';
-import { tagline } from '../content/about';
+import { tagline } from '../about';
 import { emailSignInLink } from '../lib/auth';
 import { groupPreview } from '../lib/bookClubService';
 import { inviteCodeFromUrl } from '../lib/invite';

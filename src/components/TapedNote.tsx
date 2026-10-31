@@ -1,7 +1,7 @@
 import { Linking, StyleSheet, Text, View } from 'react-native';
 
 import { theme } from '../theme';
-import { pantsCredit, pantsPreamble, pantsRules } from '../content/about';
+import { pantsCredit, pantsPreamble, pantsRules } from '../about';
 
 export function TapedNote({ beside = false }: { beside?: boolean }) {
   return (

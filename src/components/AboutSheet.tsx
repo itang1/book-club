@@ -22,7 +22,7 @@ import {
   photoCaption,
   photoCredit,
   rules,
-} from '../content/about';
+} from '../about';
 
 type AboutSheetProps = {
   visible: boolean;
