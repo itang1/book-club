@@ -1,10 +1,20 @@
+<p align="center">
+  <img src="assets/crest.png" width="64" alt="The Traveling Books crest" />
+</p>
+
 # The Traveling Books
+
+[![Deploy](https://github.com/itang1/book-club/actions/workflows/deploy-web.yml/badge.svg)](https://github.com/itang1/book-club/actions/workflows/deploy-web.yml)
+[![CI](https://github.com/itang1/book-club/actions/workflows/ci.yml/badge.svg)](https://github.com/itang1/book-club/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-1f3b2c.svg)](LICENSE)
 
 **Read it, write in it, and pass it on.** One physical copy goes around a group of
 friends, one reader at a time, and the app keeps track of where it is and
 everywhere it's been.
 
 **Live:** https://itang1.github.io/book-club
+
+![Home, a book's page, and Friends & Groups](docs/screenshots.png)
 
 ## How it works
 
@@ -15,7 +25,10 @@ everywhere it's been.
   The handwritten letter is separate: tuck it in the package, about anything
   at all.
 - **It comes home.** When nobody's waiting, it goes back to its owner.
-  Anyone can sign up again for a reread.
+  Anyone can sign up again for a reread. An owner can also **call it home**
+  at any time: it comes back next, and the line waits.
+- **Scan your shelf.** One photo of a bookshelf adds every book it can read,
+  so friends can see what you have and ask to borrow it.
 
 A book's location is never stored. It's the newest row of an append-only
 `handoffs` log, so the full journey is always there and can't be rewritten.
@@ -23,16 +36,26 @@ A book's location is never stored. It's the newest row of an append-only
 ## Run it
 
 ```bash
-npm install
-npm start      # your Supabase project (.env); sign in by emailed link
-npm run demo   # the fictional demo group, with a DEV MODE bar to switch people
-npm test       # the rules: who has it, who's next, what's sealed
-npm run typecheck
-supabase/tests/run.sh   # who can see and do what, against a local Postgres
+nvm use && npm install
+npm run demo       # the fictional demo, with a DEV MODE bar to switch people
+npm start          # your own Supabase project (.env); sign in by emailed link
 ```
 
 `.env` needs `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_ANON_KEY`
-(see `.env.example`). Without them the app runs on the demo group.
+(see `.env.example`). Without them the app runs on the demo.
+
+## Develop
+
+```bash
+npm run check      # types, lint, formatting, unit tests
+npm run test:db    # who can see and do what, as real users, against a local Postgres
+npm run sample:sql # regenerate supabase/sample.sql from src/data/sampleClubs.ts
+npm run icons      # render the icons and share card from assets/*.svg
+```
+
+CI runs the checks, the database tests and a web build on every pull request.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for how the code is laid out and the
+conventions it keeps, and [SECURITY.md](SECURITY.md) to report a problem.
 
 ## Deploy
 
@@ -70,7 +93,8 @@ while the two disagree.
 
 Sign-in links need **Authentication → URL Configuration** to allow
 `https://itang1.github.io/book-club/**` (and `http://localhost:8081/**` for
-local development).
+local development). The sign-in email itself is `supabase/templates/sign-in.html`,
+installed in the house style by every deploy.
 
 ## Emails
 
