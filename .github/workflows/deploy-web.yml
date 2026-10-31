@@ -172,7 +172,7 @@ jobs:
       - run: sed -i 's|</body>|<script data-goatcounter="https://itang1.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script></body>|' dist/index.html
       # Pages serves 404.html for unknown paths; make that the app too.
       - run: cp dist/index.html dist/404.html
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: dist
 
