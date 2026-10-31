@@ -74,7 +74,7 @@ export function HomeScreen({
   );
   const sampleGroupIds = new Set(groups.filter((group) => group.isSample).map((group) => group.id));
   const isSampleBook = (book: Book) => Boolean(book.groupId && sampleGroupIds.has(book.groupId));
-  const others = activeBooks.filter((book) => !mine.includes(book) && !book.archivedAt);
+  const others = activeBooks.filter((book) => !book.archivedAt);
   const rested = activeBooks.filter((book) => Boolean(book.archivedAt));
 
   const sections = [...groups]
@@ -88,7 +88,6 @@ export function HomeScreen({
     .filter((group) => !group.isSample && currentUserId && group.memberIds.includes(currentUserId))
     .map((group) => group.name)
     .sort();
-  const groupName = (book: Book) => groups.find((group) => group.id === book.groupId)?.name;
   const ungrouped = others.filter(
     (book) => !sections.some((section) => section.books.includes(book)),
   );
@@ -209,24 +208,7 @@ export function HomeScreen({
         </View>
       )}
 
-      {mine.length > 0 && (
-        <>
-          <View style={styles.sectionHeader}>
-            <Text style={[styles.sectionTitle, styles.sectionTitleMine]}>In your hands</Text>
-          </View>
-          {mine.map((book) => (
-            <BookCard
-              key={book.id}
-              book={book}
-              currentUserId={currentUserId}
-              groupName={groupName(book)}
-              onPress={open}
-            />
-          ))}
-        </>
-      )}
-
-      {sections.length === 0 && mine.length === 0 && ungrouped.length === 0 && (
+      {sections.length === 0 && ungrouped.length === 0 && (
         <Text style={styles.empty}>
           Got a book you'd pass around? Lend it and its journey begins.
         </Text>
@@ -381,9 +363,6 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: '700',
     color: theme.colors.text,
-  },
-  sectionTitleMine: {
-    color: theme.colors.stamp,
   },
   groupHeader: {
     flexDirection: 'row',
