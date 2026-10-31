@@ -230,6 +230,7 @@ function Tabs({ club }: { club: BookClub }) {
               friendCount={friendIdsOf(club.friendships, club.currentUserId).size}
               email={club.usesAccounts ? club.email : null}
               onSignOut={club.signOut}
+              onDeleteAccount={club.usesAccounts ? club.deleteAccount : undefined}
               onUpdateProfile={club.updateProfile}
               onUpdateEmailPrefs={club.updateEmailPrefs}
               onUpdateFriendRequestsFrom={club.updateFriendRequestsFrom}

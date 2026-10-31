@@ -577,6 +577,57 @@ begin
 end;
 $$;
 
+-- Delete my account. The journey log is shared history, so the person's stops
+-- stay on every book they touched, anonymised: the profile row stays as
+-- "A reader" with just their city, and loses its account, name, friendships,
+-- groups, queue places and queued emails. Then the sign-in itself is deleted.
+-- Refused while they hold a copy or own one still in circulation: those are
+-- physical books that someone has to hand on or put to rest first.
+create or replace function public.delete_my_account() returns void
+language plpgsql security definer set search_path = public
+as $$
+declare
+  person text := public.me();
+  title text;
+begin
+  if auth.uid() is null or person is null then
+    raise exception 'Not signed in';
+  end if;
+
+  select b.title into title
+  from public.books b
+  where (
+      select h.to_friend from public.handoffs h
+      where h.book_id = b.id order by h.happened_at desc, h.id desc limit 1
+    ) = person
+  limit 1;
+  if title is not null then
+    raise exception 'You''re holding "%". Pass it on or send it home before deleting your account.', title;
+  end if;
+
+  select b.title into title
+  from public.books b
+  where b.archived_at is null
+    and (
+      select h.to_friend from public.handoffs h
+      where h.book_id = b.id and h.from_friend is null limit 1
+    ) = person
+  limit 1;
+  if title is not null then
+    raise exception 'You lent "%", and it''s still travelling. Ask for it back and rest it before deleting your account.', title;
+  end if;
+
+  delete from public.friendships where friend_a = person or friend_b = person;
+  delete from public.reading_queue where friend_id = person;
+  delete from public.group_members where person_id = person;
+  delete from public.notifications where person_id = person or about_person = person;
+  delete from public.email_actions where person_id = person or about_person = person;
+  update public.groups set created_by = null where created_by = person;
+  update public.friends set name = 'A reader', user_id = null where id = person;
+  delete from auth.users where id = auth.uid();
+end;
+$$;
+
 -- Who's in the group you were invited to but hasn't signed in yet: the
 -- "Already in the club? That's me" list. Only with the invite code.
 create or replace function public.unclaimed_in_group(p_invite_code text)
@@ -856,6 +907,7 @@ revoke all on function public.me(), public.is_member(text), public.can_see_book(
   public.can_see_person(text), public.claim_profile(text, text),
   public.unclaimed_in_group(text), public.group_preview(text),
   public.create_group(text, text), public.join_group(text), public.leave_group(text),
+  public.delete_my_account(),
   public.lend_book(text, text, text, text, text, text, text, text),
   public.set_cover(text, text),
   public.update_book(text, text, text),
@@ -869,6 +921,7 @@ grant execute on function public.me(), public.is_member(text), public.can_see_bo
   public.can_see_person(text), public.claim_profile(text, text),
   public.unclaimed_in_group(text), public.group_preview(text),
   public.create_group(text, text), public.join_group(text), public.leave_group(text),
+  public.delete_my_account(),
   public.lend_book(text, text, text, text, text, text, text, text),
   public.set_cover(text, text),
   public.update_book(text, text, text),

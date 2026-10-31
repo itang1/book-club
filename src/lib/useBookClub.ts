@@ -29,7 +29,7 @@ import {
   SaveError,
 } from './bookClubService';
 import type { BookClubData } from './bookClubService';
-import { claimProfile, onSessionChange, signOutEverywhere } from './auth';
+import { claimProfile, deleteMyAccount, onSessionChange, signOutEverywhere } from './auth';
 import { clearCachedClubData, loadCachedClubData, saveCachedClubData } from './cache';
 import { findCoverUrl } from './covers';
 import { hasFinished, holderId } from './bookState';
@@ -700,6 +700,7 @@ export function useBookClub() {
     claimExisting,
     agreeToRules: handleAgreeToRules,
     signOut,
+    deleteAccount: deleteMyAccount,
     createProfile,
     requestFriend: handleRequestFriend,
     acceptFriend: handleAcceptFriend,

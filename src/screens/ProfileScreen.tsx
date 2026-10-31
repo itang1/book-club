@@ -8,6 +8,7 @@ import { MonthlyColumns } from '../components/MonthlyColumns';
 import { PassportStamps } from '../components/PassportStamps';
 import { EditProfileSheet } from '../components/EditProfileSheet';
 import { EmailSettings } from '../components/EmailSettings';
+import { DeleteAccountSheet } from '../components/DeleteAccountSheet';
 import { finishesByMonth, placesForOwner } from '../lib/stats';
 import {
   friendNameIn,
@@ -27,6 +28,7 @@ type ProfileScreenProps = {
   friendCount: number;
   email?: string | null;
   onSignOut?: () => void;
+  onDeleteAccount?: () => Promise<string | null>;
   onUpdateProfile: (changes: Pick<Friend, 'name' | 'city' | 'state'>) => void;
   onUpdateEmailPrefs: (prefs: EmailPrefs) => void;
   onUpdateFriendRequestsFrom: (value: 'groups' | 'nobody') => void;
@@ -38,6 +40,7 @@ export function ProfileScreen({
   friendCount,
   email,
   onSignOut,
+  onDeleteAccount,
   onUpdateProfile,
   onUpdateEmailPrefs,
   onUpdateFriendRequestsFrom,
@@ -45,6 +48,7 @@ export function ProfileScreen({
   const insets = useSafeAreaInsets();
 
   const [editing, setEditing] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   // In your hands means arrived; a book in the post to you is coming, along
   // with any you're next in line for.
   const withMe = me
@@ -212,6 +216,18 @@ export function ProfileScreen({
         <Pressable style={styles.signOut} onPress={onSignOut}>
           <Text style={styles.signOutText}>Signed in as {email} · Sign out</Text>
         </Pressable>
+      )}
+      {email && onDeleteAccount && (
+        <Pressable style={styles.signOut} onPress={() => setDeleting(true)} accessibilityRole="button">
+          <Text style={styles.signOutText}>Delete my account</Text>
+        </Pressable>
+      )}
+      {onDeleteAccount && (
+        <DeleteAccountSheet
+          visible={deleting}
+          onClose={() => setDeleting(false)}
+          onDelete={onDeleteAccount}
+        />
       )}
     </ScrollView>
   );
