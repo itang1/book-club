@@ -1,9 +1,21 @@
-import { Image, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useState } from 'react';
+import {
+  Image,
+  Modal,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Book } from '../types';
 import { theme } from '../theme';
 import { yearInReview } from '../lib/stats';
+import { yearCard } from '../lib/yearCard';
+import { shareYearCard } from '../lib/yearCardImage';
 import { PassportStamps } from './PassportStamps';
 
 type YearInReviewSheetProps = {
@@ -47,6 +59,15 @@ export function YearInReviewSheet({
 }: YearInReviewSheetProps) {
   const insets = useSafeAreaInsets();
   const review = yearInReview(books, year, currentUserId);
+  const [sharing, setSharing] = useState<'idle' | 'busy' | 'downloaded'>('idle');
+  // The picture is drawn on a canvas: web only, and only once there's a year to show.
+  const canShare = Platform.OS === 'web' && review.handoffs > 0;
+
+  const share = async () => {
+    setSharing('busy');
+    const result = await shareYearCard(yearCard(review, year)).catch(() => 'unsupported');
+    setSharing(result === 'downloaded' ? 'downloaded' : 'idle');
+  };
   const tiles = [
     { label: 'Handoffs', value: review.handoffs },
     { label: 'Notes', value: review.letters },
@@ -72,6 +93,25 @@ export function YearInReviewSheet({
                 ? 'A fresh year: lend a book and this page fills in.'
                 : 'Everything your groups passed around this year, so far.'}
             </Text>
+
+            {canShare && (
+              <View style={styles.shareRow}>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Share your year as a picture"
+                  disabled={sharing === 'busy'}
+                  onPress={share}
+                  style={({ pressed }) => [styles.shareButton, pressed && styles.pressed]}
+                >
+                  <Text style={styles.shareText}>
+                    {sharing === 'busy' ? 'Making the picture…' : 'Share as a picture'}
+                  </Text>
+                </Pressable>
+                {sharing === 'downloaded' && (
+                  <Text style={styles.shareNote}>Saved to your downloads.</Text>
+                )}
+              </View>
+            )}
 
             <View style={styles.tiles}>
               {tiles.map((tile) => (
@@ -141,6 +181,16 @@ export function YearInReviewSheet({
 }
 
 const styles = StyleSheet.create({
+  shareRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 18 },
+  shareButton: {
+    backgroundColor: theme.colors.accent,
+    borderRadius: theme.radius.sm,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+  },
+  pressed: { opacity: 0.8 },
+  shareText: { ...theme.caps, color: theme.colors.onAccent, fontWeight: '700', fontSize: 12 },
+  shareNote: { fontSize: 13, color: theme.colors.muted },
   container: {
     flex: 1,
     backgroundColor: theme.colors.background,

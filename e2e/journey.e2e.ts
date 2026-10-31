@@ -100,6 +100,15 @@ test('other members do not see the controls', async ({ page }) => {
   await expect(page.getByText('Running the group')).toHaveCount(0);
 });
 
+test('the year in review becomes a picture to share', async ({ page }) => {
+  await seen(page, 'See the year so far').click();
+  const [download] = await Promise.all([
+    page.waitForEvent('download'),
+    page.getByLabel('Share your year as a picture').click(),
+  ]);
+  expect(download.suggestedFilename()).toMatch(/^traveling-books-\d{4}\.png$/);
+});
+
 test('the privacy policy is a page of its own', async ({ page }) => {
   await page.goto('/privacy.html');
   await expect(page.getByRole('heading', { name: 'Privacy' })).toBeVisible();
