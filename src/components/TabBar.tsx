@@ -7,6 +7,7 @@ import { theme } from '../theme';
 
 const ICONS: Record<string, { active: keyof typeof Ionicons.glyphMap; idle: keyof typeof Ionicons.glyphMap }> = {
   Home: { active: 'book', idle: 'book-outline' },
+  Shelf: { active: 'library', idle: 'library-outline' },
   Friends: { active: 'people', idle: 'people-outline' },
   Profile: { active: 'person', idle: 'person-outline' },
 };

@@ -94,6 +94,20 @@ One-time setup:
    `notifications`, event Insert, type *Supabase Edge Functions*, function
    `notify`. Emails then go out within seconds of being queued.
 
+## Bookshelves
+
+The **Shelf** tab lets you photograph your shelves; `supabase/functions/scan-shelf`
+sends the photo to Gemini, which suggests titles and authors. You tick, fix or
+drop each guess before anything is saved. People who share a real group with you
+can browse your shelf and **Ask to borrow** (you get an email and say yes or not
+now); any book can be **lent to a group**, which turns it into a Traveling Book
+with a line and a journey.
+
+One-time setup: add a `GEMINI_API_KEY` repo secret (from Google AI Studio). The
+deploy then sets it as a function secret and deploys `scan-shelf`. Optionally set
+`GEMINI_MODEL` on the function (default `gemini-2.5-flash`). Without the key the
+Shelf still works; scanning says it isn't set up and you can add books by hand.
+
 ## Backups
 
 `.github/workflows/backup.yml` dumps the data every night at 06:23 UTC,

@@ -9,7 +9,7 @@ import {
   useSafeAreaInsets,
 } from 'react-native-safe-area-context';
 
-import { FriendsStackParamList, RootStackParamList, RootTabParamList } from './src/types';
+import { FriendsStackParamList, RootStackParamList, RootTabParamList, ShelfStackParamList } from './src/types';
 import { BookClub, useBookClub } from './src/lib/useBookClub';
 import { friendIdsOf, incomingRequests } from './src/lib/friendGraph';
 import { holderId, isInTransit } from './src/lib/bookState';
@@ -26,6 +26,9 @@ import { ProfileScreen } from './src/screens/ProfileScreen';
 import { BookDetailScreen } from './src/screens/BookDetailScreen';
 import { WelcomeScreen } from './src/screens/WelcomeScreen';
 import { GroupScreen } from './src/screens/GroupScreen';
+import { ShelfScreen } from './src/screens/ShelfScreen';
+import { PersonShelfScreen } from './src/screens/PersonShelfScreen';
+import { useShelf } from './src/lib/shelf';
 import { SignInScreen } from './src/screens/SignInScreen';
 import { RulesAgreementScreen } from './src/screens/RulesAgreementScreen';
 import { EmailActionScreen } from './src/screens/EmailActionScreen';
@@ -36,6 +39,7 @@ const ASK_TO_AGREE_TO_RULES = false;
 const Tab = createBottomTabNavigator<RootTabParamList>();
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const FriendsNav = createNativeStackNavigator<FriendsStackParamList>();
+const ShelfNav = createNativeStackNavigator<ShelfStackParamList>();
 
 const tabStyles = StyleSheet.create({
   root: {
@@ -189,6 +193,43 @@ function FriendsStack({ club }: { club: BookClub }) {
   );
 }
 
+function ShelfStack({ club }: { club: BookClub }) {
+  const me = club.members.find((person) => person.id === club.currentUserId) ?? null;
+  const shelf = useShelf(club.usesAccounts && me !== null);
+  const myGroups = club.groups.filter(
+    (group) => !group.isSample && club.currentUserId && group.memberIds.includes(club.currentUserId),
+  );
+
+  return (
+    <ShelfNav.Navigator
+      screenOptions={{
+        headerStyle: { backgroundColor: theme.colors.background },
+        headerTintColor: theme.colors.accent,
+        headerTitleStyle: { color: theme.colors.text, fontFamily: theme.fonts.serif },
+        headerShadowVisible: false,
+      }}
+    >
+      <ShelfNav.Screen name="ShelfHome" options={{ headerShown: false }}>
+        {({ navigation }) => (
+          <ShelfScreen
+            navigation={navigation}
+            shelf={shelf}
+            me={me}
+            members={club.members}
+            groups={myGroups}
+            books={club.books}
+          />
+        )}
+      </ShelfNav.Screen>
+      <ShelfNav.Screen name="PersonShelf" options={{ title: '' }}>
+        {(props) => (
+          <PersonShelfScreen {...props} shelf={shelf} me={me} members={club.members} books={club.books} />
+        )}
+      </ShelfNav.Screen>
+    </ShelfNav.Navigator>
+  );
+}
+
 function Tabs({ club }: { club: BookClub }) {
   const me = club.members.find((person) => person.id === club.currentUserId) ?? null;
   const incomingBookCount = club.books.filter(
@@ -213,6 +254,11 @@ function Tabs({ club }: { club: BookClub }) {
         >
           {() => <HomeStack club={club} />}
         </Tab.Screen>
+        {club.usesAccounts && (
+          <Tab.Screen name="Shelf" options={{ title: 'Shelf' }}>
+            {() => <ShelfStack club={club} />}
+          </Tab.Screen>
+        )}
         <Tab.Screen
           name="Friends"
           options={{

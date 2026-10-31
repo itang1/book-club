@@ -71,4 +71,13 @@ describe('emails', () => {
     expect(reading.text).toContain('Lena is next in line');
     expect(reading.text).toContain('once a month at most');
   });
+
+  it('shelf request: names who asked, shows the book, opens the shelf', () => {
+    const email = renderEmail({
+      kind: 'shelf_request', recipient: 'Sam', other: 'Tia Okafor', book, appUrl,
+    });
+    expect(email.subject).toBe(`Tia would like to borrow ${book.title}`);
+    expect(email.html).toContain(`${appUrl}shelf`);
+    expect(email.html).toContain('on your shelf');
+  });
 });

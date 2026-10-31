@@ -12,7 +12,8 @@ export type EmailKind =
   | 'friend_request'
   | 'new_book'
   | 'arrival_check'
-  | 'still_reading';
+  | 'still_reading'
+  | 'shelf_request';
 
 export type EmailFacts = {
   kind: EmailKind;
@@ -127,6 +128,17 @@ function content(facts: EmailFacts): Content {
         action: 'Accept',
         why: `You're getting this because ${otherText} sent you a friend request.`,
       };
+    case 'shelf_request':
+      return {
+        subject: `${otherText} would like to borrow ${titleText}`,
+        preheader: 'It is on your shelf. You decide.',
+        heading: `${otherText} asked to borrow ${titleText}`,
+        paragraphs: [
+          `${other} saw <i>${title}</i> on your shelf and would like to read it. Open your shelf to say yes or no. If it's yes, lend it to a group you share with ${other} and ${other} can join the line.`,
+        ],
+        button: 'Open your shelf',
+        why: `You're getting this because ${otherText} asked for a book on your shelf.`,
+      };
     case 'new_book': {
       const author = facts.book ? ` by ${escape(facts.book.author)}` : '';
       return {
@@ -176,9 +188,11 @@ export function renderEmail(facts: EmailFacts): Email {
   const target =
     facts.kind === 'friend_request'
       ? `${root}friends`
-      : facts.bookId
-        ? `${root}b/${encodeURIComponent(facts.bookId)}`
-        : root;
+      : facts.kind === 'shelf_request'
+        ? `${root}shelf`
+        : facts.bookId
+          ? `${root}b/${encodeURIComponent(facts.bookId)}`
+          : root;
   const settings = `${root}you`;
   const action = c.action && facts.actionUrl ? { label: c.action, url: facts.actionUrl } : null;
   const cover = facts.book

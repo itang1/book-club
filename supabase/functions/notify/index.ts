@@ -36,6 +36,7 @@ type Row = {
   kind: EmailKind;
   book_id: string | null;
   about_person: string | null;
+  shelf_book_id: string | null;
   attempts: number;
 };
 
@@ -94,6 +95,17 @@ async function factsFor(row: Row): Promise<{ to: string; facts: EmailFacts } | n
     actionUrl: await actionUrl(row),
   };
 
+  if (row.shelf_book_id) {
+    const { data: shelved } = await db
+      .from('shelf_books')
+      .select('title, author, cover_color')
+      .eq('id', row.shelf_book_id)
+      .maybeSingle();
+    if (shelved) {
+      facts.book = { title: shelved.title, author: shelved.author, coverColor: shelved.cover_color };
+    }
+  }
+
   if (row.book_id) {
     const { data: book } = await db
       .from('books')
@@ -136,7 +148,7 @@ async function giveUp(id: number, reason: string) {
 Deno.serve(async () => {
   const { data: rows, error } = await db
     .from('notifications')
-    .select('id, created_at, person_id, kind, book_id, about_person, attempts')
+    .select('id, created_at, person_id, kind, book_id, about_person, shelf_book_id, attempts')
     .is('sent_at', null)
     .lt('attempts', MAX_ATTEMPTS)
     .or(`next_attempt_at.is.null,next_attempt_at.lte.${new Date().toISOString()}`)

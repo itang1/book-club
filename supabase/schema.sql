@@ -620,6 +620,8 @@ begin
   delete from public.friendships where friend_a = person or friend_b = person;
   delete from public.reading_queue where friend_id = person;
   delete from public.group_members where person_id = person;
+  delete from public.shelf_books where owner_id = person;
+  delete from public.shelf_requests where requester_id = person;
   delete from public.notifications where person_id = person or about_person = person;
   delete from public.email_actions where person_id = person or about_person = person;
   update public.groups set created_by = null where created_by = person;
@@ -1303,6 +1305,173 @@ exception when others then
   -- A scheduling hiccup shouldn't stop the rest of the deploy.
   raise warning 'Reminders left unscheduled: %', sqlerrm;
 end $$;
+
+
+-- ---------------------------------------------------------------
+-- Bookshelves. What a person owns, scanned from a photo or typed in. Seen by
+-- people who share a (real) group with them, the same circle that sees their
+-- books. A shelf book is not in circulation until its owner lends it to a
+-- group, which makes a real book with a line and a journey.
+-- ---------------------------------------------------------------
+create table if not exists public.shelf_books (
+  id text primary key,
+  owner_id text not null references public.friends (id) on delete cascade,
+  title text not null,
+  author text not null default '',
+  cover_color text not null default '#d9a77d',
+  lent_book_id text references public.books (id) on delete set null,
+  created_at timestamptz not null default now()
+);
+create index if not exists shelf_books_owner on public.shelf_books (owner_id);
+
+create table if not exists public.shelf_requests (
+  id text primary key,
+  shelf_book_id text not null references public.shelf_books (id) on delete cascade,
+  requester_id text not null references public.friends (id) on delete cascade,
+  status text not null default 'pending' check (status in ('pending', 'accepted', 'declined')),
+  created_at timestamptz not null default now(),
+  unique (shelf_book_id, requester_id)
+);
+
+-- Whoever shares a real group with this person (the shelf's circle).
+create or replace function public.shares_group(p_person_id text) returns boolean
+language sql stable security definer set search_path = public
+as $$
+  select p_person_id = public.me() or exists (
+    select 1 from public.group_members mine
+    join public.group_members theirs on theirs.group_id = mine.group_id
+    join public.groups g on g.id = mine.group_id and not g.is_sample
+    where mine.person_id = public.me() and theirs.person_id = p_person_id
+  )
+$$;
+
+alter table public.shelf_books enable row level security;
+alter table public.shelf_requests enable row level security;
+revoke all on public.shelf_books, public.shelf_requests from anon, authenticated;
+grant select, insert, delete on public.shelf_books to authenticated;
+-- Only the description is editable; lent_book_id is set by lend_from_shelf.
+revoke update on public.shelf_books from authenticated;
+grant update (title, author, cover_color) on public.shelf_books to authenticated;
+grant select on public.shelf_requests to authenticated;
+
+drop policy if exists "see shelves in your groups" on public.shelf_books;
+create policy "see shelves in your groups"
+  on public.shelf_books for select to authenticated using (public.shares_group(owner_id));
+drop policy if exists "shelve your own books" on public.shelf_books;
+create policy "shelve your own books"
+  on public.shelf_books for insert to authenticated
+  with check (owner_id = public.me() and lent_book_id is null);
+drop policy if exists "edit your own shelf" on public.shelf_books;
+create policy "edit your own shelf"
+  on public.shelf_books for update to authenticated
+  using (owner_id = public.me()) with check (owner_id = public.me());
+drop policy if exists "clear your own shelf" on public.shelf_books;
+create policy "clear your own shelf"
+  on public.shelf_books for delete to authenticated using (owner_id = public.me());
+
+drop policy if exists "see requests you made or received" on public.shelf_requests;
+create policy "see requests you made or received"
+  on public.shelf_requests for select to authenticated using (
+    requester_id = public.me()
+    or exists (select 1 from public.shelf_books s where s.id = shelf_book_id and s.owner_id = public.me())
+  );
+
+alter table public.notifications
+  add column if not exists shelf_book_id text references public.shelf_books (id) on delete cascade;
+alter table public.notifications drop constraint if exists notifications_kind_check;
+alter table public.notifications add constraint notifications_kind_check
+  check (kind in ('book_sent', 'book_arrived', 'next_in_line', 'friend_request', 'new_book',
+                  'arrival_check', 'still_reading', 'shelf_request'));
+
+-- Ask to borrow someone's book: only from a shelf you can see, once each.
+create or replace function public.request_shelf_book(p_request_id text, p_shelf_book_id text)
+returns void
+language plpgsql security definer set search_path = public
+as $$
+declare
+  shelved public.shelf_books;
+  asker text := public.me();
+begin
+  select * into shelved from public.shelf_books where id = p_shelf_book_id;
+  if asker is null or shelved.id is null or shelved.owner_id = asker
+     or not public.shares_group(shelved.owner_id) then
+    raise exception 'You can only ask for a book on a shelf you can see';
+  end if;
+  if shelved.lent_book_id is not null then
+    raise exception 'That copy is already out travelling';
+  end if;
+
+  insert into public.shelf_requests (id, shelf_book_id, requester_id)
+  values (p_request_id, p_shelf_book_id, asker)
+  on conflict (shelf_book_id, requester_id) do update
+    set status = 'pending', created_at = now()
+    where public.shelf_requests.status = 'declined';
+  if not found then
+    return;
+  end if;
+
+  -- An email, if the owner takes request emails (the same switch as friend requests).
+  if exists (
+    select 1 from public.friends
+    where id = shelved.owner_id and user_id is not null and not is_character and email_friend_request
+  ) then
+    insert into public.notifications (person_id, kind, about_person, shelf_book_id)
+    values (shelved.owner_id, 'shelf_request', asker, p_shelf_book_id);
+  end if;
+end;
+$$;
+
+-- The owner's answer. Saying yes doesn't lend anything by itself: they lend it
+-- to a group (lend_from_shelf) when they're ready, and the asker joins the line.
+create or replace function public.answer_shelf_request(p_request_id text, p_accept boolean)
+returns void
+language plpgsql security definer set search_path = public
+as $$
+begin
+  update public.shelf_requests r
+  set status = case when p_accept then 'accepted' else 'declined' end
+  from public.shelf_books s
+  where r.id = p_request_id and s.id = r.shelf_book_id and s.owner_id = public.me();
+  if not found then
+    raise exception 'That request isn''t yours to answer';
+  end if;
+end;
+$$;
+
+-- Lend a shelf book to one of your groups: it becomes a real book (lend_book
+-- does the rest), and the shelf remembers which one.
+create or replace function public.lend_from_shelf(
+  p_shelf_book_id text, p_book_id text, p_handoff_id text, p_group_id text
+) returns void
+language plpgsql security definer set search_path = public
+as $$
+declare
+  shelved public.shelf_books;
+begin
+  select * into shelved from public.shelf_books
+  where id = p_shelf_book_id and owner_id = public.me() for update;
+  if shelved.id is null then
+    raise exception 'That isn''t on your shelf';
+  end if;
+  if shelved.lent_book_id is not null and exists (
+    select 1 from public.books where id = shelved.lent_book_id and archived_at is null
+  ) then
+    raise exception 'That copy is already out travelling';
+  end if;
+
+  perform public.lend_book(
+    p_book_id, shelved.title, shelved.author, shelved.cover_color, p_handoff_id, null, p_group_id
+  );
+  update public.shelf_books set lent_book_id = p_book_id where id = p_shelf_book_id;
+end;
+$$;
+
+revoke all on function public.shares_group(text), public.request_shelf_book(text, text),
+  public.answer_shelf_request(text, boolean), public.lend_from_shelf(text, text, text, text)
+  from public, anon;
+grant execute on function public.shares_group(text), public.request_shelf_book(text, text),
+  public.answer_shelf_request(text, boolean), public.lend_from_shelf(text, text, text, text)
+  to authenticated;
 
 -- ---------------------------------------------------------------
 -- Tell the API about any new tables or columns straight away, rather than
