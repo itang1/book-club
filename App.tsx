@@ -214,6 +214,7 @@ function FriendsStack({ club }: { club: BookClub }) {
             onRemoveMember={club.removeFromGroup}
             onHandOver={club.handOverGroup}
             onResetInvite={club.resetInviteLink}
+            onSetPace={club.setGroupPace}
             onLeft={() => navigation.navigate('FriendsHome')}
           />
         )}

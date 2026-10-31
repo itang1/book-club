@@ -25,6 +25,7 @@ import {
   placesVisited,
   readersSoFar,
   senderId,
+  stayProgress,
   timesRead,
 } from '../lib/bookState';
 
@@ -93,6 +94,7 @@ export function BookDetailScreen({
   const iSentIt = inPost && currentUserId !== null && sender === currentUserId;
   const iHoldIt = !inPost && currentUserId !== null && currentUserId === holder;
   const myPlace = placeInLine(book, currentUserId);
+  const stay = stayProgress(book, group?.paceWeeks);
   const goingHome = confirmingTo !== null && confirmingTo === owner && confirmingTo !== nextId;
 
   const whereItIs = (() => {
@@ -363,6 +365,27 @@ export function BookDetailScreen({
           <Text style={[styles.whereItIs, (iHoldIt || comingToMe) && styles.whereItIsMine]}>
             {whereItIs}
           </Text>
+          {stay && (
+            <View style={styles.pace} accessibilityRole="progressbar">
+              <View style={styles.paceTrack}>
+                <View
+                  style={[
+                    styles.paceFill,
+                    { width: `${Math.min(100, (stay.days / (stay.ofWeeks * 7)) * 100)}%` },
+                    stay.over && styles.paceFillOver,
+                  ]}
+                />
+              </View>
+              <Text style={styles.paceText}>
+                {iHoldIt
+                  ? `Week ${stay.week} of about ${stay.ofWeeks}, the group's pace.`
+                  : `${first(holder)} is in week ${stay.week} of about ${stay.ofWeeks}.`}
+                {iHoldIt && stay.over && nextId
+                  ? ` ${first(nextId)} is next whenever you're ready.`
+                  : ''}
+              </Text>
+            </View>
+          )}
           <View style={styles.action}>{renderAction()}</View>
         </View>
 

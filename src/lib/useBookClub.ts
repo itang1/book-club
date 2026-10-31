@@ -16,6 +16,7 @@ import {
   removeFromGroup,
   handOverGroup,
   resetInviteCode,
+  setGroupPace,
   removeFriendship,
   requestFriend,
   retireBook,
@@ -623,6 +624,11 @@ export function useBookClub() {
     trackGroup(`hand the group to ${nameOf(personId)}`, handOverGroup(groupId, personId));
   };
 
+  const handleSetGroupPace = (groupId: string, weeks: number | null) => {
+    patchGroup(groupId, (group) => ({ ...group, paceWeeks: weeks ?? undefined }));
+    trackGroup('set the pace', setGroupPace(groupId, weeks));
+  };
+
   /** The new code is made by the database; it arrives with the refresh. */
   const handleResetInviteLink = (groupId: string) => {
     trackGroup('reset the invite link', resetInviteCode(groupId));
@@ -739,6 +745,7 @@ export function useBookClub() {
     removeFromGroup: handleRemoveFromGroup,
     handOverGroup: handleHandOverGroup,
     resetInviteLink: handleResetInviteLink,
+    setGroupPace: handleSetGroupPace,
     addBook: handleAddBook,
     changeCover: handleChangeCover,
     updateBookDetails: handleUpdateBookDetails,

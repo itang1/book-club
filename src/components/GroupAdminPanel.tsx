@@ -12,7 +12,10 @@ type Props = {
   onRemove: (personId: string) => void;
   onHandOver: (personId: string) => void;
   onResetInvite: () => void;
+  onSetPace: (weeks: number | null) => void;
 };
+
+const PACES: (number | null)[] = [null, 2, 3, 4, 6, 8];
 
 /** One thing at a time waits for a yes: which, and about whom. */
 type Pending =
@@ -33,6 +36,7 @@ export function GroupAdminPanel({
   onRemove,
   onHandOver,
   onResetInvite,
+  onSetPace,
 }: Props) {
   const [name, setName] = useState(group.name);
   const [pending, setPending] = useState<Pending>(null);
@@ -85,6 +89,31 @@ export function GroupAdminPanel({
           >
             <Text style={styles.buttonText}>Save</Text>
           </Pressable>
+        </View>
+
+        <Text style={styles.label}>Pace</Text>
+        <Text style={styles.note}>
+          About how long each reader keeps a copy. Whoever has it sees how far along they are;
+          nothing is enforced.
+        </Text>
+        <View style={styles.chips}>
+          {PACES.map((weeks) => {
+            const chosen = (group.paceWeeks ?? null) === weeks;
+            return (
+              <Pressable
+                key={weeks ?? 'none'}
+                accessibilityRole="button"
+                accessibilityState={{ selected: chosen }}
+                accessibilityLabel={weeks ? `About ${weeks} weeks each` : 'No set pace'}
+                onPress={() => onSetPace(weeks)}
+                style={[styles.chip, chosen && styles.chipChosen]}
+              >
+                <Text style={[styles.chipText, chosen && styles.chipTextChosen]}>
+                  {weeks ? `${weeks} wk` : 'None'}
+                </Text>
+              </Pressable>
+            );
+          })}
         </View>
 
         {others.length > 0 && (
@@ -199,6 +228,17 @@ const styles = StyleSheet.create({
   },
   disabled: { opacity: 0.4 },
   buttonText: { ...theme.caps, color: theme.colors.onAccent, fontWeight: '700', fontSize: 12 },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12, marginTop: 4 },
+  chip: {
+    borderWidth: 1.5,
+    borderColor: theme.colors.accent,
+    borderRadius: theme.radius.sm,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  chipChosen: { backgroundColor: theme.colors.accent },
+  chipText: { fontSize: 13, fontWeight: '700', color: theme.colors.accent },
+  chipTextChosen: { color: theme.colors.onAccent },
   personRow: {
     flexDirection: 'row',
     alignItems: 'center',

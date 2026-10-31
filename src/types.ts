@@ -31,6 +31,8 @@ export type Group = {
    * whoever started it, or after they leave, its longest-standing member.
    */
   adminId?: string;
+  /** About how many weeks each reader keeps a copy; a shared expectation. */
+  paceWeeks?: number;
 };
 
 export type FriendStatus = 'waiting' | 'reading' | 'done';

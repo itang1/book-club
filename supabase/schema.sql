@@ -804,6 +804,21 @@ begin
 end;
 $$;
 
+-- A gentle pace: about how many weeks each reader keeps a copy. A shared
+-- expectation, shown to whoever holds it; nothing is enforced. Null: none.
+alter table public.groups add column if not exists pace_weeks smallint
+  check (pace_weeks between 1 and 12);
+
+create or replace function public.set_group_pace(p_group_id text, p_weeks smallint)
+returns void
+language plpgsql security definer set search_path = public
+as $$
+begin
+  perform public.require_group_admin(p_group_id);
+  update public.groups set pace_weeks = p_weeks where id = p_group_id;
+end;
+$$;
+
 -- A new invite link; the old one stops working. Returns the new code.
 create or replace function public.reset_invite_code(p_group_id text) returns text
 language plpgsql security definer set search_path = public
@@ -1105,6 +1120,7 @@ revoke all on function public.me(), public.is_member(text), public.can_see_book(
   public.group_admin(text), public.admin_id(public.groups),
   public.rename_group(text, text), public.remove_from_group(text, text),
   public.hand_over_group(text, text), public.reset_invite_code(text),
+  public.set_group_pace(text, smallint),
   public.delete_my_account(),
   public.lend_book(text, text, text, text, text, text, text, text),
   public.set_cover(text, text),
@@ -1123,6 +1139,7 @@ grant execute on function public.me(), public.is_member(text), public.can_see_bo
   public.group_admin(text), public.admin_id(public.groups),
   public.rename_group(text, text), public.remove_from_group(text, text),
   public.hand_over_group(text, text), public.reset_invite_code(text),
+  public.set_group_pace(text, smallint),
   public.delete_my_account(),
   public.lend_book(text, text, text, text, text, text, text, text),
   public.set_cover(text, text),
