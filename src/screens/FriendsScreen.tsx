@@ -218,6 +218,7 @@ export function FriendsScreen({
       keyboardShouldPersistTaps="handled"
     >
       <View style={[styles.headerWrap, { paddingTop: insets.top + 20 }]}>
+        <Text style={styles.eyebrow}>The Traveling Books</Text>
         <Text style={styles.title}>Friends and Groups</Text>
         <Text style={styles.subtitle}>
           Friends see what you're reading. To lend to each other, share a group.
@@ -337,7 +338,7 @@ export function FriendsScreen({
       >
         <View style={styles.backdrop}>
           <View style={styles.sheet}>
-            <Text style={styles.sheetTitle}>Unfriend {unfriending?.name.split(' ')[0]}?</Text>
+            <Text style={styles.sheetTitle}>Unfriend {unfriending?.name}?</Text>
             <Text style={styles.note}>
               This stays private, and you'll keep sharing any groups you're both in.
             </Text>
@@ -371,27 +372,36 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: 32,
   },
+  eyebrow: {
+    ...theme.caps,
+    fontSize: 10,
+    letterSpacing: 2.4,
+    color: theme.colors.brass,
+    marginBottom: 6,
+  },
   headerWrap: {
-    backgroundColor: theme.colors.masthead,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
+    backgroundColor: theme.colors.letterhead,
+    borderBottomWidth: 3,
+    borderBottomColor: theme.colors.brass,
     marginHorizontal: -20,
     paddingHorizontal: 20,
-    paddingBottom: 16,
-    marginBottom: 16,
+    paddingBottom: 20,
+    marginBottom: 20,
   },
   title: {
     fontFamily: theme.fonts.serif,
     fontSize: 30,
-    fontWeight: '700',
+    lineHeight: 36,
     marginBottom: 6,
-    color: theme.colors.text,
+    color: theme.colors.onMasthead,
   },
   subtitle: {
-    color: theme.colors.muted,
+    fontFamily: theme.fonts.serif,
+    fontStyle: 'italic',
+    color: theme.colors.onMasthead,
+    opacity: 0.85,
     fontSize: 15,
     lineHeight: 21,
-    marginBottom: 8,
   },
   sectionTitle: {
     fontFamily: theme.fonts.serif,

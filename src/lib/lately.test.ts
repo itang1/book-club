@@ -20,12 +20,12 @@ const book: Book = {
 };
 
 describe('lately', () => {
-  it('lists lends, sends and arrivals, newest first, by first name', () => {
+  it('lists lends, sends and arrivals, newest first, by full name', () => {
     expect(lately([book]).map((e) => [e.who, e.verb, e.to])).toEqual([
-      ['Bea', 'sent', 'Cat'],
-      ['Bea', 'got', undefined],
-      ['Ana', 'sent', 'Bea'],
-      ['Ana', 'lent', undefined],
+      ['Bea Reader', 'sent', 'Cat Reader'],
+      ['Bea Reader', 'got', undefined],
+      ['Ana Reader', 'sent', 'Bea Reader'],
+      ['Ana Reader', 'lent', undefined],
     ]);
   });
 

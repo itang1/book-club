@@ -108,6 +108,7 @@ function HomeStack({ club }: { club: BookClub }) {
             currentUserId={club.currentUserId}
             refreshing={club.refreshing}
             onRefresh={club.refresh}
+            canScanShelf={club.usesAccounts}
           />
         )}
       </Stack.Screen>
@@ -129,6 +130,8 @@ function HomeStack({ club }: { club: BookClub }) {
             onUpdateBookDetails={club.updateBookDetails}
             onRetireBook={club.retireBook}
             onUnretireBook={club.unretireBook}
+            onCallHome={club.callHome}
+            onCancelCallHome={club.cancelCallHome}
             onJoinLine={club.joinLine}
             onLeaveLine={club.leaveLine}
           />

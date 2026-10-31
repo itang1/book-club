@@ -42,6 +42,7 @@ type BookRow = {
   group_id: string | null;
   cover_url: string | null;
   archived_at?: string | null;
+  called_home_at?: string | null;
 };
 
 export type QueueRow = {
@@ -192,6 +193,7 @@ function assembleBooks(
       groupId: row.group_id ?? undefined,
       coverUrl: row.cover_url ?? undefined,
       archivedAt: row.archived_at ?? undefined,
+      calledHomeAt: row.called_home_at ?? undefined,
       queue,
       handoffs: handoffRows
         .filter((entry) => entry.book_id === row.id)
@@ -403,6 +405,13 @@ export const retireBook = (bookId: string) =>
 
 export const unretireBook = (bookId: string) =>
   save('unretireBook', (db) => db.rpc('unretire_book', { p_book_id: bookId }));
+
+/** Ask for a copy back: whoever has it sends it home next (owner only). */
+export const callHome = (bookId: string) =>
+  save('callHome', (db) => db.rpc('call_home', { p_book_id: bookId }));
+
+export const cancelCallHome = (bookId: string) =>
+  save('cancelCallHome', (db) => db.rpc('cancel_call_home', { p_book_id: bookId }));
 
 /** Rows store each pair once, smaller id first (see schema.sql). */
 const pairOf = (x: string, y: string) =>

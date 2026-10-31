@@ -832,6 +832,51 @@ begin
 end;
 $$;
 
+-- Call a copy home: the owner wants it back. Whoever has it sends it home
+-- next (pass_on refuses anyone else), and the line waits as it is. Going
+-- home clears the call; so can the owner, if they change their mind.
+alter table public.books add column if not exists called_home_at timestamptz;
+
+create or replace function public.call_home(p_book_id text) returns void
+language plpgsql security definer set search_path = public
+as $$
+declare
+  holder text;
+begin
+  if not exists (
+    select 1 from public.handoffs
+    where book_id = p_book_id and from_friend is null and to_friend = public.me()
+  ) then
+    raise exception 'Only the book''s owner can call it home';
+  end if;
+  select to_friend into holder from public.handoffs
+  where book_id = p_book_id order by happened_at desc limit 1;
+  if holder = public.me() then
+    raise exception 'It''s already home with you';
+  end if;
+
+  update public.books set called_home_at = now()
+  where id = p_book_id and called_home_at is null and archived_at is null;
+  if found then
+    perform public.notify(holder, 'called_home', p_book_id, public.me());
+  end if;
+end;
+$$;
+
+create or replace function public.cancel_call_home(p_book_id text) returns void
+language plpgsql security definer set search_path = public
+as $$
+begin
+  if not exists (
+    select 1 from public.handoffs
+    where book_id = p_book_id and from_friend is null and to_friend = public.me()
+  ) then
+    raise exception 'Only the book''s owner can change that';
+  end if;
+  update public.books set called_home_at = null where id = p_book_id;
+end;
+$$;
+
 -- Send the book you're holding to the next reader in line, or home to its
 -- owner, with an optional letter. It's in the post until they say Got it.
 create or replace function public.pass_on(
@@ -863,6 +908,11 @@ begin
   ) then
     raise exception 'They are not in line for this book';
   end if;
+  if p_to is distinct from owner and exists (
+    select 1 from public.books where id = p_book_id and called_home_at is not null
+  ) then
+    raise exception 'Its owner has called it home, so it goes back to them next';
+  end if;
 
   -- Passing it on means you had it, even if you never tapped Got it.
   update public.handoffs set received_at = coalesce(received_at, now())
@@ -876,6 +926,10 @@ begin
   where book_id = p_book_id and friend_id = me_id;
   update public.reading_queue set status = 'reading'
   where book_id = p_book_id and friend_id = p_to and status = 'waiting';
+  -- Going home answers a call home.
+  if p_to = owner then
+    update public.books set called_home_at = null where id = p_book_id;
+  end if;
 end;
 $$;
 
@@ -914,6 +968,7 @@ revoke all on function public.me(), public.is_member(text), public.can_see_book(
   public.set_cover(text, text),
   public.update_book(text, text, text),
   public.retire_book(text), public.unretire_book(text),
+  public.call_home(text), public.cancel_call_home(text),
   public.pass_on(text, text, text, text, smallint),
   public.mark_received(text)
   from public, anon;
@@ -928,6 +983,7 @@ grant execute on function public.me(), public.is_member(text), public.can_see_bo
   public.set_cover(text, text),
   public.update_book(text, text, text),
   public.retire_book(text), public.unretire_book(text),
+  public.call_home(text), public.cancel_call_home(text),
   public.pass_on(text, text, text, text, smallint),
   public.mark_received(text)
   to authenticated;
@@ -1001,6 +1057,7 @@ begin
     when 'new_book' then email_new_book
     when 'arrival_check' then email_reminders
     when 'still_reading' then email_reminders
+    when 'called_home' then email_book_sent
   end into wants
   from public.friends
   where id = p_person and user_id is not null and not is_character;
@@ -1421,7 +1478,7 @@ alter table public.notifications
 alter table public.notifications drop constraint if exists notifications_kind_check;
 alter table public.notifications add constraint notifications_kind_check
   check (kind in ('book_sent', 'book_arrived', 'next_in_line', 'friend_request', 'new_book',
-                  'arrival_check', 'still_reading', 'shelf_request'));
+                  'arrival_check', 'still_reading', 'shelf_request', 'called_home'));
 
 -- Ask to borrow someone's book: only from a shelf you can see, once each.
 create or replace function public.request_shelf_book(p_request_id text, p_shelf_book_id text)

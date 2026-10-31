@@ -152,9 +152,9 @@ export function recentActivity(books: Book[], limit: number): { book: Book; leg:
     .slice(0, limit);
 }
 
-/** One leg as a sentence: "Carmen passed Circe to Lena". First names only. */
+/** One leg as a sentence: "Carmen passed Circe to Lena". Full names, as everywhere a status reads. */
 export function describeLeg(book: Book, leg: Handoff): string {
-  const first = (id: string | null) => friendNameIn(book, id).split(' ')[0];
+  const first = (id: string | null) => friendNameIn(book, id);
 
   if (!leg.fromFriend) {
     return `${first(leg.toFriend)} put ${book.title} into circulation`;

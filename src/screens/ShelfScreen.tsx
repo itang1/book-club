@@ -23,7 +23,7 @@ type ShelfScreenProps = {
   books: Book[];
 };
 
-const first = (name: string) => name.split(' ')[0];
+const first = (name: string) => name;
 
 export function ShelfScreen({ navigation, shelf, me, members, groups, books }: ShelfScreenProps) {
   const insets = useSafeAreaInsets();
@@ -90,15 +90,17 @@ export function ShelfScreen({ navigation, shelf, me, members, groups, books }: S
   return (
     <ScrollView
       style={styles.container}
-      contentContainerStyle={[styles.content, { paddingTop: insets.top + 12 }]}
+      contentContainerStyle={styles.content}
       refreshControl={<RefreshControl refreshing={shelf.loading} onRefresh={shelf.reload} />}
     >
-      <Text style={styles.heading}>Your shelf</Text>
-      <Text style={styles.sub}>
-        Photograph your shelves and we'll read the spines. People in your groups can see what you
-        have and ask to borrow it, and you can lend any book to a group. Photos are sent to Google's
-        Gemini to read the spines and aren't saved here.
-      </Text>
+      <View style={[styles.band, { paddingTop: insets.top + 20 }]}>
+        <Text style={styles.eyebrow}>The Traveling Books</Text>
+        <Text style={styles.heading}>Your shelf</Text>
+        <Text style={styles.sub}>
+          Photograph your shelves and we'll read the spines. People in your groups can see what
+          you have and ask to borrow it, and you can lend any book to a group.
+        </Text>
+      </View>
 
       <View style={styles.buttons}>
         <Pressable
@@ -128,6 +130,9 @@ export function ShelfScreen({ navigation, shelf, me, members, groups, books }: S
           <Text style={styles.secondaryText}>Add by hand</Text>
         </Pressable>
       </View>
+      <Text style={styles.privacy}>
+        Photos go to Google's Gemini to read the spines and aren't saved here.
+      </Text>
       {message && <Text style={styles.message}>{message}</Text>}
       {shelf.error && <Text style={styles.message}>{shelf.error}</Text>}
 
@@ -230,8 +235,27 @@ export function ShelfScreen({ navigation, shelf, me, members, groups, books }: S
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
   content: { paddingHorizontal: 20, paddingBottom: 32 },
-  heading: { fontFamily: theme.fonts.serif, fontSize: 28, fontWeight: '700', color: theme.colors.text },
-  sub: { fontSize: 14, lineHeight: 20, color: theme.colors.muted, marginTop: 6, marginBottom: 16 },
+  band: {
+    backgroundColor: theme.colors.letterhead,
+    borderBottomWidth: 3,
+    borderBottomColor: theme.colors.brass,
+    marginHorizontal: -20,
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+    marginBottom: 20,
+  },
+  eyebrow: { ...theme.caps, fontSize: 10, letterSpacing: 2.4, color: theme.colors.brass, marginBottom: 6 },
+  heading: { fontFamily: theme.fonts.serif, fontSize: 30, lineHeight: 36, color: theme.colors.onMasthead },
+  sub: {
+    fontFamily: theme.fonts.serif,
+    fontStyle: 'italic',
+    fontSize: 15,
+    lineHeight: 21,
+    color: theme.colors.onMasthead,
+    opacity: 0.85,
+    marginTop: 6,
+  },
+  privacy: { fontSize: 12, lineHeight: 17, color: theme.colors.muted, marginTop: 10 },
   buttons: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   primary: {
     flexDirection: 'row',

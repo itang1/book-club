@@ -129,7 +129,7 @@ export function GroupScreen({
                       ? ` · with ${
                           holderId(book) === currentUserId
                             ? 'you'
-                            : (book.queue.find((entry) => entry.id === holderId(book))?.name.split(' ')[0] ??
+                            : (book.queue.find((entry) => entry.id === holderId(book))?.name ??
                               'someone')
                         }`
                       : ''}

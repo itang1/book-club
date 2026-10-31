@@ -28,7 +28,12 @@ type HomeScreenProps = {
   currentUserId: string | null;
   refreshing: boolean;
   onRefresh: () => void;
+  /** Whether there's a Shelf tab to scan a bookshelf into (accounts only, not the demo). */
+  canScanShelf?: boolean;
 };
+
+/** Rules & About is hidden for now: newcomers found it confusing. The sheet is kept. */
+const SHOW_RULES_AND_ABOUT = false;
 
 type FilterMode = 'all' | 'hands' | 'ready' | 'travelling';
 
@@ -39,6 +44,7 @@ export function HomeScreen({
   currentUserId,
   refreshing,
   onRefresh,
+  canScanShelf = false,
 }: HomeScreenProps) {
   const [aboutOpen, setAboutOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -115,22 +121,51 @@ export function HomeScreen({
       <View style={styles.headerWrap}>
         <Letterhead>
           <View style={styles.actions}>
-            <Pressable
-              style={({ pressed }) => [styles.addButton, pressed && styles.addButtonPressed]}
-              onPress={() => navigation.navigate('AddBook')}
-              accessibilityRole="button"
-            >
-              <Text style={styles.addButtonText}>Lend a new book</Text>
-            </Pressable>
-            <Pressable
-              style={styles.aboutButton}
-              onPress={() => setAboutOpen(true)}
-              accessibilityRole="button"
-              hitSlop={8}
-            >
-              <Text style={styles.aboutButtonText}>Rules & About</Text>
-            </Pressable>
+            {canScanShelf ? (
+              <>
+                <Pressable
+                  style={({ pressed }) => [styles.addButton, pressed && styles.addButtonPressed]}
+                  onPress={() => navigation.getParent()?.navigate('Shelf')}
+                  accessibilityRole="button"
+                >
+                  <Ionicons name="camera-outline" size={16} color={theme.colors.accent} />
+                  <Text style={styles.addButtonText}>Scan your bookshelf</Text>
+                </Pressable>
+                <Pressable
+                  style={styles.aboutButton}
+                  onPress={() => navigation.navigate('AddBook')}
+                  accessibilityRole="button"
+                  hitSlop={8}
+                >
+                  <Text style={styles.aboutButtonText}>Lend one book</Text>
+                </Pressable>
+              </>
+            ) : (
+              <Pressable
+                style={({ pressed }) => [styles.addButton, pressed && styles.addButtonPressed]}
+                onPress={() => navigation.navigate('AddBook')}
+                accessibilityRole="button"
+              >
+                <Text style={styles.addButtonText}>Lend a new book</Text>
+              </Pressable>
+            )}
+            {SHOW_RULES_AND_ABOUT && (
+              <Pressable
+                style={styles.aboutButton}
+                onPress={() => setAboutOpen(true)}
+                accessibilityRole="button"
+                hitSlop={8}
+              >
+                <Text style={styles.aboutButtonText}>Rules & About</Text>
+              </Pressable>
+            )}
           </View>
+          {canScanShelf && (
+            <Text style={styles.scanHint}>
+              Take one photo of your shelves and we'll read every spine, so your friends can see
+              what you have and ask to borrow it.
+            </Text>
+          )}
           <Text style={styles.homage}>{homage}</Text>
         </Letterhead>
       </View>
@@ -389,17 +424,27 @@ const styles = StyleSheet.create({
   },
 
 
+  scanHint: {
+    fontSize: 13,
+    lineHeight: 19,
+    color: theme.colors.onMasthead,
+    opacity: 0.8,
+    textAlign: 'center',
+    marginTop: 12,
+    maxWidth: 320,
+  },
   addButtonPressed: {
     opacity: 0.85,
   },
   addButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
     backgroundColor: theme.colors.onMasthead,
     borderRadius: theme.radius.sm,
     paddingVertical: 11,
     paddingHorizontal: 18,
   },
-
-
   addButtonText: {
     ...theme.caps,
     color: theme.colors.accent,

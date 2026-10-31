@@ -175,15 +175,15 @@ describe('rereads and sealed letters', () => {
 });
 
 describe('the feed', () => {
-  it('describes legs as sentences, newest first', () => {
+  it('describes legs as sentences with full names, newest first', () => {
     const b = book(
       [person('ana', 0, 'done'), person('bea', 1, 'done')],
       [leg(null, 'ana', 1), leg('ana', 'bea', 2), leg('bea', 'ana', 3)],
     );
     const recent = recentActivity([b], 2);
     expect(recent.map(({ leg: l }) => describeLeg(b, l))).toEqual([
-      'Circe went home to Ana',
-      'Ana passed Circe to Bea',
+      'Circe went home to Ana Reader',
+      'Ana Reader passed Circe to Bea Reader',
     ]);
   });
 });

@@ -13,7 +13,8 @@ export type EmailKind =
   | 'new_book'
   | 'arrival_check'
   | 'still_reading'
-  | 'shelf_request';
+  | 'shelf_request'
+  | 'called_home';
 
 export type EmailFacts = {
   kind: EmailKind;
@@ -165,6 +166,18 @@ function content(facts: EmailFacts): Content {
         button: `Open ${titleText}`,
         action: "Got it, it's here",
         why: `You're getting this because ${otherText} sent you ${titleText}. Reminders come once a month at most.`,
+      };
+    case 'called_home':
+      return {
+        subject: `${otherText} has called ${titleText} home`,
+        preheader: 'When you finish, it goes back to them. The line will wait.',
+        heading: `${otherText} would like ${titleText} back`,
+        paragraphs: [
+          `${other} has called their copy home. When you're ready, send it back to ${other} in the app instead of on to the next reader.`,
+          'Nobody loses their place: the line waits for the book to travel again.',
+        ],
+        button: `Open ${titleText}`,
+        why: `You're getting this because ${titleText} is with you.`,
       };
     case 'still_reading':
       return {

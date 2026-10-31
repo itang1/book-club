@@ -111,6 +111,8 @@ export type Book = {
   coverUrl?: string;
   /** When the owner rested this copy from circulation. */
   archivedAt?: string;
+  /** The owner has asked for it back: it goes home next, and the line waits. */
+  calledHomeAt?: string;
   queue: ReadingQueueEntry[];
   handoffs: Handoff[];
 };

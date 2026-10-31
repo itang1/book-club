@@ -80,4 +80,10 @@ describe('emails', () => {
     expect(email.html).toContain(`${appUrl}shelf`);
     expect(email.html).toContain('on your shelf');
   });
+
+  it('called home: tells the reader whose copy it is and that the line waits', () => {
+    const email = renderEmail({ kind: 'called_home', recipient: 'T', other: 'Carmen Lowell', book, bookId: 'b1', appUrl });
+    expect(email.subject).toBe(`Carmen has called ${book.title} home`);
+    expect(email.text).toContain('the line waits');
+  });
 });

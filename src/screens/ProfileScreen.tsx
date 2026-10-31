@@ -80,6 +80,7 @@ export function ProfileScreen({
           <Text style={styles.avatarText}>{me?.name.charAt(0) ?? '?'}</Text>
         </View>
         <View style={styles.headerText}>
+          <Text style={styles.eyebrow}>The Traveling Books</Text>
           <Text style={styles.title}>{me?.name ?? 'You'}</Text>
           {me && (
             <Text style={styles.subtitle}>
@@ -152,10 +153,10 @@ export function ProfileScreen({
                 <Text style={styles.bookTitle}>{book.title}</Text>
                 <Text style={styles.bookMeta}>
                   {isInTransit(book) && holderId(book) === me?.id
-                    ? `In the post from ${friendNameIn(book, senderId(book)).split(' ')[0]}`
+                    ? `In the post from ${friendNameIn(book, senderId(book))}`
                     : isInTransit(book)
-                      ? `You're next. In the post to ${friendNameIn(book, holderId(book)).split(' ')[0]}`
-                      : `You're next. Currently with ${friendNameIn(book, holderId(book)).split(' ')[0]}`}
+                      ? `You're next. In the post to ${friendNameIn(book, holderId(book))}`
+                      : `You're next. Currently with ${friendNameIn(book, holderId(book))}`}
                 </Text>
               </View>
             </View>
@@ -250,16 +251,22 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: 32,
   },
+  eyebrow: {
+    ...theme.caps,
+    fontSize: 10,
+    letterSpacing: 2.4,
+    color: theme.colors.brass,
+    marginBottom: 6,
+  },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: theme.colors.masthead,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
+    backgroundColor: theme.colors.letterhead,
+    borderBottomWidth: 3,
+    borderBottomColor: theme.colors.brass,
     marginHorizontal: -20,
     paddingHorizontal: 20,
-    paddingBottom: 16,
-    marginBottom: 20,
+    paddingBottom: 20,
+    marginBottom: 20,    flexDirection: 'row',
+    alignItems: 'center',
   },
   headerText: {
     flex: 1,
@@ -285,16 +292,15 @@ const styles = StyleSheet.create({
   },
   editButton: {
     borderWidth: 1,
-    borderColor: theme.colors.border,
-    backgroundColor: theme.colors.card,
+    borderColor: theme.colors.brass,
     borderRadius: theme.radius.sm,
     paddingHorizontal: 14,
     paddingVertical: 7,
   },
   editButtonText: {
-    color: theme.colors.accent,
-    fontWeight: '700',
-    fontSize: 13,
+    ...theme.caps,
+    color: theme.colors.onMasthead,
+    fontSize: 11,
   },
   avatar: {
     width: 60,
@@ -315,11 +321,11 @@ const styles = StyleSheet.create({
     fontFamily: theme.fonts.serif,
     fontSize: 28,
     lineHeight: 34,
-    fontWeight: '700',
-    color: theme.colors.text,
+    color: theme.colors.onMasthead,
   },
   subtitle: {
-    color: theme.colors.muted,
+    color: theme.colors.onMasthead,
+    opacity: 0.85,
     fontSize: 14,
     marginTop: 2,
   },

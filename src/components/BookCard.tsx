@@ -3,6 +3,7 @@ import { BookCover } from './BookCover';
 import { Book } from '../types';
 import { theme } from '../theme';
 import {
+  copyOwnerId,
   friendNameIn,
   holderId,
   isInTransit,
@@ -30,10 +31,10 @@ function whereLine(book: Book, currentUserId: string | null): string {
   if (isInTransit(book)) {
     return holder === currentUserId
       ? 'On its way to you'
-      : `In the post to ${friendNameIn(book, holder).split(' ')[0]}`;
+      : `In the post to ${friendNameIn(book, holder)}`;
   }
   if (holder === currentUserId) {
-    return 'With you';
+    return 'In your hands';
   }
 
   const entry = book.queue.find((person) => person.id === holder);
@@ -41,6 +42,10 @@ function whereLine(book: Book, currentUserId: string | null): string {
 }
 
 function nextLine(book: Book, currentUserId: string | null): string {
+  const owner = copyOwnerId(book);
+  if (book.calledHomeAt && owner && holderId(book) !== owner) {
+    return owner === currentUserId ? "You've called it home" : `Called home by ${friendNameIn(book, owner)}`;
+  }
   const myPlace = placeInLine(book, currentUserId);
   if (myPlace === 1) {
     return "You're next";

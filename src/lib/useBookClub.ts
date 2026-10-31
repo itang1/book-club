@@ -19,6 +19,8 @@ import {
   requestFriend,
   retireBook,
   unretireBook,
+  callHome,
+  cancelCallHome,
   setCover,
   updateBookDetails,
   markReceived,
@@ -32,7 +34,7 @@ import type { BookClubData } from './bookClubService';
 import { claimProfile, deleteMyAccount, onSessionChange, signOutEverywhere } from './auth';
 import { clearCachedClubData, loadCachedClubData, saveCachedClubData } from './cache';
 import { findCoverUrl } from './covers';
-import { hasFinished, holderId } from './bookState';
+import { copyOwnerId, hasFinished, holderId } from './bookState';
 import { isDevMode } from './devMode';
 import { clearInviteFromUrl } from './invite';
 import { clearReaderId, loadReaderId, saveReaderId } from './identity';
@@ -434,6 +436,8 @@ export function useBookClub() {
 
     updateBook(bookId, (candidate) => ({
       ...candidate,
+      // Going home answers a call home.
+      calledHomeAt: toFriend === copyOwnerId(candidate) ? undefined : candidate.calledHomeAt,
       // Passing it on means you had it, even if you never tapped Got it.
       handoffs: [
         ...candidate.handoffs.map((leg) =>
@@ -682,6 +686,21 @@ export function useBookClub() {
     track(`send ${book?.title ?? 'the book'} travelling again`, unretireBook(bookId));
   };
 
+  const handleCallHome = (bookId: string, calling: boolean) => {
+    const book = books.find((candidate) => candidate.id === bookId);
+    setBooks((current) =>
+      current.map((item) =>
+        item.id === bookId
+          ? { ...item, calledHomeAt: calling ? new Date().toISOString() : undefined }
+          : item,
+      ),
+    );
+    track(
+      calling ? `call ${book?.title ?? 'the book'} home` : `let ${book?.title ?? 'the book'} keep travelling`,
+      calling ? callHome(bookId) : cancelCallHome(bookId),
+    );
+  };
+
   return {
     usesAccounts,
     signedIn: session !== null,
@@ -713,6 +732,8 @@ export function useBookClub() {
     updateBookDetails: handleUpdateBookDetails,
     retireBook: handleRetireBook,
     unretireBook: handleUnretireBook,
+    callHome: (bookId: string) => handleCallHome(bookId, true),
+    cancelCallHome: (bookId: string) => handleCallHome(bookId, false),
     joinLine: handleJoinLine,
     markReceived: handleMarkReceived,
     updateProfile: handleUpdateProfile,

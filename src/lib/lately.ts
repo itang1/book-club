@@ -7,7 +7,7 @@ export type LatelyEvent = {
   bookId: string;
   title: string;
   at: string;
-  /** "Phoebe sent", "Rachel got", "Nate lent": who did it, and what. */
+  /** Who did it, by full name, and what. */
   who: string;
   verb: 'lent' | 'sent' | 'got';
   /** Who it was sent to, for "sent". */
@@ -19,7 +19,7 @@ export type LatelyEvent = {
  * who and where: notes and stars stay sealed in the book until you've read it.
  */
 export function lately(books: Book[], limit = 6): LatelyEvent[] {
-  const first = (book: Book, id: string) => friendNameIn(book, id).split(' ')[0];
+  const first = (book: Book, id: string) => friendNameIn(book, id);
   const events: LatelyEvent[] = [];
 
   for (const book of books) {

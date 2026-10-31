@@ -49,6 +49,8 @@ type BookDetailScreenProps = {
   onUpdateBookDetails?: (bookId: string, title: string, author: string) => void;
   onRetireBook?: (bookId: string) => void;
   onUnretireBook?: (bookId: string) => void;
+  onCallHome?: (bookId: string) => void;
+  onCancelCallHome?: (bookId: string) => void;
   onJoinLine: (bookId: string) => void;
   onLeaveLine: (bookId: string) => void;
 };
@@ -64,6 +66,8 @@ export function BookDetailScreen({
   onUpdateBookDetails,
   onRetireBook,
   onUnretireBook,
+  onCallHome,
+  onCancelCallHome,
   onJoinLine,
   onLeaveLine,
 }: BookDetailScreenProps) {
@@ -94,7 +98,8 @@ export function BookDetailScreen({
     setNote('');
   };
 
-  const first = (id: string | null) => friendNameIn(book, id).split(' ')[0];
+  // Full names everywhere, for consistency (the letter's "Dear …" keeps it friendly).
+  const first = (id: string | null) => friendNameIn(book, id);
   const holder = holderId(book);
   const owner = copyOwnerId(book);
   const nextId = nextInLineId(book);
@@ -164,6 +169,20 @@ export function BookDetailScreen({
         <Text style={styles.actionNote}>
           It becomes {first(holder)}'s once they tap Got it.
         </Text>
+      );
+    }
+
+    if (iHoldIt && book.calledHomeAt && owner && owner !== currentUserId) {
+      return (
+        <View>
+          <Pressable style={styles.primaryButton} onPress={() => setConfirmingTo(owner)}>
+            <Text style={styles.primaryButtonText}>Send home to {first(owner)}</Text>
+          </Pressable>
+          <Text style={styles.actionNote}>
+            {first(owner)} has called this copy home. Send it back when you finish; the line
+            waits for it to travel again.
+          </Text>
+        </View>
       );
     }
 
@@ -303,6 +322,19 @@ export function BookDetailScreen({
                 <Text style={styles.ownerActionText}>Rest this copy</Text>
               </Pressable>
             )}
+            {!book.archivedAt && !isSample && owner === currentUserId && holder !== currentUserId && (
+              <Pressable
+                style={styles.ownerAction}
+                onPress={() =>
+                  book.calledHomeAt ? onCancelCallHome?.(book.id) : onCallHome?.(book.id)
+                }
+                accessibilityRole="button"
+              >
+                <Text style={styles.ownerActionText}>
+                  {book.calledHomeAt ? 'Let it keep travelling' : 'Call it home'}
+                </Text>
+              </Pressable>
+            )}
             {book.archivedAt && onUnretireBook && (
               <Pressable
                 style={styles.ownerAction}
@@ -320,6 +352,13 @@ export function BookDetailScreen({
           </Text>
         )}
 
+        {book.calledHomeAt && !book.archivedAt && holder !== owner && (
+          <Text style={styles.calledHome}>
+            {owner === currentUserId
+              ? `You've called it home. ${first(holder)} sends it back to you next.`
+              : `${first(owner)} has called it home. It goes back to them next.`}
+          </Text>
+        )}
         <Text style={styles.ownership}>
           {first(owner)}'s copy
           {isSample
@@ -595,6 +634,14 @@ function Stars({
 }
 
 const styles = StyleSheet.create({
+  calledHome: {
+    ...theme.caps,
+    fontSize: 11,
+    lineHeight: 16,
+    color: theme.colors.stamp,
+    textAlign: 'center',
+    marginBottom: 6,
+  },
   stars: {
     flexDirection: 'row',
   },
