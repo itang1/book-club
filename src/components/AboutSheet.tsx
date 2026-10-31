@@ -277,7 +277,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   credit: {
-    fontSize: 10,
+    fontSize: 12,
     color: theme.colors.muted,
     textAlign: 'center',
     marginTop: 2,
@@ -303,7 +303,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   homage: {
-    fontSize: 11,
+    fontSize: 12,
     lineHeight: 16,
     color: theme.colors.muted,
     marginTop: 28,

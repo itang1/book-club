@@ -35,6 +35,7 @@ export function EditProfileSheet({ me, visible, onClose, onSave }: EditProfileSh
         <View style={styles.sheet}>
           <Text style={styles.title}>Your profile</Text>
           <TextInput
+            accessibilityLabel="Your name"
             value={name}
             onChangeText={setName}
             placeholder="Your name"
@@ -42,6 +43,7 @@ export function EditProfileSheet({ me, visible, onClose, onSave }: EditProfileSh
             style={styles.input}
           />
           <TextInput
+            accessibilityLabel="City"
             value={city}
             onChangeText={setCity}
             placeholder="City"
@@ -49,6 +51,7 @@ export function EditProfileSheet({ me, visible, onClose, onSave }: EditProfileSh
             style={styles.input}
           />
           <TextInput
+            accessibilityLabel="State or country"
             value={region}
             onChangeText={setRegion}
             placeholder="State or country (optional)"

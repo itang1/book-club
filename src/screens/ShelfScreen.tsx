@@ -301,7 +301,7 @@ const styles = StyleSheet.create({
   },
   eyebrow: {
     ...theme.caps,
-    fontSize: 10,
+    fontSize: 11,
     letterSpacing: 2.4,
     color: theme.colors.brass,
     marginBottom: 6,

@@ -124,13 +124,13 @@ const styles = StyleSheet.create({
   },
   group: {
     ...theme.caps,
-    fontSize: 11,
+    fontSize: 12,
     color: theme.colors.accent,
     marginBottom: 4,
   },
   owner: {
     ...theme.caps,
-    fontSize: 10,
+    fontSize: 11,
     letterSpacing: 1.2,
     color: theme.colors.faint,
     marginBottom: 3,
@@ -173,7 +173,7 @@ const styles = StyleSheet.create({
   },
   stamp: {
     ...theme.caps,
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '700',
     letterSpacing: 0.6,
     textTransform: 'uppercase',
@@ -191,7 +191,7 @@ const styles = StyleSheet.create({
   sample: {
     marginLeft: 6,
     ...theme.caps,
-    fontSize: 10,
+    fontSize: 11,
     letterSpacing: 0.6,
     textTransform: 'uppercase',
     color: theme.colors.faint,
@@ -205,7 +205,7 @@ const styles = StyleSheet.create({
   updated: {
     marginLeft: 'auto',
     ...theme.caps,
-    fontSize: 11,
+    fontSize: 12,
     color: theme.colors.faint,
   },
 });

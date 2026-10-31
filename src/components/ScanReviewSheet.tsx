@@ -85,6 +85,7 @@ export function ScanReviewSheet({
                 </Pressable>
                 <View style={styles.fields}>
                   <TextInput
+                    accessibilityLabel="Title"
                     value={row.title}
                     onChangeText={(title) => change(index, { title })}
                     placeholder="Title"
@@ -92,6 +93,7 @@ export function ScanReviewSheet({
                     style={styles.input}
                   />
                   <TextInput
+                    accessibilityLabel="Author"
                     value={row.author}
                     onChangeText={(author) => change(index, { author })}
                     placeholder="Author"
@@ -169,7 +171,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   authorInput: { marginTop: 4, fontWeight: '400', fontSize: 13 },
-  already: { fontSize: 11, color: theme.colors.muted, marginTop: 3 },
+  already: { fontSize: 12, color: theme.colors.muted, marginTop: 3 },
   problem: { fontSize: 13, color: theme.colors.text, fontWeight: '600', marginBottom: 8 },
   add: {
     backgroundColor: theme.colors.accent,

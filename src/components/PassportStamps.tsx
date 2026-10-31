@@ -61,7 +61,7 @@ const styles = StyleSheet.create({
   },
   region: {
     ...theme.caps,
-    fontSize: 10,
+    fontSize: 12,
     color: theme.colors.muted,
     marginTop: 1,
   },

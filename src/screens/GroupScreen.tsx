@@ -251,7 +251,7 @@ const styles = StyleSheet.create({
     color: theme.colors.text,
   },
   tileLabel: {
-    fontSize: 11,
+    fontSize: 12,
     color: theme.colors.muted,
     marginTop: 2,
   },

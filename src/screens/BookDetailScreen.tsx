@@ -474,6 +474,7 @@ export function BookDetailScreen({
             <Text style={styles.sheetLabel}>Rate it and leave a note about the book</Text>
             <Stars value={rating} size={28} onChange={setRating} />
             <TextInput
+              accessibilityLabel="Your letter to the next reader"
               value={note}
               onChangeText={setNote}
               placeholder={`Dear ${friendNameIn(book, confirmingTo).split(' ')[0]}, …`}
@@ -523,6 +524,7 @@ export function BookDetailScreen({
             </Text>
             <Text style={styles.sheetLabel}>Title</Text>
             <TextInput
+              accessibilityLabel="Title"
               value={editTitle}
               onChangeText={setEditTitle}
               placeholder="Title"
@@ -531,6 +533,7 @@ export function BookDetailScreen({
             />
             <Text style={styles.sheetLabel}>Author</Text>
             <TextInput
+              accessibilityLabel="Author"
               value={editAuthor}
               onChangeText={setEditAuthor}
               placeholder="Author"
@@ -637,7 +640,7 @@ function Stars({
 const styles = StyleSheet.create({
   calledHome: {
     ...theme.caps,
-    fontSize: 11,
+    fontSize: 12,
     lineHeight: 16,
     color: theme.colors.stamp,
     textAlign: 'center',
@@ -769,7 +772,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   letterSign: {
-    fontSize: 11,
+    fontSize: 12,
     color: theme.colors.muted,
     marginTop: 4,
   },
@@ -869,7 +872,7 @@ const styles = StyleSheet.create({
     color: theme.colors.text,
   },
   statLabel: {
-    fontSize: 11,
+    fontSize: 12,
     color: theme.colors.muted,
     marginTop: 2,
   },
@@ -994,7 +997,7 @@ const styles = StyleSheet.create({
   },
   legMeta: {
     color: theme.colors.muted,
-    fontSize: 11,
+    fontSize: 12,
     marginTop: 4,
   },
 });

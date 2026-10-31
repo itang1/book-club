@@ -259,7 +259,7 @@ const styles = StyleSheet.create({
   },
   eyebrow: {
     ...theme.caps,
-    fontSize: 10,
+    fontSize: 11,
     letterSpacing: 2.4,
     color: theme.colors.brass,
     marginBottom: 6,
@@ -307,7 +307,7 @@ const styles = StyleSheet.create({
   editButtonText: {
     ...theme.caps,
     color: theme.colors.onMasthead,
-    fontSize: 11,
+    fontSize: 12,
   },
   avatar: {
     width: 60,
@@ -401,7 +401,7 @@ const styles = StyleSheet.create({
   },
   bookMeta: {
     color: theme.colors.muted,
-    fontSize: 11,
+    fontSize: 12,
     marginTop: 3,
   },
 });

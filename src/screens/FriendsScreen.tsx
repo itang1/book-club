@@ -153,6 +153,7 @@ function StartGroup({ onCreate }: { onCreate: (name: string) => void }) {
   return (
     <View style={styles.card}>
       <TextInput
+        accessibilityLabel="Group name"
         value={name}
         onChangeText={setName}
         placeholder="Group name, e.g. Sunday Book Club"
@@ -372,7 +373,7 @@ const styles = StyleSheet.create({
   },
   eyebrow: {
     ...theme.caps,
-    fontSize: 10,
+    fontSize: 11,
     letterSpacing: 2.4,
     color: theme.colors.brass,
     marginBottom: 6,
@@ -489,7 +490,7 @@ const styles = StyleSheet.create({
   },
   sampleTag: {
     ...theme.caps,
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '700',
     color: theme.colors.muted,
     marginBottom: 1,

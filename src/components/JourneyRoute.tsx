@@ -185,12 +185,12 @@ const styles = StyleSheet.create({
     color: theme.colors.text,
   },
   city: {
-    fontSize: 11,
+    fontSize: 12,
     color: theme.colors.muted,
     marginTop: 1,
   },
   meta: {
-    fontSize: 11,
+    fontSize: 12,
     color: theme.colors.muted,
     marginTop: 3,
   },

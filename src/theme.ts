@@ -18,7 +18,7 @@ export const theme = {
     card: '#fffdf7',
     text: '#1c1b17',
     muted: '#575046',
-    faint: '#8a8174',
+    faint: '#6b6357',
     /** Hunter green: buttons, links, the letterhead. */
     accent: '#1f3b2c',
     border: '#e4dac7',
