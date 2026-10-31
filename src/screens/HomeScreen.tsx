@@ -112,7 +112,7 @@ export function HomeScreen({
       }
     >
       <View style={[styles.headerWrap, { paddingTop: insets.top + 20 }]}>
-        <Text style={styles.title}>Sisterhood of the Traveling Books</Text>
+        <Text style={styles.title}>The Traveling Books</Text>
         <Text style={styles.subtitle}>{tagline}</Text>
         <View style={styles.actions}>
           <Pressable

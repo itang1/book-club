@@ -260,7 +260,7 @@ export function BookDetailScreen({
           onPress={async () => {
             const link = bookLink(book.id);
             try {
-              await Share.share({ message: `${book.title}, on Sisterhood of the Traveling Books: ${link}` });
+              await Share.share({ message: `${book.title}, on The Traveling Books: ${link}` });
             } catch {
               setShownLink(link);
             }

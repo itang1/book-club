@@ -121,7 +121,7 @@ function content(facts: EmailFacts): Content {
         preheader: 'Friends see what each other is reading.',
         heading: `${otherText} wants to be friends`,
         paragraphs: [
-          `${other} asked to be friends on Sisterhood of the Traveling Books. Friends see what each other is reading.`,
+          `${other} asked to be friends on The Traveling Books. Friends see what each other is reading.`,
         ],
         button: 'Answer in the app',
         action: 'Accept',
@@ -207,7 +207,7 @@ export function renderEmail(facts: EmailFacts): Email {
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f7f1ea;">
 <tr><td align="center" style="padding:20px 16px 32px;">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;">
-<tr><td style="padding:0 4px 14px;font-family:Georgia,'Times New Roman',serif;font-size:13px;letter-spacing:1px;text-transform:uppercase;color:#7a5c48;">Sisterhood of the Traveling Books</td></tr>
+<tr><td style="padding:0 4px 14px;font-family:Georgia,'Times New Roman',serif;font-size:13px;letter-spacing:1px;text-transform:uppercase;color:#7a5c48;">The Traveling Books</td></tr>
 <tr><td style="background:#fffdfb;border:1px solid #eaded3;border-radius:16px;padding:22px;font-family:-apple-system,Helvetica,Arial,sans-serif;">
   ${cover}
   <h1 style="font-family:Georgia,'Times New Roman',serif;font-size:24px;line-height:30px;color:#1f1a17;margin:22px 0 12px;">${escape(c.heading)}</h1>

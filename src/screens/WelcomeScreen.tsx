@@ -56,7 +56,7 @@ export function WelcomeScreen({
       contentContainerStyle={[styles.content, { paddingTop: insets.top + 40 }]}
       keyboardShouldPersistTaps="handled"
     >
-      <Text style={styles.title}>Sisterhood of the Traveling Books</Text>
+      <Text style={styles.title}>The Traveling Books</Text>
       <Text style={styles.subtitle}>
         {groupName ? `You're invited to ${groupName}. ${tagline}` : tagline}
       </Text>

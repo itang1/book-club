@@ -64,7 +64,7 @@ export function EmailActionScreen({ token, onClose }: { token: string; onClose: 
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={[styles.content, { paddingTop: insets.top + 40 }]}>
-      <Text style={styles.title}>Sisterhood of the Traveling Books</Text>
+      <Text style={styles.title}>The Traveling Books</Text>
       <Text style={styles.subtitle}>{tagline}</Text>
 
       <View style={styles.card}>

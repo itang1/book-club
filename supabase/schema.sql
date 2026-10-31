@@ -1,4 +1,4 @@
--- Sisterhood of the Traveling Books — Supabase schema (structure only)
+-- The Traveling Books — Supabase schema (structure only)
 -- One book, many readers, a shared reading journey.
 --
 -- Run this in the Supabase SQL editor. It is safe to re-run, and safe to run

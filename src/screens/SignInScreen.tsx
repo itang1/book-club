@@ -48,7 +48,7 @@ export function SignInScreen() {
       contentContainerStyle={[styles.content, { paddingTop: insets.top + 40 }]}
       keyboardShouldPersistTaps="handled"
     >
-      <Text style={styles.title}>Sisterhood of the Traveling Books</Text>
+      <Text style={styles.title}>The Traveling Books</Text>
       <Text style={styles.subtitle}>
         {tagline}
       </Text>

@@ -24,7 +24,7 @@ export function InviteButton({ group, compact = false }: { group: Group; compact
 
   const link = group.inviteCode ? inviteLink(group.inviteCode) : null;
   const message = link
-    ? `Come pass books around with me in ${group.name} on Sisterhood of the Traveling Books: ${link}`
+    ? `Come pass books around with me in ${group.name} on The Traveling Books: ${link}`
     : '';
 
   const close = () => {

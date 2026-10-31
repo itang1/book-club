@@ -1,4 +1,4 @@
-# Sisterhood of the Traveling Books
+# The Traveling Books
 
 **Read it. Write in it. Pass it on.** One physical copy goes around a group of
 friends, one reader at a time, and the app keeps track of where it is and
