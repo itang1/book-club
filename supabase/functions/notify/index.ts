@@ -3,7 +3,8 @@
 //
 // Runs on Supabase (Deno). Called by a Database Webhook on inserts into
 // public.notifications, so emails go out within seconds; each call also
-// sweeps up anything older still unsent.
+// sweeps up anything older still unsent, including emails that failed earlier
+// and are due another try (see MAX_ATTEMPTS).
 //
 // Mail goes out over SMTP from your own email account (e.g. Gmail with an
 // app password); Supabase itself can only send its own sign-in emails.
@@ -23,6 +24,11 @@ const APP_URL = Deno.env.get('APP_URL') ?? 'https://itang1.github.io/book-club/'
 const SMTP_USER = Deno.env.get('SMTP_USER') ?? '';
 const FROM = `The Traveling Books <${SMTP_USER}>`;
 
+// A failed send is tried again after these gaps, then given up on: three tries
+// in all. A permanent problem (no address, too old) isn't retried at all.
+const MAX_ATTEMPTS = 3;
+const RETRY_GAPS_MINUTES = [5, 60];
+
 type Row = {
   id: number;
   created_at: string;
@@ -30,6 +36,7 @@ type Row = {
   kind: EmailKind;
   book_id: string | null;
   about_person: string | null;
+  attempts: number;
 };
 
 type Person = { id: string; name: string; user_id: string | null };
@@ -121,12 +128,18 @@ async function factsFor(row: Row): Promise<{ to: string; facts: EmailFacts } | n
   return { to, facts };
 }
 
+/** Records why this email will never go out, and stops any retries. */
+async function giveUp(id: number, reason: string) {
+  await db.from('notifications').update({ error: reason, attempts: MAX_ATTEMPTS }).eq('id', id);
+}
+
 Deno.serve(async () => {
   const { data: rows, error } = await db
     .from('notifications')
-    .select('id, created_at, person_id, kind, book_id, about_person')
+    .select('id, created_at, person_id, kind, book_id, about_person, attempts')
     .is('sent_at', null)
-    .is('error', null)
+    .lt('attempts', MAX_ATTEMPTS)
+    .or(`next_attempt_at.is.null,next_attempt_at.lte.${new Date().toISOString()}`)
     .order('id')
     .limit(25);
   if (error) {
@@ -150,14 +163,14 @@ Deno.serve(async () => {
   for (const row of rows as Row[]) {
     // Queued long ago (say, before sending was set up): old news, so skip it.
     if (Date.parse(row.created_at) < stale) {
-      await db.from('notifications').update({ error: 'Too old to send' }).eq('id', row.id);
+      await giveUp(row.id, 'Too old to send');
       continue;
     }
 
     try {
       const found = await factsFor(row);
       if (!found) {
-        await db.from('notifications').update({ error: 'No email address' }).eq('id', row.id);
+        await giveUp(row.id, 'No email address');
         continue;
       }
 
@@ -172,10 +185,20 @@ Deno.serve(async () => {
       await db.from('notifications').update({ sent_at: new Date().toISOString() }).eq('id', row.id);
       sent += 1;
     } catch (failure) {
-      // Recorded, not retried forever: a bad address shouldn't block the rest.
+      // Try again later, a little further out each time, and stop after
+      // MAX_ATTEMPTS so a bad address can't hold up the rest forever.
+      const attempts = row.attempts + 1;
+      const gap = RETRY_GAPS_MINUTES[attempts - 1];
       await db
         .from('notifications')
-        .update({ error: String(failure).slice(0, 500) })
+        .update({
+          attempts,
+          error: String(failure).slice(0, 500),
+          next_attempt_at:
+            attempts < MAX_ATTEMPTS && gap
+              ? new Date(Date.now() + gap * 60 * 1000).toISOString()
+              : null,
+        })
         .eq('id', row.id);
     }
   }

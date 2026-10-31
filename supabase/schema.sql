@@ -909,6 +909,22 @@ create table if not exists public.notifications (
   sent_at timestamptz,
   error text
 );
+-- Retries: a send that fails (say, a Gmail hiccup) is tried again up to three
+-- times in all, with growing gaps. Rows that can never succeed (no address,
+-- too old) are marked as used up straight away. Rows that failed before this
+-- existed were final, so they're used up too, once, as the column is added.
+do $$
+begin
+  if not exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'notifications' and column_name = 'attempts'
+  ) then
+    alter table public.notifications add column attempts int not null default 0;
+    update public.notifications set attempts = 3 where error is not null;
+  end if;
+end $$;
+alter table public.notifications add column if not exists next_attempt_at timestamptz;
+
 alter table public.notifications enable row level security;
 revoke all on public.notifications from anon, authenticated;
 
