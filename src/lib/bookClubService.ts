@@ -10,6 +10,7 @@ import type {
   ReadingQueueEntry,
 } from '../types';
 import { supabase } from './supabase';
+import { looksOffline, OutboxOp, SendResult } from './outbox';
 
 /**
  * Supabase returns snake_case columns; the app speaks camelCase. Every row
@@ -555,84 +556,6 @@ export async function unclaimedInGroup(
   return (data as { id: string; name: string; city: string }[] | null) ?? [];
 }
 
-/**
- * Sign someone up for a book, at the back of the line. An upsert, because a
- * past reader signing up again reuses their row: it goes back to "waiting"
- * with a new position. Their earlier read is still in the handoff log.
- */
-export async function joinLine(entry: QueueRow): Promise<SaveError> {
-  if (!supabase) {
-    return null;
-  }
-
-  try {
-    const { error } = await supabase
-      .from('reading_queue')
-      .upsert([entry], { onConflict: 'book_id,friend_id' });
-    if (error) {
-      console.warn('Supabase joinLine failed:', error.message);
-      return error.message;
-    }
-
-    return null;
-  } catch (error) {
-    console.warn('Join line error:', error);
-    return describe(error);
-  }
-}
-
-/**
- * Take back a sign-up. Someone who never had the book is removed outright;
- * someone who signed up for a second read goes back to "done", keeping their
- * row so their name stays attached to the history.
- */
-export async function leaveLine(
-  bookId: string,
-  friendId: string,
-  readBefore: boolean,
-): Promise<SaveError> {
-  if (!supabase) {
-    return null;
-  }
-
-  try {
-    const query = supabase.from('reading_queue');
-    const { error } = await (readBefore ? query.update({ status: 'done' }) : query.delete())
-      .eq('book_id', bookId)
-      .eq('friend_id', friendId)
-      .eq('status', 'waiting');
-    if (error) {
-      console.warn('Supabase leaveLine failed:', error.message);
-      return error.message;
-    }
-
-    return null;
-  } catch (error) {
-    console.warn('Leave line error:', error);
-    return describe(error);
-  }
-}
-
-/** "Got it": the book posted to you has arrived. */
-export async function markReceived(bookId: string): Promise<SaveError> {
-  if (!supabase) {
-    return null;
-  }
-
-  try {
-    const { error } = await supabase.rpc('mark_received', { p_book_id: bookId });
-    if (error) {
-      console.warn('Supabase mark_received failed:', error.message);
-      return error.message;
-    }
-
-    return null;
-  } catch (error) {
-    console.warn('Mark received error:', error);
-    return describe(error);
-  }
-}
-
 /** Change your own name or city. Past stops keep the city they had. */
 export async function updateProfile(person: Friend): Promise<SaveError> {
   if (!supabase) {
@@ -657,31 +580,77 @@ export async function updateProfile(person: Friend): Promise<SaveError> {
 }
 
 /**
- * Append one leg to a book's journey: pass_on() in the database checks that
- * you're the one holding it and that the recipient is in line (or is the
- * owner), then writes the leg and moves both queue statuses together.
+ * Send one of the changes that can wait for a connection (see outbox.ts):
+ *
+ * - passOn: append a leg. pass_on() in the database checks that you're the
+ *   one holding it and that the recipient is in line (or is the owner), then
+ *   writes the leg and moves both queue statuses together.
+ * - markReceived: "Got it", the book posted to you has arrived.
+ * - joinLine: sign up at the back of the line. An upsert, because a past
+ *   reader signing up again reuses their row; their earlier read is still in
+ *   the handoff log.
+ * - leaveLine: take back a sign-up. Someone who never had the book is
+ *   removed; someone signed up for a second read goes back to "done".
+ *
+ * Each is safe to send twice. A pass-on whose first try did arrive (only the
+ * answer was lost) is refused the second time, as the book has moved; that's
+ * recognised by its handoff already being there.
  */
-export async function recordHandoff(handoff: Handoff): Promise<SaveError> {
+export async function sendOutboxOp(op: OutboxOp): Promise<SendResult> {
   if (!supabase) {
-    return null;
+    return { ok: true };
   }
+  const db = supabase;
 
-  try {
-    const { error } = await supabase.rpc('pass_on', {
-      p_handoff_id: handoff.id,
-      p_book_id: handoff.bookId,
-      p_to: handoff.toFriend,
-      p_note: handoff.note ?? null,
-      p_rating: handoff.rating ?? null,
-    });
-    if (error) {
-      console.warn('Supabase pass_on failed:', error.message);
-      return error.message;
+  const run = async (): Promise<{ message: string } | null> => {
+    switch (op.kind) {
+      case 'passOn':
+        return (
+          await db.rpc('pass_on', {
+            p_handoff_id: op.handoffId,
+            p_book_id: op.bookId,
+            p_to: op.to,
+            p_note: op.note,
+            p_rating: op.rating,
+          })
+        ).error;
+      case 'markReceived':
+        return (await db.rpc('mark_received', { p_book_id: op.bookId })).error;
+      case 'joinLine':
+        return (
+          await db.from('reading_queue').upsert([op.entry], { onConflict: 'book_id,friend_id' })
+        ).error;
+      case 'leaveLine': {
+        const query = db.from('reading_queue');
+        return (
+          await (op.readBefore ? query.update({ status: 'done' }) : query.delete())
+            .eq('book_id', op.bookId)
+            .eq('friend_id', op.friendId)
+            .eq('status', 'waiting')
+        ).error;
+      }
     }
+  };
 
-    return null;
+  let reason: string;
+  try {
+    const error = await run();
+    if (!error) {
+      return { ok: true };
+    }
+    reason = error.message;
   } catch (error) {
-    console.warn('Pass on error:', error);
-    return describe(error);
+    reason = describe(error);
   }
+
+  const offline =
+    looksOffline(reason) || (typeof navigator !== 'undefined' && navigator.onLine === false);
+  if (!offline && op.kind === 'passOn') {
+    const { data } = await db.from('handoffs').select('id').eq('id', op.handoffId);
+    if (data && data.length > 0) {
+      return { ok: true };
+    }
+  }
+  console.warn(`Supabase ${op.kind} failed:`, reason);
+  return { ok: false, offline, reason };
 }

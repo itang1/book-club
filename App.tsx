@@ -394,6 +394,18 @@ function Root() {
       <SafeAreaInsetsContext.Provider value={isDevMode ? { ...insets, top: 0 } : insets}>
         <View style={tabStyles.root}>{body}</View>
       </SafeAreaInsetsContext.Provider>
+      {club.pendingSaves > 0 && !club.saveProblem && (
+        <View style={tabStyles.banner} accessibilityLiveRegion="polite">
+          <Text style={tabStyles.bannerTitle}>
+            {club.pendingSaves === 1
+              ? 'One change is waiting for a connection.'
+              : `${club.pendingSaves} changes are waiting for a connection.`}
+          </Text>
+          <Text style={tabStyles.bannerHint}>
+            It's saved on this device and sends by itself when you're back online.
+          </Text>
+        </View>
+      )}
       {club.saveProblem && (
         <Pressable style={tabStyles.banner} onPress={club.dismissSaveProblem}>
           <Text style={tabStyles.bannerTitle}>One more try to {club.saveProblem.action}.</Text>
