@@ -22,6 +22,8 @@ import { isDevMode } from './src/lib/devMode';
 import { clearEmailActionFromUrl, emailActionTokenFromUrl, linking } from './src/lib/links';
 import { theme } from './src/theme';
 import { registerFonts } from './src/fonts';
+import { startMonitoring } from './src/lib/monitoring';
+import { ErrorBoundary } from './src/components/ErrorBoundary';
 import { DevBar } from './src/components/DevBar';
 import { TabBar } from './src/components/TabBar';
 import { JoinGroupPrompt } from './src/components/JoinGroupPrompt';
@@ -43,6 +45,7 @@ import { EmailActionScreen } from './src/screens/EmailActionScreen';
 const ASK_TO_AGREE_TO_RULES = false;
 
 registerFonts();
+startMonitoring();
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -132,9 +135,9 @@ function HomeStack({ club }: { club: BookClub }) {
       </Stack.Screen>
       <Stack.Screen
         name="BookDetail"
-        // The cover block carries title and author, so the header stays
-        // empty rather than repeating them.
-        options={{ title: '' }}
+        // The cover carries the title, so the header shows only a quiet
+        // "Book"; screen readers still get a real heading rather than an empty one.
+        options={{ title: 'Book' }}
       >
         {(props) => (
           <BookDetailScreen
@@ -403,7 +406,9 @@ function Root() {
 export default function App() {
   return (
     <SafeAreaProvider>
-      <Root />
+      <ErrorBoundary>
+        <Root />
+      </ErrorBoundary>
     </SafeAreaProvider>
   );
 }

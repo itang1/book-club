@@ -1599,6 +1599,50 @@ grant execute on function public.shares_group(text), public.request_shelf_book(t
   to authenticated;
 
 -- ---------------------------------------------------------------
+-- Error monitoring. The app reports crashes here (src/lib/monitoring.ts);
+-- .github/workflows/errors.yml checks daily and fails, which emails the
+-- owner, when there are new ones. Write-only for the app, rate-limited, and
+-- kept 90 days. No book contents or notes: just the message, stack and screen.
+-- ---------------------------------------------------------------
+create table if not exists public.client_errors (
+  id bigserial primary key,
+  at timestamptz not null default now(),
+  person_id text references public.friends (id) on delete set null,
+  message text not null,
+  stack text,
+  screen text,
+  url text,
+  user_agent text
+);
+create index if not exists client_errors_at on public.client_errors (at);
+alter table public.client_errors enable row level security;
+revoke all on public.client_errors from anon, authenticated;
+
+create or replace function public.report_error(
+  p_message text, p_stack text, p_screen text, p_url text, p_user_agent text
+) returns void
+language plpgsql security definer set search_path = public
+as $$
+declare
+  reporter text := public.me();
+begin
+  -- A broken screen can throw in a loop: a few a minute per person, and a
+  -- ceiling for everyone signed out, keep the table (and the alert) sane.
+  if (select count(*) from public.client_errors
+      where at > now() - interval '1 minute'
+        and person_id is not distinct from reporter) >= 5 then
+    return;
+  end if;
+  insert into public.client_errors (person_id, message, stack, screen, url, user_agent)
+  values (reporter, left(coalesce(p_message, '(no message)'), 500), left(p_stack, 4000),
+          left(p_screen, 100), left(p_url, 300), left(p_user_agent, 300));
+  delete from public.client_errors where at < now() - interval '90 days';
+end;
+$$;
+revoke all on function public.report_error(text, text, text, text, text) from public;
+grant execute on function public.report_error(text, text, text, text, text) to anon, authenticated;
+
+-- ---------------------------------------------------------------
 -- Tell the API about any new tables or columns straight away, rather than
 -- waiting for it to notice ("not in the schema cache" errors otherwise).
 -- ---------------------------------------------------------------

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import { Linking, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Book, EmailPrefs, Friend } from '../types';
@@ -10,6 +10,7 @@ import { EditProfileSheet } from '../components/EditProfileSheet';
 import { EmailSettings } from '../components/EmailSettings';
 import { DeleteAccountSheet } from '../components/DeleteAccountSheet';
 import { finishesByMonth, placesForOwner } from '../lib/stats';
+import { privacyLink } from '../lib/links';
 import {
   friendNameIn,
   hasFinished,
@@ -207,6 +208,13 @@ export function ProfileScreen({
         </View>
       )}
 
+      <Pressable
+        style={styles.signOut}
+        onPress={() => Linking.openURL(privacyLink())}
+        accessibilityRole="link"
+      >
+        <Text style={styles.signOutText}>Privacy policy</Text>
+      </Pressable>
       {email && onSignOut && (
         <Pressable style={styles.signOut} onPress={onSignOut}>
           <Text style={styles.signOutText}>Signed in as {email} · Sign out</Text>

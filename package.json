@@ -27,7 +27,8 @@
     "format:check": "prettier --check .",
     "test:db": "supabase/tests/run.sh",
     "icons": "node scripts/icons.js",
-    "check": "npm run typecheck && npm run lint && npm run format:check && npm test"
+    "check": "npm run typecheck && npm run lint && npm run format:check && npm test",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@expo/metro-runtime": "~57.0.16",
@@ -50,6 +51,7 @@
     "react-native-web": "^0.21.2"
   },
   "devDependencies": {
+    "@playwright/test": "^1.63.0",
     "@types/node": "^26.6.4",
     "@types/react": "~19.2.4",
     "eslint": "^9.39.5",

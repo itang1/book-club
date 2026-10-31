@@ -12,7 +12,7 @@ module.exports = defineConfig([
   },
   {
     // Node scripts and config files.
-    files: ['scripts/**/*.js', '*.config.js'],
+    files: ['scripts/**/*.js', '*.config.js', 'e2e/**/*.mjs'],
     languageOptions: {
       globals: {
         __dirname: 'readonly',
@@ -23,6 +23,14 @@ module.exports = defineConfig([
     },
   },
   {
-    ignores: ['dist/*', '.expo/*', 'supabase/functions/*', 'design/*'],
+    ignores: [
+      'dist/*',
+      'e2e-dist/*',
+      'playwright-report/*',
+      'test-results/*',
+      '.expo/*',
+      'supabase/functions/*',
+      'design/*',
+    ],
   },
 ]);

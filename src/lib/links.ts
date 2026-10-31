@@ -69,6 +69,15 @@ export function bookLink(bookId: string): string {
   return `${root}/b/${encodeURIComponent(bookId)}`;
 }
 
+/** The privacy policy, a static page beside the app (public/privacy.html). */
+export function privacyLink(): string {
+  const root =
+    Platform.OS === 'web' && typeof window !== 'undefined'
+      ? `${window.location.origin}${BASE_PATH}`
+      : APP_URL;
+  return `${root}/privacy.html`;
+}
+
 /** The token from a one-tap email link (?do=…), on web. */
 export function emailActionTokenFromUrl(): string | null {
   if (Platform.OS !== 'web' || typeof window === 'undefined') {

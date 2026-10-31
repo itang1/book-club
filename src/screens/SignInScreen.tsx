@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Linking, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { theme } from '../theme';
 import { Letterhead } from '../components/Letterhead';
 import { emailSignInLink } from '../lib/auth';
 import { groupPreview } from '../lib/bookClubService';
 import { inviteCodeFromUrl } from '../lib/invite';
+import { privacyLink } from '../lib/links';
 
 /** A new email simply gets an account, so this covers first-timers too. */
 export function SignInScreen() {
@@ -100,7 +101,17 @@ export function SignInScreen() {
                   {sending ? 'Sending…' : 'Email me a link'}
                 </Text>
               </Pressable>
-              <Text style={styles.fine}>No password, now or ever.</Text>
+              <Text style={styles.fine}>
+                No password, now or ever. Read how we look after your details in the{' '}
+                <Text
+                  style={styles.inlineLink}
+                  accessibilityRole="link"
+                  onPress={() => Linking.openURL(privacyLink())}
+                >
+                  privacy policy
+                </Text>
+                .
+              </Text>
               {problem && <Text style={styles.problem}>{problem}</Text>}
             </>
           )}
@@ -118,6 +129,11 @@ export function SignInScreen() {
 const styles = StyleSheet.create({
   scroll: {
     paddingBottom: 40,
+  },
+  inlineLink: {
+    color: theme.colors.accent,
+    fontWeight: '700',
+    textDecorationLine: 'underline',
   },
   fine: {
     marginTop: 10,

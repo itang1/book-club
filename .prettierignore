@@ -4,3 +4,6 @@ node_modules
 package-lock.json
 supabase/sample.sql
 design
+e2e-dist
+test-results
+playwright-report
