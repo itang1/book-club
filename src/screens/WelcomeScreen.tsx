@@ -84,7 +84,7 @@ export function WelcomeScreen({
 
       <View style={styles.card}>
         <Text style={styles.cardTitle}>
-          {claimable.length > 0 ? 'New here? Join the Sisterhood' : 'Join the Sisterhood'}
+          {claimable.length > 0 ? 'New here? Join the circle' : 'Join the circle'}
         </Text>
         <TextInput
           value={name}

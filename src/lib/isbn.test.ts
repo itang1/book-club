@@ -14,9 +14,9 @@ describe('lookupIsbn', () => {
 
   it('normalizes hyphens and spaces and parses valid Open Library response', async () => {
     const fakeData = {
-      'ISBN:9780385729338': {
-        title: 'The Sisterhood of the Traveling Pants',
-        authors: [{ name: 'Ann Brashares' }],
+      'ISBN:9780316556347': {
+        title: 'Circe',
+        authors: [{ name: 'Madeline Miller' }],
         cover: { medium: 'https://covers.openlibrary.org/b/id/123-M.jpg' },
       },
     };
@@ -26,10 +26,10 @@ describe('lookupIsbn', () => {
       json: async () => fakeData,
     }) as unknown as typeof fetch;
 
-    const result = await lookupIsbn('978-0-385-72933-8');
+    const result = await lookupIsbn('978-0-316-55634-7');
     expect(result).toEqual({
-      title: 'The Sisterhood of the Traveling Pants',
-      author: 'Ann Brashares',
+      title: 'Circe',
+      author: 'Madeline Miller',
       coverUrl: 'https://covers.openlibrary.org/b/id/123-M.jpg',
     });
   });
@@ -39,7 +39,7 @@ describe('lookupIsbn', () => {
       ok: false,
     }) as unknown as typeof fetch;
 
-    const result = await lookupIsbn('9780385729338');
+    const result = await lookupIsbn('9780316556347');
     expect(result).toBeNull();
   });
 });

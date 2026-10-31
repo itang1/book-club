@@ -27,13 +27,13 @@ export const noteTitle = 'About';
  */
 export type BioRun = string | { text: string; italic?: boolean; href?: string };
 
-const SERIES_URL = 'https://en.wikipedia.org/wiki/The_Sisterhood_of_the_Traveling_Pants';
+const SERIES_URL = 'https://en.wikipedia.org/wiki/Ann_Brashares';
 
 export const bio: BioRun[][] = [
   [
-    'I read ',
-    { text: 'The Sisterhood of the Traveling Pants', italic: true, href: SERIES_URL },
-    ' series by Ann Brashares in middle school. It\'s about four best friends who spend their first summer apart during their junior year of high school and mail a pair of thrift store jeans (which somehow fits every one of them) back and forth with letters about everything that happens.',
+    'I read the ',
+    { text: 'Traveling Pants', italic: true, href: SERIES_URL },
+    ' books by Ann Brashares in middle school. It\'s about four best friends who spend their first summer apart during their junior year of high school and mail a pair of thrift store jeans (which somehow fits every one of them) back and forth with letters about everything that happens.',
   ],
   [
     'My twelve-year-old self wanted so badly to have the life those fictional girls had, with the summer happenings and friends who stayed close across an ocean. I never found that life, or jeans that fit as well as that, but I did find the friends to pass books around by USPS Media Mail (a ritual that spawned out of an annual long-distance Secret Santa tradition). This webapp helps keep the books alive by logging where they have been.',
@@ -59,8 +59,9 @@ export const rules = [
 
 /**
  * The Rules of the Pants from the first book, shown as a taped note beside
- * ours, with a credit linking to the series. All ten, but the one about
+ * ours, with a credit linking to the author. All ten, but the one about
  * boys is redacted: fine in a teen novel, out of place on this page.
+ * Rules 7 and 8 are lightly reworded to keep this app's own name throughout.
  */
 export const pantsRules = [
   'You must never wash the Pants.',
@@ -69,18 +70,18 @@ export const pantsRules = [
   '[redacted]',
   'You must not pick your nose while wearing the Pants. You may, however, scratch casually your nostril while really kind of picking.',
   'Upon our reunion, you must follow the proper procedures for documenting your time in the Pants.',
-  'You must write to your Sisters throughout the summer, no matter how much fun you are having without them.',
-  'You must pass the Pants along to your Sister according to the specifications set down by the Sisterhood. Failures to comply will result in a severe spanking upon our reunion.',
+  'You must write to your friends throughout the summer, no matter how much fun you are having without them.',
+  'You must pass the Pants along according to the specifications set down by the group. Failures to comply will result in a severe spanking upon our reunion.',
   'You must not wear the Pants with a tucked-in shirt and belt. See rule #2.',
   'Remember: Pants = love. Love your pals. Love yourself.',
 ];
 
 /** The line that opens the Rules of the Pants in the book. */
 export const pantsPreamble =
-  'We, the Sisterhood, hereby instate the following rules to govern the use of the Traveling Pants:';
+  'We hereby instate the following rules to govern the use of the Traveling Pants:';
 
 export const pantsCredit = {
-  text: 'From The Sisterhood of the Traveling Pants by Ann Brashares',
+  text: 'From the Traveling Pants books by Ann Brashares',
   href: SERIES_URL,
 };
 
@@ -88,4 +89,4 @@ export const pantsCredit = {
 export const tagline = 'Read it. Write in it. Pass it on.';
 
 export const homage =
-  'A fan homage to The Sisterhood of the Traveling Pants by Ann Brashares. Not affiliated with the author or publisher.';
+  'A fan homage to the Traveling Pants books by Ann Brashares. Not affiliated with the author or publisher.';

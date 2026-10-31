@@ -1,8 +1,8 @@
 import type { Book, Friend, Friendship, Group } from '../types';
 
 /**
- * Fictional demo group: the four girls from The Sisterhood of the Traveling
- * Pants, in the places they spend the first book's summer. Kept fictional on
+ * Fictional demo group: the four girls from Ann Brashares's Traveling Pants
+ * books, in the places they spend the first book's summer. Kept fictional on
  * purpose — this file ships in the client bundle and the repo is public.
  */
 
