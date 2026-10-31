@@ -27,7 +27,7 @@ export function ClubYearCard({
   const early = year.handoffs < EARLY_BELOW;
   const tiles = [
     { label: 'Handoffs', value: year.handoffs },
-    { label: 'Letters', value: year.letters },
+    { label: 'Notes', value: year.letters },
     { label: 'Readers', value: year.readers },
     { label: 'Places', value: year.places },
   ];
@@ -53,7 +53,7 @@ export function ClubYearCard({
         <Text style={styles.slimStats} numberOfLines={1}>
           {early
             ? earlyLine(year)
-            : `${count(year.handoffs, 'handoff')} · ${count(year.letters, 'letter')} · ${count(year.places, 'place')}`}
+            : `${count(year.handoffs, 'handoff')} · ${count(year.letters, 'note')} · ${count(year.places, 'place')}`}
         </Text>
         <Text style={styles.link}>›</Text>
         {sheet}
@@ -98,7 +98,7 @@ function earlyLine(year: ClubYear): string {
     return 'a fresh year, ready for its first book';
   }
   const moving = `${count(year.booksMoving, 'book')} on the move`;
-  return year.letters > 0 ? `${moving} and ${count(year.letters, 'letter')}` : moving;
+  return year.letters > 0 ? `${moving} and ${count(year.letters, 'note')}` : moving;
 }
 
 function count(n: number, noun: string): string {

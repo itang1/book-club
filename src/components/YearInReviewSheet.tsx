@@ -49,7 +49,7 @@ export function YearInReviewSheet({
   const review = yearInReview(books, year, currentUserId);
   const tiles = [
     { label: 'Handoffs', value: review.handoffs },
-    { label: 'Letters', value: review.letters },
+    { label: 'Notes', value: review.letters },
     { label: 'Readers', value: review.readers },
     { label: 'Places', value: review.places },
   ];
@@ -104,7 +104,7 @@ export function YearInReviewSheet({
                     book={review.bestLoved.book}
                     detail={`${'★'.repeat(Math.round(review.bestLoved.average))} from ${
                       review.bestLoved.ratings
-                    } ${review.bestLoved.ratings === 1 ? 'letter' : 'letters'}`}
+                    } ${review.bestLoved.ratings === 1 ? 'note' : 'notes'}`}
                   />
                 </View>
               </>
@@ -127,8 +127,8 @@ export function YearInReviewSheet({
                   : `You finished and passed on ${review.mine.finished} ${
                       review.mine.finished === 1 ? 'book' : 'books'
                     }, with ${review.mine.lettersWritten} ${
-                      review.mine.lettersWritten === 1 ? 'letter' : 'letters'
-                    } tucked inside${
+                      review.mine.lettersWritten === 1 ? 'note' : 'notes'
+                    } left in the app${
                       review.mine.sentTo.length > 0
                         ? `, to ${listOf(review.mine.sentTo)}`
                         : ''

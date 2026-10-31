@@ -11,7 +11,9 @@ everywhere it's been.
 - **Lend a book.** You own the copy; it starts with you.
 - **Join the line.** Friends sign themselves up. Nobody is added for them.
 - **Pass it on.** The holder hands it to whoever's next and can leave a
-  letter: a rating and a note, sealed until the next reader finishes too.
+  rating and a note about the book, sealed until the next reader finishes too.
+  The handwritten letter is separate: tuck it in the package, about anything
+  at all.
 - **It comes home.** When nobody's waiting, it goes back to its owner.
   Anyone can sign up again for a reread.
 

@@ -72,8 +72,9 @@ export type ReadingQueueEntry = Friend & {
  * book's current location is derived from the most recent one.
  * `fromFriend` is null for the handoff that put the book into circulation.
  *
- * `note` and `rating` are the letter `fromFriend` tucks into the book as they
- * pass it on, the way the girls in the novel wrote letters with the pants.
+ * `note` and `rating` are what `fromFriend` says about the book in the app as
+ * they pass it on. They are not the letter: that is handwritten and travels in
+ * the package, the way the girls in the novel wrote letters with the pants.
  * Both optional, and as permanent as the leg itself.
  */
 export type Handoff = {

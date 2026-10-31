@@ -399,7 +399,7 @@ export function BookDetailScreen({
                     ) : (
                       <View style={[styles.letter, styles.letterSealed]}>
                         <Text style={styles.letterSealedText}>
-                          ✉ Sealed letter from {friendNameIn(book, leg.fromFriend)}. It opens
+                          ✉ Sealed note from {friendNameIn(book, leg.fromFriend)}. It opens
                           once you've finished the book.
                         </Text>
                       </View>
@@ -430,9 +430,10 @@ export function BookDetailScreen({
               arrives. The leg goes into the travel history for good.
             </Text>
 
-            {/* The letter. Readers who come after see it only once they've
-                finished the book too. */}
-            <Text style={styles.sheetLabel}>Leave a letter in the book</Text>
+            {/* The in-app note and stars are about the book. The handwritten
+                letter travels in the package and never touches the app. Readers
+                who come after see the note only once they've finished too. */}
+            <Text style={styles.sheetLabel}>Rate it and leave a note about the book</Text>
             <Stars value={rating} size={28} onChange={setRating} />
             <TextInput
               value={note}
@@ -443,6 +444,10 @@ export function BookDetailScreen({
               maxLength={500}
               style={styles.sheetInput}
             />
+            <Text style={styles.sheetBody}>
+              Your handwritten letter doesn't go here. Tuck it in the package with the
+              book. It can be about anything.
+            </Text>
 
             <Pressable
               style={styles.sheetConfirm}
@@ -526,7 +531,7 @@ export function BookDetailScreen({
           <View style={styles.sheet}>
             <Text style={styles.sheetTitle}>Keep this copy home?</Text>
             <Text style={styles.sheetBody}>
-              Put this copy to rest on the home shelf. Its past travels, stamps, and letters stay safe to look back on, and the line will rest.
+              Put this copy to rest on the home shelf. Its past travels, stamps, and notes stay safe to look back on, and the line will rest.
             </Text>
             <Pressable
               style={styles.sheetConfirm}

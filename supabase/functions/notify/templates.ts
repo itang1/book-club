@@ -83,7 +83,7 @@ function content(facts: EmailFacts): Content {
           "Take your time with it. Someone's next after you, so send it on when you're done.",
         ],
         aside: facts.hasLetter
-          ? `&#9993; ${other} tucked a letter inside. It opens once you've finished the book.`
+          ? `&#9993; ${other} left a note about the book. It opens once you've finished it. Look for their handwritten letter in the package.`
           : undefined,
         button: `Open ${titleText}`,
         action: "Got it, it's here",

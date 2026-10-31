@@ -36,7 +36,7 @@ asks, because every audience type is another case for every rule below.)
 | Thing | Visible to |
 | --- | --- |
 | A book, its line, its travel history | Members of its group, its owner, and whoever is holding it or waiting in its line |
-| Letters | As above, and still sealed until you've finished the copy |
+| Notes (stars and words about the book) | As above, and still sealed until you've finished the copy |
 | A person's name and city | Themselves, their friends, people they share a group with, and anyone they've sent a friend request to |
 | "People you may know" | Only people you already share a group with. Friends of friends are not shown, since that would reveal people who never shared anything with you |
 | Search for any user | Doesn't exist. You find people through groups and invite links |
@@ -69,7 +69,7 @@ asks, because every audience type is another case for every rule below.)
   copy finishes its journey, comes home, and stops being lent until they put
   it in another group.
 - **Unfriending.** Changes nothing about books (friendship never opened them).
-- **Rereads, sealed letters, return home.** Unchanged.
+- **Rereads, sealed notes, return home.** Unchanged.
 
 ## Teaching the rules without a help page
 
@@ -89,7 +89,7 @@ explanation nobody would read.
 | Unfriending (from ⋯ on a friend) | "Unfriend Becky? She won't be told." | Either side can leave, quietly |
 | A group invite | "Lena invited you to **The Traveling Pants**. Members see each other's books and can join their lines. **Join** · Not now" | Invites need a yes, and what joining means |
 | Books tab with no groups | "Books live in groups. Start one, or ask a friend for an invite." | Where books come from |
-| Welcome screen, under the form | Three short lines: *Lend a book to a group. Friends in it sign up. It travels with a letter at every stop, then comes home.* | The whole idea, once |
+| Welcome screen, under the form | Three short lines: *Lend a book to a group. Friends in it sign up. It travels with a handwritten letter at every stop, then comes home.* | The whole idea, once |
 
 And one new entry in the Rules of the Books, so the principle has a
 memorable form too: **"What's lent in the group stays in the group."**
@@ -169,7 +169,7 @@ Put the demo group in your real Supabase as a second, separate group,
 ## Open questions
 
 - One group per copy, or can a copy be lent to several groups at once?
-  (Recommended: one. It keeps the line and the letters in one circle.)
+  (Recommended: one. It keeps the line and the notes in one circle.)
 - Can anyone create a group, or only people already in one?
 - Joining a group: invite only, or can people ask to join one they've heard
   of? (Recommended: invite link only, at first.)

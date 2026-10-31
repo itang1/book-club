@@ -127,9 +127,10 @@ export function hasFinished(book: Book, friendId: string | null): boolean {
 }
 
 /**
- * Letters stay sealed until you've finished this copy yourself, so nobody's
- * opinion colours your read. You can always see a letter you wrote, and a
- * second read doesn't re-seal what you've already opened.
+ * Notes (the in-app stars and words about the book) stay sealed until you've
+ * finished this copy yourself, so nobody's opinion colours your read. You can
+ * always see a note you wrote, and a second read doesn't re-seal what you've
+ * already opened.
  */
 export function canReadLetter(book: Book, leg: Handoff, viewerId: string | null): boolean {
   if (!viewerId) {

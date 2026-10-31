@@ -6,12 +6,12 @@ const book = { title: 'Circe', author: 'Madeline Miller', coverColor: '#b4b8a9' 
 const appUrl = 'https://example.test/';
 
 describe('emails', () => {
-  it('book sent: names the sender, mentions a sealed letter', () => {
+  it('book sent: names the sender, mentions a sealed note', () => {
     const email = renderEmail({
       kind: 'book_sent', recipient: 'Tibby', other: 'Carmen Lowell', book, group: 'Our Book Club', hasLetter: true, appUrl,
     });
     expect(email.subject).toBe('Carmen sent you Circe');
-    expect(email.html).toContain('tucked a letter inside');
+    expect(email.html).toContain('left a note about the book');
     expect(email.text).toContain('tap Got it');
   });
 

@@ -58,7 +58,7 @@ export function GroupScreen({
   const tiles = [
     { label: 'Books', value: totals.books },
     { label: 'Handoffs', value: totals.handoffs },
-    { label: 'Letters', value: totals.letters },
+    { label: 'Notes', value: totals.letters },
     { label: 'Places', value: totals.places },
   ];
 
@@ -156,7 +156,7 @@ export function GroupScreen({
                 <View style={styles.historyText}>
                   <Text style={styles.historyLine}>
                     {describeLeg(book, leg)}
-                    {hasLetter(leg) ? ' · left a letter' : ''}
+                    {hasLetter(leg) ? ' · left a note' : ''}
                   </Text>
                   <Text style={styles.historyDate}>{formatDate(leg.happenedAt)}</Text>
                 </View>

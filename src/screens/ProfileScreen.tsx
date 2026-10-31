@@ -113,7 +113,7 @@ export function ProfileScreen({
         </View>
         <View style={styles.statCard}>
           <Text style={styles.statValue}>{lettersWritten}</Text>
-          <Text style={styles.statLabel}>Letters written</Text>
+          <Text style={styles.statLabel}>Notes written</Text>
         </View>
       </View>
 
