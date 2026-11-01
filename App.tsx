@@ -10,6 +10,7 @@ import {
 } from 'react-native-safe-area-context';
 
 import {
+  Friend,
   FriendsStackParamList,
   RootStackParamList,
   RootTabParamList,
@@ -43,8 +44,12 @@ import { SignInScreen } from './src/screens/SignInScreen';
 import { RulesAgreementScreen } from './src/screens/RulesAgreementScreen';
 import { EmailActionScreen } from './src/screens/EmailActionScreen';
 
-/** The one-time rules agreement after joining. Agreements already given are still remembered. */
-const ASK_TO_AGREE_TO_RULES = false;
+/**
+ * The one-time rules agreement, for people who join. Whoever already had an
+ * account when it was switched on isn't asked, and neither is the demo.
+ */
+const asksToAgree = (me: Friend, usesAccounts: boolean) =>
+  usesAccounts && !me.agreedRulesAt && !me.joinedBeforeRules;
 
 registerFonts();
 startMonitoring();
@@ -367,7 +372,7 @@ function Root() {
         onSignOut={club.usesAccounts ? club.signOut : undefined}
       />
     );
-  } else if (ASK_TO_AGREE_TO_RULES && me && !me.agreedRulesAt) {
+  } else if (me && asksToAgree(me, club.usesAccounts)) {
     body = <RulesAgreementScreen firstName={me.name.split(' ')[0]} onAgree={club.agreeToRules} />;
   } else {
     body = (
