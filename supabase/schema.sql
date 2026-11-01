@@ -194,6 +194,18 @@ alter table public.friendships
   add column if not exists status text not null default 'accepted'
   check (status in ('pending', 'accepted'));
 
+-- Blocks: one person blocking another. While it stands, neither can ask the
+-- other to be friends or borrow from the other's shelf, and any friendship
+-- between them ends. Nobody is told. Shared groups stay shared; whoever runs
+-- a group can remove someone. See block_person() below.
+create table if not exists public.blocks (
+  blocker text not null references public.friends (id) on delete cascade,
+  blocked text not null references public.friends (id) on delete cascade,
+  created_at timestamptz not null default now(),
+  primary key (blocker, blocked),
+  check (blocker <> blocked)
+);
+
 -- ---------------------------------------------------------------
 -- Groups: the circles books are lent within. Every book belongs to one,
 -- and only its members (plus whoever is reading or waiting for it) can see
@@ -381,6 +393,17 @@ as $$
   )
 $$;
 
+-- Whether you and this person have a block between you, either way round.
+create or replace function public.blocked_between(p_person_id text) returns boolean
+language sql stable security definer set search_path = public
+as $$
+  select exists (
+    select 1 from public.blocks
+    where (blocker = public.me() and blocked = p_person_id)
+       or (blocker = p_person_id and blocked = public.me())
+  )
+$$;
+
 -- ---------------------------------------------------------------
 -- Data API privileges
 --
@@ -539,6 +562,7 @@ create policy "ask to be friends"
     and public.can_see_person(case when friend_a = public.me() then friend_b else friend_a end)
     and public.has_account(case when friend_a = public.me() then friend_b else friend_a end)
     and public.accepts_requests(case when friend_a = public.me() then friend_b else friend_a end)
+    and not public.blocked_between(case when friend_a = public.me() then friend_b else friend_a end)
   );
 drop policy if exists "accept a request" on public.friendships;
 create policy "accept a request"
@@ -1118,7 +1142,7 @@ $$;
 revoke all on function public.me(), public.is_member(text), public.can_see_book(text),
   public.is_sample_group(text), public.is_sample_book(text), public.has_account(text),
   public.is_character(text), public.accepts_requests(text),
-  public.can_see_person(text), public.claim_profile(text, text),
+  public.can_see_person(text), public.blocked_between(text), public.claim_profile(text, text),
   public.unclaimed_in_group(text), public.group_preview(text),
   public.create_group(text, text), public.join_group(text), public.leave_group(text),
   public.group_admin(text), public.admin_id(public.groups),
@@ -1137,7 +1161,7 @@ revoke all on function public.me(), public.is_member(text), public.can_see_book(
 grant execute on function public.me(), public.is_member(text), public.can_see_book(text),
   public.is_sample_group(text), public.is_sample_book(text), public.has_account(text),
   public.is_character(text), public.accepts_requests(text),
-  public.can_see_person(text), public.claim_profile(text, text),
+  public.can_see_person(text), public.blocked_between(text), public.claim_profile(text, text),
   public.unclaimed_in_group(text), public.group_preview(text),
   public.create_group(text, text), public.join_group(text), public.leave_group(text),
   public.group_admin(text), public.admin_id(public.groups),
@@ -1656,7 +1680,8 @@ grant select on public.shelf_requests to authenticated;
 
 drop policy if exists "see shelves in your groups" on public.shelf_books;
 create policy "see shelves in your groups"
-  on public.shelf_books for select to authenticated using (public.shares_group(owner_id));
+  on public.shelf_books for select to authenticated
+  using (public.shares_group(owner_id) and not public.blocked_between(owner_id));
 drop policy if exists "shelve your own books" on public.shelf_books;
 create policy "shelve your own books"
   on public.shelf_books for insert to authenticated
@@ -1694,7 +1719,7 @@ declare
 begin
   select * into shelved from public.shelf_books where id = p_shelf_book_id;
   if asker is null or shelved.id is null or shelved.owner_id = asker
-     or not public.shares_group(shelved.owner_id) then
+     or not public.shares_group(shelved.owner_id) or public.blocked_between(shelved.owner_id) then
     raise exception 'You can only ask for a book on a shelf you can see';
   end if;
   if shelved.lent_book_id is not null then
@@ -1877,6 +1902,87 @@ create policy "say you'd read it"
 drop policy if exists "take it back" on public.wish_votes;
 create policy "take it back"
   on public.wish_votes for delete to authenticated using (person_id = public.me());
+
+-- ---------------------------------------------------------------
+-- Block and report. You see only your own blocks; nobody can read reports
+-- through the API. .github/workflows/errors.yml lists new reports daily and
+-- fails, which emails the owner, so someone looks at each one.
+-- ---------------------------------------------------------------
+alter table public.blocks enable row level security;
+revoke all on public.blocks from anon, authenticated;
+grant select on public.blocks to authenticated;
+drop policy if exists "see who you've blocked" on public.blocks;
+create policy "see who you've blocked"
+  on public.blocks for select to authenticated using (blocker = public.me());
+
+create or replace function public.block_person(p_person_id text) returns void
+language plpgsql security definer set search_path = public
+as $$
+declare
+  v_me text := public.me();
+begin
+  if v_me is null or p_person_id is null or p_person_id = v_me
+     or not public.can_see_person(p_person_id) then
+    raise exception 'You can only block someone you can see';
+  end if;
+  insert into public.blocks (blocker, blocked) values (v_me, p_person_id)
+  on conflict do nothing;
+  -- Friends or a request either way: it goes, as an unfriend would.
+  delete from public.friendships
+  where friend_a = least(v_me, p_person_id) and friend_b = greatest(v_me, p_person_id);
+  -- Open asks to borrow from each other's shelves go too.
+  delete from public.shelf_requests r
+  using public.shelf_books s
+  where s.id = r.shelf_book_id and r.status = 'pending'
+    and ((s.owner_id = v_me and r.requester_id = p_person_id)
+      or (s.owner_id = p_person_id and r.requester_id = v_me));
+end;
+$$;
+
+create or replace function public.unblock_person(p_person_id text) returns void
+language sql security definer set search_path = public
+as $$
+  delete from public.blocks where blocker = public.me() and blocked = p_person_id
+$$;
+
+create table if not exists public.reports (
+  id bigserial primary key,
+  at timestamptz not null default now(),
+  reporter text references public.friends (id) on delete set null,
+  reported text references public.friends (id) on delete set null,
+  reason text not null check (reason in ('unkind', 'kept_book', 'fake', 'other')),
+  details text
+);
+alter table public.reports enable row level security;
+revoke all on public.reports from anon, authenticated;
+revoke all on sequence public.reports_id_seq from anon, authenticated;
+
+-- Report someone you can see (or have blocked). A few a day per person.
+create or replace function public.report_person(p_person_id text, p_reason text, p_details text)
+returns void
+language plpgsql security definer set search_path = public
+as $$
+declare
+  v_me text := public.me();
+begin
+  if v_me is null or p_person_id is null or p_person_id = v_me
+     or not (public.can_see_person(p_person_id)
+             or exists (select 1 from public.blocks where blocker = v_me and blocked = p_person_id)) then
+    raise exception 'You can only report someone you can see';
+  end if;
+  if (select count(*) from public.reports
+      where reporter = v_me and at > now() - interval '1 day') >= 10 then
+    raise exception 'That''s a lot of reports for one day. Try again tomorrow';
+  end if;
+  insert into public.reports (reporter, reported, reason, details)
+  values (v_me, p_person_id, p_reason, nullif(left(trim(coalesce(p_details, '')), 2000), ''));
+end;
+$$;
+
+revoke all on function public.block_person(text), public.unblock_person(text),
+  public.report_person(text, text, text) from public, anon;
+grant execute on function public.block_person(text), public.unblock_person(text),
+  public.report_person(text, text, text) to authenticated;
 
 -- ---------------------------------------------------------------
 -- Tell the API about any new tables or columns straight away, rather than

@@ -41,6 +41,7 @@ import { ShelfScreen } from './src/screens/ShelfScreen';
 import { PersonShelfScreen } from './src/screens/PersonShelfScreen';
 import { useShelf } from './src/lib/shelf';
 import { SignInScreen } from './src/screens/SignInScreen';
+import { useBlocks } from './src/lib/blocks';
 import { RulesAgreementScreen } from './src/screens/RulesAgreementScreen';
 import { EmailActionScreen } from './src/screens/EmailActionScreen';
 
@@ -183,6 +184,7 @@ function HomeStack({ club }: { club: BookClub }) {
 }
 
 function FriendsStack({ club }: { club: BookClub }) {
+  const blocks = useBlocks(club.currentUserId);
   return (
     <FriendsNav.Navigator
       screenOptions={{
@@ -202,6 +204,7 @@ function FriendsStack({ club }: { club: BookClub }) {
             onRemoveFriend={club.removeFriend}
             onCreateGroup={club.createGroup}
             onOpenGroup={(groupId) => navigation.navigate('Group', { groupId })}
+            blocks={blocks}
           />
         )}
       </FriendsNav.Screen>
@@ -222,6 +225,8 @@ function FriendsStack({ club }: { club: BookClub }) {
             onHandOver={club.handOverGroup}
             onResetInvite={club.resetInviteLink}
             onSetPace={club.setGroupPace}
+            blocks={blocks}
+            onBlocked={club.removeFriend}
             onLeft={() => navigation.navigate('FriendsHome')}
           />
         )}

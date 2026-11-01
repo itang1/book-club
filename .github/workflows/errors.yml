@@ -1,7 +1,8 @@
-# Daily error check. Lists any errors the app reported in the last day
-# (public.client_errors, see src/lib/monitoring.ts) and fails if there were
-# any, so GitHub emails the repo owner about a failed run. Open the run to read
-# them. A quiet day is a green run.
+# Daily error and report check. Lists any errors the app reported in the last
+# day (public.client_errors, see src/lib/monitoring.ts) and any reports people
+# made about someone (public.reports), and fails if there were any, so GitHub
+# emails the repo owner about a failed run. Open the run to read them. A quiet
+# day is a green run.
 name: Error report
 
 on:
@@ -39,4 +40,30 @@ jobs:
             where at > now() - interval '24 hours'
             group by message order by count(*) desc limit 30"
           echo "::error::$count error report(s) in the last 24 hours. Details above."
+          exit 1
+
+      - name: Reports about people in the last 24 hours
+        if: always()
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          if [ -z "$SUPABASE_DB_URL" ]; then
+            exit 0
+          fi
+          count=$(psql "$SUPABASE_DB_URL" -At -c \
+            "select count(*) from public.reports where at > now() - interval '24 hours'")
+          if [ "$count" = "0" ]; then
+            echo "No reports in the last 24 hours."
+            exit 0
+          fi
+          psql "$SUPABASE_DB_URL" -c "
+            select to_char(r.at, 'Mon DD HH24:MI') as at, by_.name as reporter,
+                   about.name as reported, r.reported as reported_id, r.reason,
+                   left(r.details, 300) as details
+            from public.reports r
+            left join public.friends by_ on by_.id = r.reporter
+            left join public.friends about on about.id = r.reported
+            where r.at > now() - interval '24 hours'
+            order by r.at"
+          echo "::error::$count report(s) about people in the last 24 hours. Details above."
           exit 1
