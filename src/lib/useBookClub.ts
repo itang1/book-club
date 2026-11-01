@@ -43,6 +43,7 @@ import type { OutboxEntry, OutboxOp } from './outbox';
 import { clubOutbox as outbox, listenToOutbox } from './clubOutbox';
 import { withJoined, withLeft, withPassedOn, withReceived } from './journeyChanges';
 import { useLiveRefresh } from './useLiveRefresh';
+import { countMilestone } from './analytics';
 
 export type NewProfile = { name: string; city: string; region: string };
 
@@ -316,6 +317,9 @@ export function useBookClub() {
     track(
       `add ${book.title}`,
       createBook(book).then(async (reason) => {
+        if (!reason) {
+          countMilestone('book-lent');
+        }
         const url = await cover;
         if (reason || !url) {
           return reason;
@@ -416,6 +420,7 @@ export function useBookClub() {
 
     updateBook(bookId, (candidate) => withPassedOn(candidate, handoff));
 
+    countMilestone('passed-on');
     trackOrQueue(`pass ${book.title} on`, {
       kind: 'passOn',
       handoffId: handoff.id,
@@ -563,6 +568,7 @@ export function useBookClub() {
       'join the group',
       joinGroup(inviteCode).then((reason) => {
         if (!reason) {
+          countMilestone('joined-group');
           fetchBookClubData().then(applyData);
         }
         return reason;
@@ -657,12 +663,16 @@ export function useBookClub() {
     }
 
     const write = createFriend(person).then(async (reason) => {
+      if (!reason) {
+        countMilestone('signed-up');
+      }
       if (reason || !inviteCode || !usesAccounts) {
         return reason;
       }
 
       const joined = await joinGroup(inviteCode);
       if (!joined) {
+        countMilestone('joined-group');
         applyData(await fetchBookClubData());
       }
       return joined;

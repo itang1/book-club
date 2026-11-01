@@ -30,6 +30,15 @@
       content="The Traveling Books crest, with the motto Lege, Scribe, Trade"
     />
     <meta name="twitter:card" content="summary_large_image" />
+    <!-- Visit counts (GoatCounter, added on deploy) see the page's path only,
+         never the query string, which can carry a group's invite code. -->
+    <script>
+      window.goatcounter = {
+        path: function () {
+          return location.pathname;
+        },
+      };
+    </script>
     <link rel="apple-touch-icon" href="icon.png" />
     <link rel="manifest" href="manifest.json" />
     <!-- The `react-native-web` recommended style reset: https://necolas.github.io/react-native-web/docs/setup/#root-element -->
