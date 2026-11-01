@@ -25,6 +25,8 @@ type YearInReviewSheetProps = {
   books: Book[];
   currentUserId: string | null;
   year: number;
+  /** Opens a book's page; the sheet closes first so the page is visible. */
+  onOpenBook?: (bookId: string) => void;
 };
 
 function listOf(names: string[]): string {
@@ -33,9 +35,23 @@ function listOf(names: string[]): string {
     : `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`;
 }
 
-function BookLine({ book, detail }: { book: Book; detail: string }) {
+function BookLine({
+  book,
+  detail,
+  onOpen,
+}: {
+  book: Book;
+  detail: string;
+  onOpen?: (bookId: string) => void;
+}) {
   return (
-    <View style={styles.bookLine}>
+    <Pressable
+      style={({ pressed }) => [styles.bookLine, pressed && styles.pressed]}
+      disabled={!onOpen}
+      onPress={() => onOpen?.(book.id)}
+      accessibilityRole={onOpen ? 'button' : undefined}
+      accessibilityLabel={onOpen ? `Open ${book.title}` : undefined}
+    >
       {book.coverUrl ? (
         <Image source={{ uri: book.coverUrl }} style={styles.bookCover} />
       ) : (
@@ -46,7 +62,8 @@ function BookLine({ book, detail }: { book: Book; detail: string }) {
         <Text style={styles.bookAuthor}>{book.author}</Text>
         <Text style={styles.bookDetail}>{detail}</Text>
       </View>
-    </View>
+      {onOpen && <Text style={styles.chevron}>›</Text>}
+    </Pressable>
   );
 }
 
@@ -56,6 +73,7 @@ export function YearInReviewSheet({
   books,
   currentUserId,
   year,
+  onOpenBook,
 }: YearInReviewSheetProps) {
   const insets = useSafeAreaInsets();
   const review = yearInReview(books, year, currentUserId);
@@ -68,6 +86,12 @@ export function YearInReviewSheet({
     const result = await shareYearCard(yearCard(review, year)).catch(() => 'unsupported');
     setSharing(result === 'downloaded' ? 'downloaded' : 'idle');
   };
+  const open = onOpenBook
+    ? (bookId: string) => {
+        onClose();
+        onOpenBook(bookId);
+      }
+    : undefined;
   const tiles = [
     { label: 'Handoffs', value: review.handoffs },
     { label: 'Notes', value: review.letters },
@@ -128,6 +152,7 @@ export function YearInReviewSheet({
                 <View style={styles.card}>
                   <BookLine
                     book={review.mostTravelled.book}
+                    onOpen={open}
                     detail={`${review.mostTravelled.legs} ${
                       review.mostTravelled.legs === 1 ? 'leg' : 'legs'
                     } of its journey this year`}
@@ -142,6 +167,7 @@ export function YearInReviewSheet({
                 <View style={styles.card}>
                   <BookLine
                     book={review.bestLoved.book}
+                    onOpen={open}
                     detail={`${'★'.repeat(Math.round(review.bestLoved.average))} from ${
                       review.bestLoved.ratings
                     } ${review.bestLoved.ratings === 1 ? 'note' : 'notes'}`}
@@ -291,6 +317,11 @@ const styles = StyleSheet.create({
   },
   bookText: {
     flex: 1,
+  },
+  chevron: {
+    fontSize: 24,
+    color: theme.colors.accent,
+    marginLeft: 8,
   },
   bookTitle: {
     fontFamily: theme.fonts.serif,

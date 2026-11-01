@@ -13,6 +13,7 @@ export function ClubYearCard({
   currentUserId,
   slim = false,
   now = new Date(),
+  onOpenBook,
 }: {
   /** Your real groups' books only. */
   books: Book[];
@@ -20,6 +21,7 @@ export function ClubYearCard({
   currentUserId: string | null;
   slim?: boolean;
   now?: Date;
+  onOpenBook?: (bookId: string) => void;
 }) {
   const [open, setOpen] = useState(false);
   const year = clubYear(books, now.getFullYear());
@@ -38,6 +40,7 @@ export function ClubYearCard({
       books={books}
       currentUserId={currentUserId}
       year={year.year}
+      onOpenBook={onOpenBook}
     />
   );
 

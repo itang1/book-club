@@ -15,7 +15,14 @@ type PersonShelfScreenProps = NativeStackScreenProps<ShelfStackParamList, 'Perso
 };
 
 /** Someone else's shelf: browse it and ask to borrow. */
-export function PersonShelfScreen({ route, shelf, me, members, books }: PersonShelfScreenProps) {
+export function PersonShelfScreen({
+  route,
+  navigation,
+  shelf,
+  me,
+  members,
+  books,
+}: PersonShelfScreenProps) {
   const { personId } = route.params;
   const owner = members.find((person) => person.id === personId);
   const theirs = shelf.books.filter((book) => book.ownerId === personId);
@@ -43,7 +50,7 @@ export function PersonShelfScreen({ route, shelf, me, members, books }: PersonSh
           ? books.find((candidate) => candidate.id === book.lentBookId && !candidate.archivedAt)
           : undefined;
         const status = out
-          ? 'Out travelling. Join its line from the Books tab.'
+          ? 'Out travelling. Open it to join its line.'
           : request?.status === 'pending'
             ? 'You asked. Waiting to hear.'
             : request?.status === 'accepted'
@@ -58,14 +65,24 @@ export function PersonShelfScreen({ route, shelf, me, members, books }: PersonSh
             book={book}
             status={status}
             actions={
-              canAsk
+              out
                 ? [
                     {
-                      label: 'Ask to borrow',
-                      onPress: async () => setProblem(await shelf.requestBook(book.id)),
+                      label: 'Open it',
+                      onPress: () =>
+                        navigation
+                          .getParent()
+                          ?.navigate('Home', { screen: 'BookDetail', params: { bookId: out.id } }),
                     },
                   ]
-                : undefined
+                : canAsk
+                  ? [
+                      {
+                        label: 'Ask to borrow',
+                        onPress: async () => setProblem(await shelf.requestBook(book.id)),
+                      },
+                    ]
+                  : undefined
             }
           />
         );

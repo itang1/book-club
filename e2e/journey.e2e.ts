@@ -109,6 +109,20 @@ test('the year in review becomes a picture to share', async ({ page }) => {
   expect(download.suggestedFilename()).toMatch(/^traveling-books-\d{4}\.png$/);
 });
 
+test('books listed in the year in review and on Profile open their page', async ({ page }) => {
+  await seen(page, 'See the year so far').click();
+  await page
+    .getByLabel(/^Open /)
+    .filter({ visible: true })
+    .first()
+    .click();
+  await expect(page.getByText("Where this copy has been, and who's waiting.")).toBeVisible();
+
+  await page.getByText('Profile', { exact: true }).last().click();
+  await page.getByLabel('Open Pride and Prejudice').filter({ visible: true }).click();
+  await expect(seen(page, "Where this copy has been, and who's waiting.")).toBeVisible();
+});
+
 test('a group keeps a wishlist of books nobody owns yet', async ({ page }) => {
   await page.getByText('Friends & Groups', { exact: true }).last().click();
   await page

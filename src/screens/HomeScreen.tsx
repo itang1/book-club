@@ -254,6 +254,7 @@ export function HomeScreen({
           groupNames={myGroupNames}
           currentUserId={currentUserId}
           slim={mine.length >= 3}
+          onOpenBook={(bookId) => navigation.navigate('BookDetail', { bookId })}
         />
       )}
 

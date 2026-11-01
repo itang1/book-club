@@ -1,0 +1,899 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Traveling Books House Colours</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Libre+Caslon+Text:ital,wght@0,400;0,700;1,400&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      /* One visual world: the app's own ivory stock. Controls on the left, the app redrawn live on the right. */
+      :root {
+        --main: #1f3b2c; /* letterhead, buttons, links */
+        --highlight: #7d2532; /* "in your hands" */
+        --brass: #b4925a; /* fine rules, motto */
+        --paper: #f6f1e6; /* background */
+        --ink: #1c1b17;
+        --muted: #575046;
+        --rule: #d6c9b1;
+        --card: #fffdf7;
+        --display: 'Libre Caslon Text', Georgia, 'Times New Roman', serif;
+        --body: -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        color-scheme: light;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+      }
+      body {
+        background: #e9e4da;
+        color: var(--ink);
+        font-family: var(--body);
+        font-size: 15px;
+        line-height: 1.45;
+      }
+      .page {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px 20px 56px;
+        display: grid;
+        grid-template-columns: 340px 1fr;
+        gap: 32px;
+        align-items: start;
+      }
+      @media (max-width: 860px) {
+        .page {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      h1 {
+        font-family: var(--display);
+        font-weight: 400;
+        font-size: 30px;
+        line-height: 1.15;
+        margin: 0 0 6px;
+        text-wrap: balance;
+      }
+      .lede {
+        color: #5b554c;
+        margin: 0 0 22px;
+        max-width: 34em;
+      }
+      .caps {
+        font-family: var(--display);
+        text-transform: uppercase;
+        letter-spacing: 0.16em;
+        font-size: 11px;
+      }
+
+      /* Controls */
+      .controls {
+        position: sticky;
+        top: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 22px;
+      }
+      .presets {
+        display: grid;
+        gap: 8px;
+      }
+      .preset {
+        display: grid;
+        grid-template-columns: 56px 1fr;
+        gap: 12px;
+        align-items: center;
+        text-align: left;
+        width: 100%;
+        padding: 10px 12px;
+        background: #faf8f3;
+        border: 1px solid #d8d1c3;
+        border-radius: 3px;
+        cursor: pointer;
+        font: inherit;
+        color: inherit;
+      }
+      .preset:hover {
+        border-color: #a89f8f;
+      }
+      .preset:focus-visible,
+      .copy:focus-visible,
+      input:focus-visible {
+        outline: 2px solid #1c1b17;
+        outline-offset: 2px;
+      }
+      .preset[aria-pressed='true'] {
+        border-color: #1c1b17;
+        box-shadow: inset 0 0 0 1px #1c1b17;
+        background: #fff;
+      }
+      .swatches {
+        display: flex;
+        height: 30px;
+        border-radius: 2px;
+        overflow: hidden;
+        border: 1px solid rgba(0, 0, 0, 0.12);
+      }
+      .swatches span:nth-child(1) {
+        flex: 3;
+      }
+      .swatches span {
+        flex: 1;
+      }
+      .preset b {
+        font-family: var(--display);
+        font-weight: 700;
+        font-size: 15px;
+        display: block;
+      }
+      .preset small {
+        color: #6a6458;
+        font-size: 12.5px;
+      }
+
+      .custom {
+        display: grid;
+        gap: 10px;
+      }
+      .field {
+        display: grid;
+        grid-template-columns: 44px 1fr auto;
+        gap: 10px;
+        align-items: center;
+      }
+      .field input[type='color'] {
+        width: 44px;
+        height: 32px;
+        padding: 0;
+        border: 1px solid #c9c1b2;
+        border-radius: 2px;
+        background: none;
+        cursor: pointer;
+      }
+      .field label {
+        font-size: 14px;
+      }
+      .field code {
+        font-size: 12px;
+        color: #6a6458;
+      }
+
+      .out {
+        background: #faf8f3;
+        border: 1px solid #d8d1c3;
+        border-radius: 3px;
+        padding: 12px;
+        display: grid;
+        gap: 10px;
+      }
+      .out pre {
+        margin: 0;
+        font-size: 12.5px;
+        white-space: pre-wrap;
+        font-family: ui-monospace, Menlo, Consolas, monospace;
+      }
+      .copy {
+        justify-self: start;
+        font: inherit;
+        font-size: 13px;
+        padding: 7px 14px;
+        border: 1px solid #1c1b17;
+        background: #1c1b17;
+        color: #fff;
+        border-radius: 2px;
+        cursor: pointer;
+      }
+      .warn {
+        font-size: 12.5px;
+        color: #8a2a2b;
+        margin: 0;
+        min-height: 1em;
+      }
+
+      /* The app, redrawn */
+      .previews {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 24px;
+      }
+      .phone {
+        background: var(--paper);
+        border-radius: 6px;
+        overflow: hidden;
+        box-shadow:
+          0 1px 0 rgba(0, 0, 0, 0.06),
+          0 12px 30px rgba(40, 30, 10, 0.12);
+      }
+      .label {
+        margin: 0 0 8px;
+        color: #6a6458;
+      }
+
+      .letterhead {
+        background: var(--main);
+        color: var(--paper);
+        text-align: center;
+        padding: 26px 20px 20px;
+        border-bottom: 3px solid var(--brass);
+      }
+      .crest {
+        width: 44px;
+        height: 53px;
+        display: block;
+        margin: 0 auto;
+      }
+      .lh-title {
+        font-family: var(--display);
+        font-size: 26px;
+        margin: 10px 0 0;
+        font-weight: 400;
+      }
+      .ornament {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        width: 150px;
+        margin: 10px auto 0;
+      }
+      .ornament i {
+        flex: 1;
+        height: 1px;
+        background: var(--brass);
+      }
+      .ornament em {
+        width: 6px;
+        height: 6px;
+        background: var(--brass);
+        transform: rotate(45deg);
+      }
+      .motto {
+        color: var(--brass);
+        letter-spacing: 0.3em;
+        margin-top: 8px;
+      }
+      .tag {
+        font-family: var(--display);
+        font-style: italic;
+        opacity: 0.82;
+        margin: 6px 0 0;
+        font-size: 14.5px;
+      }
+      .actions {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 18px;
+        margin-top: 16px;
+      }
+      .btn-paper {
+        background: var(--paper);
+        color: var(--main);
+        padding: 9px 14px;
+        border-radius: 2px;
+        font-weight: 700;
+      }
+      .link-paper {
+        color: var(--paper);
+        border-bottom: 1px solid var(--brass);
+        padding-bottom: 1px;
+      }
+
+      .body {
+        padding: 16px 18px 20px;
+      }
+      .tabs {
+        display: flex;
+        gap: 18px;
+        border-bottom: 1px solid var(--rule);
+        font-size: 13.5px;
+        font-weight: 600;
+        color: var(--muted);
+      }
+      .tabs span {
+        padding: 8px 0;
+      }
+      .tabs .on {
+        color: var(--ink);
+        border-bottom: 2px solid var(--main);
+      }
+      .lately {
+        margin-top: 16px;
+      }
+      .lately h3 {
+        margin: 0;
+        padding-bottom: 6px;
+        border-bottom: 2px solid var(--ink);
+        font-weight: 400;
+        color: var(--ink);
+      }
+      .ev {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 8px 0;
+        border-bottom: 1px solid var(--rule);
+        font-size: 13.5px;
+        color: var(--muted);
+      }
+      .ev b {
+        color: var(--ink);
+      }
+      .ev cite {
+        font-family: var(--display);
+        color: var(--ink);
+      }
+      .ev .caps {
+        font-size: 9.5px;
+        color: #8a8174;
+        white-space: nowrap;
+      }
+
+      .group {
+        margin-top: 18px;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        border-bottom: 2px solid var(--ink);
+        padding-bottom: 6px;
+      }
+      .group h4 {
+        font-family: var(--display);
+        font-size: 19px;
+        margin: 2px 0 0;
+      }
+      .group .see {
+        color: var(--main);
+        font-weight: 700;
+        font-size: 13px;
+      }
+      .row {
+        display: grid;
+        grid-template-columns: 62px 1fr;
+        gap: 14px;
+        padding: 14px 0;
+        border-bottom: 1px solid var(--rule);
+      }
+      .cover {
+        position: relative;
+        width: 62px;
+        height: 88px;
+        border-radius: 1px 3px 3px 1px;
+        border: 1px solid rgba(28, 27, 23, 0.25);
+        overflow: hidden;
+      }
+      .cover::before {
+        content: '';
+        position: absolute;
+        inset: 0 auto 0 0;
+        width: 5px;
+        background: rgba(28, 27, 23, 0.16);
+      }
+      .cover .frame {
+        position: absolute;
+        inset: 5px 4px 5px 9px;
+        border: 1px solid rgba(28, 27, 23, 0.32);
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        padding: 3px 2px;
+        text-align: center;
+      }
+      .cover .t {
+        font-family: var(--display);
+        font-weight: 700;
+        font-size: 8px;
+        line-height: 1.15;
+      }
+      .cover .a {
+        font-family: var(--display);
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        font-size: 5.5px;
+      }
+      .row h5 {
+        font-family: var(--display);
+        font-size: 16.5px;
+        margin: 0;
+      }
+      .row .by {
+        font-family: var(--display);
+        font-style: italic;
+        color: var(--muted);
+        font-size: 13px;
+      }
+      .row .where {
+        margin-top: 6px;
+        font-weight: 600;
+        font-size: 13.5px;
+      }
+      .row .mine {
+        color: var(--highlight);
+      }
+      .row .next {
+        color: var(--muted);
+        font-size: 13px;
+      }
+      .stamp {
+        display: inline-block;
+        margin-top: 7px;
+        border: 1px solid var(--main);
+        color: var(--main);
+        font-family: var(--display);
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        font-size: 9.5px;
+        padding: 1px 5px;
+        border-radius: 2px;
+      }
+      .stamp.mine {
+        border-color: var(--highlight);
+        color: var(--highlight);
+      }
+
+      /* Sign-in */
+      .signin {
+        text-align: center;
+        padding: 34px 22px 26px;
+      }
+      .signin .crest {
+        width: 58px;
+        height: 70px;
+      }
+      .signin h2 {
+        font-family: var(--display);
+        font-weight: 400;
+        font-size: 26px;
+        margin: 12px 0 0;
+        color: var(--ink);
+      }
+      .signin .motto {
+        margin-top: 10px;
+      }
+      .signin .tag {
+        opacity: 1;
+        color: var(--muted);
+      }
+      .card {
+        margin-top: 22px;
+        background: var(--card);
+        border: 1px solid var(--rule);
+        border-top: 3px solid var(--main);
+        border-radius: 3px;
+        padding: 18px;
+        text-align: left;
+      }
+      .card h3 {
+        font-family: var(--display);
+        font-size: 19px;
+        margin: 0;
+      }
+      .card p {
+        margin: 6px 0 12px;
+        color: var(--muted);
+        font-size: 13.5px;
+      }
+      .input {
+        border: 1px solid var(--rule);
+        border-radius: 2px;
+        padding: 10px 12px;
+        color: #8a8174;
+        background: #fff;
+        font-size: 14px;
+      }
+      .btn-main {
+        margin-top: 10px;
+        background: var(--main);
+        color: var(--paper);
+        text-align: center;
+        padding: 11px;
+        border-radius: 2px;
+        font-weight: 700;
+      }
+      .fine {
+        font-size: 12px;
+        color: var(--muted);
+        margin-top: 10px;
+      }
+
+      .icons {
+        display: flex;
+        gap: 22px;
+        align-items: flex-end;
+        padding: 22px;
+      }
+      .appicon {
+        width: 96px;
+        height: 96px;
+        border-radius: 22px;
+        background: var(--paper);
+        display: grid;
+        place-items: center;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+      }
+      .appicon .crest {
+        width: 54px;
+        height: 65px;
+      }
+      .tab {
+        background: #dfe1e5;
+        border-radius: 8px 8px 0 0;
+        padding: 7px 12px;
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        font-size: 12.5px;
+        color: #333;
+      }
+      .tab .crest {
+        width: 14px;
+        height: 17px;
+        margin: 0;
+      }
+      .email {
+        margin: 0 22px 22px;
+        background: var(--card);
+        border: 1px solid var(--rule);
+        border-radius: 4px;
+        padding: 14px 16px;
+      }
+      .email > .caps {
+        color: var(--main);
+      }
+      .email p {
+        margin: 6px 0 10px;
+        font-size: 13.5px;
+      }
+      .email .btn-main {
+        display: inline-block;
+        margin: 0;
+        padding: 8px 14px;
+        font-size: 13px;
+      }
+
+      @media (prefers-reduced-motion: no-preference) {
+        .phone,
+        .preset {
+          transition:
+            background-color 0.2s,
+            border-color 0.2s;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <section class="controls" aria-label="Colour choices">
+        <div>
+          <h1>House colours for The Traveling Books</h1>
+          <p class="lede">
+            Pick a set to see it across the app, or fine-tune the four colours. Copy the result and
+            paste it to Claude to apply it.
+          </p>
+        </div>
+
+        <div class="presets" id="presets" role="group" aria-label="Preset themes"></div>
+
+        <div class="custom">
+          <div class="caps">Fine-tune</div>
+          <div class="field">
+            <input type="color" id="c-main" aria-describedby="d-main" /><label for="c-main"
+              >Letterhead, buttons and links</label
+            ><code id="v-main"></code>
+          </div>
+          <div class="field">
+            <input type="color" id="c-highlight" /><label for="c-highlight"
+              >"In your hands" highlight</label
+            ><code id="v-highlight"></code>
+          </div>
+          <div class="field">
+            <input type="color" id="c-brass" /><label for="c-brass">Brass rules and motto</label
+            ><code id="v-brass"></code>
+          </div>
+          <div class="field">
+            <input type="color" id="c-paper" /><label for="c-paper">Paper</label
+            ><code id="v-paper"></code>
+          </div>
+          <p class="warn" id="warn" role="status"></p>
+        </div>
+
+        <div class="out">
+          <div class="caps">Paste this to Claude</div>
+          <pre id="out"></pre>
+          <button class="copy" id="copy" type="button">Copy</button>
+        </div>
+      </section>
+
+      <section class="previews" aria-label="Preview">
+        <div>
+          <p class="label caps">Home</p>
+          <div class="phone">
+            <div class="letterhead">
+              <svg class="crest" viewBox="0 0 100 120" aria-hidden="true">
+                <use href="#crest" />
+              </svg>
+              <div class="lh-title">The Traveling Books</div>
+              <div class="ornament"><i></i><em></em><i></i></div>
+              <div class="motto caps">Lege · Scribe · Trade</div>
+              <p class="tag">Read it, write in it, and pass it on.</p>
+              <div class="actions">
+                <span class="btn-paper caps">Lend a new book</span
+                ><span class="link-paper caps">Rules &amp; About</span>
+              </div>
+            </div>
+            <div class="body">
+              <div class="tabs">
+                <span class="on">All books</span><span>In your hands</span><span>Travelling</span>
+              </div>
+              <div class="lately">
+                <h3 class="caps">Lately</h3>
+                <div class="ev">
+                  <span><b>Nate</b> sent <cite>Breakfast at Tiffany's</cite> to Chuck</span
+                  ><span class="caps">2h ago</span>
+                </div>
+                <div class="ev">
+                  <span><b>Phoebe</b> sent <cite>Jurassic Park</cite> to Rachel</span
+                  ><span class="caps">6h ago</span>
+                </div>
+              </div>
+              <div class="group">
+                <div>
+                  <div class="caps" style="color: var(--muted); font-size: 10px">Sample group</div>
+                  <h4>The Upper East Side</h4>
+                </div>
+                <span class="see">See group →</span>
+              </div>
+              <div class="row">
+                <div class="cover" style="background: #d4c08e">
+                  <div class="frame">
+                    <span class="t">The Great Gatsby</span><span class="a">Fitzgerald</span>
+                  </div>
+                </div>
+                <div>
+                  <h5>The Great Gatsby</h5>
+                  <div class="by">F. Scott Fitzgerald</div>
+                  <div class="where mine">With you</div>
+                  <div class="next">Chuck Bass is next</div>
+                  <span class="stamp mine">Being read</span>
+                </div>
+              </div>
+              <div class="row">
+                <div class="cover" style="background: #a6d2cc">
+                  <div class="frame">
+                    <span class="t">Breakfast at Tiffany's</span><span class="a">Capote</span>
+                  </div>
+                </div>
+                <div>
+                  <h5>Breakfast at Tiffany's</h5>
+                  <div class="by">Truman Capote</div>
+                  <div class="where">In the post to Chuck</div>
+                  <div class="next">Dan Humphrey is next</div>
+                  <span class="stamp">In the post</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <p class="label caps">Sign in or join</p>
+          <div class="phone">
+            <div class="signin">
+              <svg class="crest" viewBox="0 0 100 120" aria-hidden="true">
+                <use href="#crest" />
+              </svg>
+              <h2>The Traveling Books</h2>
+              <div class="ornament"><i></i><em></em><i></i></div>
+              <div class="motto caps">Lege · Scribe · Trade</div>
+              <p class="tag">Read it, write in it, and pass it on.</p>
+              <div class="card">
+                <h3>Sign in or create an account</h3>
+                <p>
+                  Enter your email and we'll send you a link. If you're new, the link sets up your
+                  account.
+                </p>
+                <div class="input">you@example.com</div>
+                <div class="btn-main caps">Email me a link</div>
+                <div class="fine">No password needed, now or ever.</div>
+              </div>
+            </div>
+          </div>
+
+          <p class="label caps" style="margin-top: 24px">Icon, tab and email</p>
+          <div class="phone">
+            <div class="icons">
+              <div class="appicon">
+                <svg class="crest" viewBox="0 0 100 120" aria-hidden="true">
+                  <use href="#crest" />
+                </svg>
+              </div>
+              <div class="tab">
+                <svg class="crest" viewBox="0 0 100 120" aria-hidden="true">
+                  <use href="#crest" /></svg
+                >The Traveling Books
+              </div>
+            </div>
+            <div class="email">
+              <div class="caps">The Traveling Books</div>
+              <p><b>Phoebe</b> sent you <i>Jurassic Park</i>. Tap Got it when it arrives.</p>
+              <span class="btn-main caps">Open the book</span>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <svg width="0" height="0" style="position: absolute" aria-hidden="true">
+      <defs>
+        <g id="crest">
+          <path
+            d="M8 6 H92 V58 C92 88 72 106 50 115 C28 106 8 88 8 58 Z"
+            style="fill: var(--main); stroke: var(--brass); stroke-width: 3.2"
+          />
+          <path
+            d="M14.5 12.5 H85.5 V58 C85.5 84 68 100 50 108 C32 100 14.5 84 14.5 58 Z"
+            style="fill: none; stroke: var(--brass); stroke-width: 1.1"
+          />
+          <circle cx="31" cy="31" r="3.4" style="fill: var(--brass)" />
+          <circle cx="50" cy="24.5" r="3.4" style="fill: var(--brass)" />
+          <circle cx="69" cy="31" r="3.4" style="fill: var(--brass)" />
+          <path
+            d="M24 49 C33 44 42 44 48.6 49 V80 C42 75.5 33 75.5 24 80 Z"
+            style="fill: var(--paper)"
+          />
+          <path
+            d="M51.4 49 C58 44 67 44 76 49 V80 C67 75.5 58 75.5 51.4 80 Z"
+            style="fill: var(--paper)"
+          />
+          <path
+            d="M29 55 C35 52.5 40 52.5 44 55 M29 61 C35 58.5 40 58.5 44 61 M29 67 C35 64.5 40 64.5 44 67 M56 55 C60 52.5 65 52.5 71 55 M56 61 C60 58.5 65 58.5 71 61"
+            style="fill: none; stroke: var(--brass); stroke-width: 1.3"
+          />
+          <path d="M47.6 76 V93 L50 89.5 L52.4 93 V76 Z" style="fill: var(--highlight)" />
+        </g>
+      </defs>
+    </svg>
+
+    <script>
+      const PRESETS = [
+        {
+          name: 'Hunter green',
+          note: 'Country club, library lamps. What the app uses now.',
+          main: '#1f3b2c',
+          highlight: '#7d2532',
+          brass: '#b4925a',
+          paper: '#f6f1e6',
+        },
+        {
+          name: 'Oxblood',
+          note: 'Leather club chairs, crimson colleges. Green marks your books.',
+          main: '#5e1a24',
+          highlight: '#2e5a3e',
+          brass: '#b4925a',
+          paper: '#f5efe4',
+        },
+        {
+          name: 'Claret',
+          note: 'A brighter wine red, with a navy highlight.',
+          main: '#7a1f33',
+          highlight: '#1b2a44',
+          brass: '#c2a066',
+          paper: '#f7f1e7',
+        },
+        {
+          name: 'Navy',
+          note: 'Blazers, regattas, Nantucket. Red marks your books.',
+          main: '#1b2a44',
+          highlight: '#8a2a2b',
+          brass: '#b08d57',
+          paper: '#f4f0e6',
+        },
+        {
+          name: 'Tobacco',
+          note: 'Saddle leather and camel coats, with forest green.',
+          main: '#5a3d29',
+          highlight: '#2f4a35',
+          brass: '#c09a5b',
+          paper: '#f6efe2',
+        },
+        {
+          name: 'Black and brass',
+          note: 'Engraved invitations. The most formal.',
+          main: '#1f1e1b',
+          highlight: '#7d2532',
+          brass: '#b4925a',
+          paper: '#f7f3ea',
+        },
+        {
+          name: 'The original brown',
+          note: 'The colours from before the redesign.',
+          main: '#7a5c48',
+          highlight: '#a6463a',
+          brass: '#c4a27a',
+          paper: '#f7f1ea',
+        },
+      ];
+      const KEYS = ['main', 'highlight', 'brass', 'paper'];
+      const root = document.documentElement;
+      let current = { ...PRESETS[0] };
+
+      // Contrast ratio, to warn when paper-coloured text on the main colour gets hard to read.
+      const lum = (hex) => {
+        const c = [1, 3, 5]
+          .map((i) => parseInt(hex.slice(i, i + 2), 16) / 255)
+          .map((v) => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4));
+        return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+      };
+      const contrast = (a, b) => {
+        const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p);
+        return (x + 0.05) / (y + 0.05);
+      };
+
+      function apply() {
+        for (const key of KEYS) {
+          root.style.setProperty('--' + key, current[key]);
+          document.getElementById('c-' + key).value = current[key];
+          document.getElementById('v-' + key).textContent = current[key];
+        }
+        const ratio = contrast(current.main, current.paper);
+        const hl = contrast(current.highlight, current.paper);
+        document.getElementById('warn').textContent =
+          ratio < 4.5
+            ? `Text on the letterhead is hard to read (${ratio.toFixed(1)}:1). Try a darker main colour.`
+            : hl < 4.5
+              ? `The highlight is hard to read on paper (${hl.toFixed(1)}:1). Try a darker highlight.`
+              : '';
+        const match = PRESETS.find((p) => KEYS.every((k) => p[k] === current[k]));
+        document
+          .querySelectorAll('.preset')
+          .forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.name === match?.name)));
+        document.getElementById('out').textContent =
+          `Use ${match ? 'the ' + match.name + ' theme' : 'these colours'} for The Traveling Books:\n` +
+          `main ${current.main}\nhighlight ${current.highlight}\nbrass ${current.brass}\npaper ${current.paper}`;
+      }
+
+      const presets = document.getElementById('presets');
+      for (const p of PRESETS) {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'preset';
+        b.dataset.name = p.name;
+        b.innerHTML = `<span class="swatches" aria-hidden="true"><span style="background:${p.main}"></span><span style="background:${p.highlight}"></span><span style="background:${p.brass}"></span><span style="background:${p.paper}"></span></span><span><b>${p.name}</b><small>${p.note}</small></span>`;
+        b.addEventListener('click', () => {
+          current = { ...p };
+          apply();
+        });
+        presets.appendChild(b);
+      }
+      for (const key of KEYS) {
+        document.getElementById('c-' + key).addEventListener('input', (e) => {
+          current[key] = e.target.value;
+          apply();
+        });
+      }
+      document.getElementById('copy').addEventListener('click', async (e) => {
+        const text = document.getElementById('out').textContent;
+        try {
+          await navigator.clipboard.writeText(text);
+          e.target.textContent = 'Copied';
+        } catch {
+          const r = document.createRange();
+          r.selectNodeContents(document.getElementById('out'));
+          getSelection().removeAllRanges();
+          getSelection().addRange(r);
+          e.target.textContent = 'Selected: press Ctrl+C or ⌘C';
+        }
+        setTimeout(() => (e.target.textContent = 'Copy'), 2500);
+      });
+      apply();
+    </script>
+  </body>
+</html>
