@@ -46,6 +46,8 @@ export type Friend = {
   userId?: string;
   /** When they agreed to the Rules of the Books; unset until they do. */
   agreedRulesAt?: string;
+  /** Already a member when the rules agreement was switched on, so never asked. */
+  joinedBeforeRules?: boolean;
   /** Which emails they want. All off until they turn one on. */
   emails?: EmailPrefs;
   /** Who can send them friend requests: groupmates (default) or nobody. */

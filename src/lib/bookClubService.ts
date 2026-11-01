@@ -25,6 +25,7 @@ type FriendRow = {
   state: string;
   user_id: string | null;
   agreed_rules_at: string | null;
+  joined_before_rules?: boolean;
   email_new_book?: boolean;
   email_book_sent?: boolean;
   email_book_arrived?: boolean;
@@ -133,6 +134,7 @@ function toFriend(row: FriendRow): Friend {
     state: row.state,
     userId: row.user_id ?? undefined,
     agreedRulesAt: row.agreed_rules_at ?? undefined,
+    joinedBeforeRules: row.joined_before_rules ?? false,
     emails: {
       newBook: row.email_new_book ?? false,
       bookSent: row.email_book_sent ?? false,

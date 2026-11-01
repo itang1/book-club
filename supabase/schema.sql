@@ -161,6 +161,10 @@ alter table public.friends drop column if exists email;
 -- sees once, after joining. Null until they do. Set through "edit your own
 -- profile" below, so only by them.
 alter table public.friends add column if not exists agreed_rules_at timestamptz;
+-- Whoever already had an account when the agreement was switched on (November
+-- 2026) isn't asked; it's for people who join after. Set once, below.
+alter table public.friends
+  add column if not exists joined_before_rules boolean not null default false;
 
 -- Retired: an email-to-profile table that had to be filled in by hand before
 -- anyone could sign in. Claiming is now done in the app.
@@ -1473,6 +1477,15 @@ update public.friends
 set email_new_book = false, email_book_sent = false, email_book_arrived = false,
     email_next_in_line = false, email_friend_request = false, email_reminders = false
 where exists (select 1 from first_time);
+
+-- The rules agreement is for new members: everyone with an account the day it
+-- was switched on counts as already here.
+with first_time as (
+  insert into public.applied_once (name) values ('rules-for-new-members-2026-11')
+  on conflict do nothing returning name
+)
+update public.friends set joined_before_rules = true
+where user_id is not null and exists (select 1 from first_time);
 alter table public.notifications drop constraint if exists notifications_kind_check;
 alter table public.notifications add constraint notifications_kind_check
   check (kind in ('book_sent', 'book_arrived', 'next_in_line', 'friend_request', 'new_book',
