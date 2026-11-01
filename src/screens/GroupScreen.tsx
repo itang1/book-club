@@ -6,6 +6,8 @@ import { theme } from '../theme';
 import { InviteButton } from '../components/InviteButton';
 import { GroupAdminPanel } from '../components/GroupAdminPanel';
 import { WishlistSection } from '../components/WishlistSection';
+import { PersonSafetySheet } from '../components/PersonSafetySheet';
+import type { Blocks } from '../lib/blocks';
 import {
   describeLeg,
   formatDate,
@@ -31,6 +33,9 @@ type GroupScreenProps = {
   onHandOver: (groupId: string, personId: string) => void;
   onResetInvite: (groupId: string) => void;
   onSetPace: (groupId: string, weeks: number | null) => void;
+  blocks: Blocks;
+  /** After a block, so any friendship goes too. */
+  onBlocked: (personId: string) => void;
 };
 
 export function GroupScreen({
@@ -47,8 +52,11 @@ export function GroupScreen({
   onHandOver,
   onResetInvite,
   onSetPace,
+  blocks,
+  onBlocked,
 }: GroupScreenProps) {
   const [confirmLeave, setConfirmLeave] = useState(false);
+  const [about, setAbout] = useState<Friend | null>(null);
   const group = groups.find((candidate) => candidate.id === route.params.groupId);
 
   if (!group) {
@@ -103,7 +111,21 @@ export function GroupScreen({
         <View style={styles.card}>
           <View style={styles.memberRow}>
             {people.map((person) => (
-              <View key={person.id} style={styles.member}>
+              <Pressable
+                key={person.id}
+                style={styles.member}
+                // Block or report someone from the group, never yourself or a sample character.
+                disabled={person.id === currentUserId || group.isSample}
+                onPress={() => setAbout(person)}
+                accessibilityRole={
+                  person.id === currentUserId || group.isSample ? undefined : 'button'
+                }
+                accessibilityLabel={
+                  person.id === currentUserId || group.isSample
+                    ? undefined
+                    : `More for ${person.name}`
+                }
+              >
                 <View style={styles.avatar}>
                   <Text style={styles.avatarText}>{person.name.charAt(0)}</Text>
                 </View>
@@ -111,7 +133,7 @@ export function GroupScreen({
                   {person.id === currentUserId ? 'You' : person.name.split(' ')[0]}
                 </Text>
                 {person.id === group.adminId && <Text style={styles.adminTag}>Runs it</Text>}
-              </View>
+              </Pressable>
             ))}
           </View>
           {!group.isSample && (
@@ -232,6 +254,12 @@ export function GroupScreen({
             </Pressable>
           ))}
       </View>
+      <PersonSafetySheet
+        person={about}
+        blocks={blocks}
+        onBlocked={onBlocked}
+        onClose={() => setAbout(null)}
+      />
     </ScrollView>
   );
 }

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -14,6 +14,8 @@ import {
   relativeTime,
 } from '../lib/bookState';
 import { InviteButton } from '../components/InviteButton';
+import { PersonSafetySheet } from '../components/PersonSafetySheet';
+import type { Blocks } from '../lib/blocks';
 import {
   friendIdsOf,
   groupmateIdsOf,
@@ -33,6 +35,7 @@ type FriendsScreenProps = {
   onRemoveFriend: (personId: string) => void;
   onCreateGroup: (name: string) => void;
   onOpenGroup: (groupId: string) => void;
+  blocks: Blocks;
 };
 
 /**
@@ -192,9 +195,12 @@ export function FriendsScreen({
   onRemoveFriend,
   onCreateGroup,
   onOpenGroup,
+  blocks,
 }: FriendsScreenProps) {
   const insets = useSafeAreaInsets();
-  const [unfriending, setUnfriending] = useState<Friend | null>(null);
+  const [about, setAbout] = useState<Friend | null>(null);
+  const blocked = new Set(blocks.blockedIds);
+  const notBlocked = (candidate: Friend) => !blocked.has(candidate.id);
 
   const person = (id: string) => members.find((candidate) => candidate.id === id);
   const myGroups = groups
@@ -205,13 +211,17 @@ export function FriendsScreen({
     );
   const hasRealGroup = myGroups.some((group) => !group.isSample);
   const friendIds = friendIdsOf(friendships, currentUserId);
-  const friends = members.filter((candidate) => friendIds.has(candidate.id));
+  const friends = members.filter((candidate) => friendIds.has(candidate.id)).filter(notBlocked);
   const requests = incomingRequests(friendships, currentUserId)
     .map(person)
-    .filter((candidate): candidate is Friend => Boolean(candidate));
+    .filter((candidate): candidate is Friend => Boolean(candidate))
+    .filter(notBlocked);
   const asked = outgoingRequests(friendships, currentUserId);
-  const askedPeople = members.filter((candidate) => asked.has(candidate.id));
-  const suggestions = suggestionsFor(currentUserId, members, friendships, books, groups);
+  const askedPeople = members.filter((candidate) => asked.has(candidate.id)).filter(notBlocked);
+  const suggestions = suggestionsFor(currentUserId, members, friendships, books, groups).filter(
+    ({ person: candidate }) => notBlocked(candidate),
+  );
+  const blockedPeople = members.filter((candidate) => blocked.has(candidate.id));
   const groupmates = groupmateIdsOf(groups, currentUserId);
 
   return (
@@ -237,13 +247,28 @@ export function FriendsScreen({
               <View style={styles.personInfo}>
                 <Text style={styles.personName}>{requester.name}</Text>
                 <Text style={styles.muted}>wants to be friends</Text>
+                <View style={styles.requestActions}>
+                  <Pressable
+                    style={styles.primarySmall}
+                    onPress={() => onAcceptFriend(requester.id)}
+                  >
+                    <Text style={styles.primarySmallText}>Accept</Text>
+                  </Pressable>
+                  <Pressable
+                    style={styles.plainButton}
+                    onPress={() => onRemoveFriend(requester.id)}
+                  >
+                    <Text style={styles.plainButtonText}>Not now</Text>
+                  </Pressable>
+                  <Pressable
+                    onPress={() => setAbout(requester)}
+                    hitSlop={10}
+                    accessibilityLabel={`More for ${requester.name}`}
+                  >
+                    <Ionicons name="ellipsis-horizontal" size={18} color={theme.colors.muted} />
+                  </Pressable>
+                </View>
               </View>
-              <Pressable style={styles.primarySmall} onPress={() => onAcceptFriend(requester.id)}>
-                <Text style={styles.primarySmallText}>Accept</Text>
-              </Pressable>
-              <Pressable style={styles.plainButton} onPress={() => onRemoveFriend(requester.id)}>
-                <Text style={styles.plainButtonText}>Not now</Text>
-              </Pressable>
             </View>
           ))}
         </>
@@ -287,7 +312,7 @@ export function FriendsScreen({
                 )}
               </View>
               <Pressable
-                onPress={() => setUnfriending(friend)}
+                onPress={() => setAbout(friend)}
                 hitSlop={10}
                 accessibilityLabel={`More for ${friend.name}`}
               >
@@ -329,35 +354,35 @@ export function FriendsScreen({
         </>
       )}
 
-      <Modal
-        visible={unfriending !== null}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setUnfriending(null)}
-      >
-        <View style={styles.backdrop}>
-          <View style={styles.sheet}>
-            <Text style={styles.sheetTitle}>Unfriend {unfriending?.name}?</Text>
-            <Text style={styles.note}>
-              This stays private, and you'll keep sharing any groups you're both in.
-            </Text>
-            <Pressable
-              style={styles.dangerButtonWide}
-              onPress={() => {
-                if (unfriending) {
-                  onRemoveFriend(unfriending.id);
-                }
-                setUnfriending(null);
-              }}
-            >
-              <Text style={styles.dangerButtonText}>Unfriend</Text>
-            </Pressable>
-            <Pressable style={styles.plainButtonWide} onPress={() => setUnfriending(null)}>
-              <Text style={styles.plainButtonText}>Cancel</Text>
-            </Pressable>
-          </View>
-        </View>
-      </Modal>
+      {blockedPeople.length > 0 && (
+        <>
+          <Text style={styles.sectionTitle}>Blocked</Text>
+          {blockedPeople.map((candidate) => (
+            <View key={candidate.id} style={styles.personRow}>
+              <Avatar name={candidate.name} />
+              <View style={styles.personInfo}>
+                <Text style={styles.personName}>{candidate.name}</Text>
+                <Text style={styles.muted}>Can't ask you to be friends or borrow</Text>
+              </View>
+              <Pressable
+                style={styles.plainButton}
+                onPress={() => blocks.unblock(candidate.id)}
+                accessibilityLabel={`Unblock ${candidate.name}`}
+              >
+                <Text style={styles.plainButtonText}>Unblock</Text>
+              </Pressable>
+            </View>
+          ))}
+        </>
+      )}
+
+      <PersonSafetySheet
+        person={about}
+        blocks={blocks}
+        onUnfriend={about && friendIds.has(about.id) ? () => onRemoveFriend(about.id) : undefined}
+        onBlocked={onRemoveFriend}
+        onClose={() => setAbout(null)}
+      />
     </ScrollView>
   );
 }
@@ -507,6 +532,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 8,
+  },
+  requestActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 8,
   },
   avatar: {
     width: 40,

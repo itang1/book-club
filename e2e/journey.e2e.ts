@@ -124,6 +124,22 @@ test('a group keeps a wishlist of books nobody owns yet', async ({ page }) => {
   await expect(page.getByLabel("I'd read Middlemarch")).toBeVisible();
 });
 
+test('someone can be reported, blocked and unblocked', async ({ page }) => {
+  await page.getByText('Friends & Groups', { exact: true }).last().click();
+  await page.getByLabel('More for Bridget Vreeland').click();
+
+  await page.getByRole('button', { name: /^Report Bridget/ }).click();
+  await page.getByRole('radio', { name: 'Fake or spam profile' }).click();
+  await page.getByRole('button', { name: 'Send report', exact: true }).click();
+  await expect(page.getByText('Thanks for telling us.')).toBeVisible();
+
+  await page.getByRole('button', { name: 'Block Bridget', exact: true }).click();
+  await page.getByRole('button', { name: 'Block', exact: true }).click();
+  await expect(page.getByText('wants to be friends')).toHaveCount(0);
+  await page.getByLabel('Unblock Bridget Vreeland').click();
+  await expect(page.getByLabel('Unblock Bridget Vreeland')).toHaveCount(0);
+});
+
 test('the privacy policy is a page of its own', async ({ page }) => {
   await page.goto('/privacy.html');
   await expect(page.getByRole('heading', { name: 'Privacy' })).toBeVisible();
