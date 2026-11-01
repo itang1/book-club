@@ -33,6 +33,7 @@ type ProfileScreenProps = {
   onUpdateProfile: (changes: Pick<Friend, 'name' | 'city' | 'state'>) => void;
   onUpdateEmailPrefs: (prefs: EmailPrefs) => void;
   onUpdateFriendRequestsFrom: (value: 'groups' | 'nobody') => void;
+  onOpenBook?: (bookId: string) => void;
 };
 
 export function ProfileScreen({
@@ -45,6 +46,7 @@ export function ProfileScreen({
   onUpdateProfile,
   onUpdateEmailPrefs,
   onUpdateFriendRequestsFrom,
+  onOpenBook,
 }: ProfileScreenProps) {
   const insets = useSafeAreaInsets();
 
@@ -124,13 +126,21 @@ export function ProfileScreen({
           <Text style={styles.empty}>Free hands: a good moment to join a line.</Text>
         ) : (
           withMe.map((book) => (
-            <View key={book.id} style={styles.bookRow}>
+            <Pressable
+              key={book.id}
+              style={({ pressed }) => [styles.bookRow, pressed && styles.bookRowPressed]}
+              onPress={() => onOpenBook?.(book.id)}
+              disabled={!onOpenBook}
+              accessibilityRole="button"
+              accessibilityLabel={`Open ${book.title}`}
+            >
               <View style={[styles.swatch, { backgroundColor: book.coverColor }]} />
               <View style={styles.bookInfo}>
                 <Text style={styles.bookTitle}>{book.title}</Text>
                 <Text style={styles.bookMeta}>Arrived {relativeTime(lastActivityAt(book))}</Text>
               </View>
-            </View>
+              <Text style={styles.chevron}>›</Text>
+            </Pressable>
           ))
         )}
       </View>
@@ -141,7 +151,14 @@ export function ProfileScreen({
           <Text style={styles.empty}>Join a line and your next book will find you.</Text>
         ) : (
           comingToMe.map((book) => (
-            <View key={book.id} style={styles.bookRow}>
+            <Pressable
+              key={book.id}
+              style={({ pressed }) => [styles.bookRow, pressed && styles.bookRowPressed]}
+              onPress={() => onOpenBook?.(book.id)}
+              disabled={!onOpenBook}
+              accessibilityRole="button"
+              accessibilityLabel={`Open ${book.title}`}
+            >
               <View style={[styles.swatch, { backgroundColor: book.coverColor }]} />
               <View style={styles.bookInfo}>
                 <Text style={styles.bookTitle}>{book.title}</Text>
@@ -153,7 +170,8 @@ export function ProfileScreen({
                       : `You're next. Currently with ${friendNameIn(book, holderId(book))}`}
                 </Text>
               </View>
-            </View>
+              <Text style={styles.chevron}>›</Text>
+            </Pressable>
           ))
         )}
       </View>
@@ -385,6 +403,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 12,
   },
+  bookRowPressed: { opacity: 0.7 },
+  chevron: { fontSize: 22, color: theme.colors.accent, marginLeft: 8 },
   swatch: {
     width: 34,
     height: 46,

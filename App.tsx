@@ -331,8 +331,11 @@ function Tabs({ club, justJoined = false }: { club: BookClub; justJoined?: boole
           {() => <FriendsStack club={club} />}
         </Tab.Screen>
         <Tab.Screen name="Profile" options={{ title: 'Profile' }}>
-          {() => (
+          {({ navigation }) => (
             <ProfileScreen
+              onOpenBook={(bookId) =>
+                navigation.navigate('Home', { screen: 'BookDetail', params: { bookId } })
+              }
               books={club.books}
               me={me}
               friendCount={friendIdsOf(club.friendships, club.currentUserId).size}
