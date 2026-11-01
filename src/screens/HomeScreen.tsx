@@ -518,7 +518,7 @@ const styles = StyleSheet.create({
   },
   addButtonText: {
     ...theme.caps,
-    color: theme.colors.accent,
+    color: theme.colors.letterhead,
     fontWeight: '700',
     fontSize: 12,
   },

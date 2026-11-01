@@ -1,6 +1,6 @@
 import { Linking, StyleSheet, Text, View } from 'react-native';
 
-import { theme } from '../theme';
+import { palettes, theme } from '../theme';
 import { pantsCredit, pantsPreamble, pantsRules } from '../content/about';
 
 export function TapedNote({ beside = false }: { beside?: boolean }) {
@@ -44,12 +44,13 @@ const styles = StyleSheet.create({
   paper: {
     width: '88%',
     maxWidth: 380,
-    backgroundColor: '#fdf8ec',
+    backgroundColor: theme.colors.paper,
     paddingTop: 26,
     paddingBottom: 20,
     paddingHorizontal: 22,
     transform: [{ rotate: '-2.5deg' }],
-    shadowColor: theme.colors.text,
+    // A canvas-free shadow needs a real colour: always dark ink.
+    shadowColor: palettes.light.text,
     shadowOpacity: 0.12,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 3 },

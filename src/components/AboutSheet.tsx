@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { theme } from '../theme';
+import { palettes, theme } from '../theme';
 import { TapedNote } from './TapedNote';
 import {
   authorName,
@@ -240,7 +240,8 @@ const styles = StyleSheet.create({
     marginTop: 16,
     marginBottom: 20,
     transform: [{ rotate: '-2deg' }],
-    shadowColor: theme.colors.text,
+    // A canvas-free shadow needs a real colour: always dark ink.
+    shadowColor: palettes.light.text,
     shadowOpacity: 0.14,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 4 },

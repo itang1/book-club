@@ -1,4 +1,4 @@
-import { theme } from '../theme';
+import { palettes } from '../theme';
 import type { YearCard } from './yearCard';
 
 /**
@@ -47,7 +47,7 @@ function wrap(
 }
 
 function rule(ctx: CanvasRenderingContext2D, y: number, x0 = 96, x1 = CARD_WIDTH - 96) {
-  ctx.strokeStyle = theme.colors.brass;
+  ctx.strokeStyle = palettes.light.brass;
   ctx.lineWidth = 3;
   ctx.beginPath();
   ctx.moveTo(x0, y);
@@ -60,22 +60,22 @@ export function drawYearCard(ctx: CanvasRenderingContext2D, card: YearCard) {
   const left = 96;
   const inner = W - left * 2;
 
-  ctx.fillStyle = theme.colors.letterhead;
+  ctx.fillStyle = palettes.light.letterhead;
   ctx.fillRect(0, 0, W, CARD_HEIGHT);
   // A brass frame, like the letterhead's rule.
-  ctx.strokeStyle = theme.colors.brass;
+  ctx.strokeStyle = palettes.light.brass;
   ctx.lineWidth = 4;
   ctx.strokeRect(40, 40, W - 80, CARD_HEIGHT - 80);
 
   ctx.textBaseline = 'alphabetic';
   ctx.textAlign = 'center';
-  ctx.fillStyle = theme.colors.brass;
+  ctx.fillStyle = palettes.light.brass;
   ctx.font = `400 34px ${SERIF}`;
   ctx.letterSpacing = '8px';
   ctx.fillText('THE TRAVELING BOOKS', W / 2, 190);
   ctx.letterSpacing = '0px';
 
-  ctx.fillStyle = theme.colors.onMasthead;
+  ctx.fillStyle = palettes.light.onMasthead;
   ctx.font = `400 200px ${SERIF}`;
   ctx.fillText(String(card.year), W / 2, 420);
   ctx.font = `italic 400 64px ${SERIF}`;
@@ -87,10 +87,10 @@ export function drawYearCard(ctx: CanvasRenderingContext2D, card: YearCard) {
   card.figures.forEach((figure, index) => {
     const x = left + cellW * (index % 2) + cellW / 2;
     const y = 760 + Math.floor(index / 2) * 230;
-    ctx.fillStyle = theme.colors.onMasthead;
+    ctx.fillStyle = palettes.light.onMasthead;
     ctx.font = `700 120px ${SERIF}`;
     ctx.fillText(String(figure.value), x, y);
-    ctx.fillStyle = theme.colors.brass;
+    ctx.fillStyle = palettes.light.brass;
     ctx.font = `400 32px ${SERIF}`;
     ctx.letterSpacing = '6px';
     ctx.fillText(figure.label.toUpperCase(), x, y + 56);
@@ -102,19 +102,19 @@ export function drawYearCard(ctx: CanvasRenderingContext2D, card: YearCard) {
   for (const highlight of card.highlights) {
     rule(ctx, y);
     y += 56;
-    ctx.fillStyle = theme.colors.brass;
+    ctx.fillStyle = palettes.light.brass;
     ctx.font = `400 30px ${SERIF}`;
     ctx.letterSpacing = '6px';
     ctx.fillText(highlight.kicker.toUpperCase(), left, y);
     ctx.letterSpacing = '0px';
-    ctx.fillStyle = theme.colors.onMasthead;
+    ctx.fillStyle = palettes.light.onMasthead;
     ctx.font = `italic 400 58px ${SERIF}`;
     for (const line of wrap(ctx, highlight.title, inner, 2)) {
       y += 66;
       ctx.fillText(line, left, y);
     }
     ctx.font = `400 34px ${SANS}`;
-    ctx.fillStyle = theme.colors.onMasthead;
+    ctx.fillStyle = palettes.light.onMasthead;
     y += 50;
     ctx.fillText(highlight.detail, left, y);
     y += 40;
@@ -123,12 +123,12 @@ export function drawYearCard(ctx: CanvasRenderingContext2D, card: YearCard) {
   if (card.places.length > 0 && y < 1600) {
     rule(ctx, y);
     y += 56;
-    ctx.fillStyle = theme.colors.brass;
+    ctx.fillStyle = palettes.light.brass;
     ctx.font = `400 30px ${SERIF}`;
     ctx.letterSpacing = '6px';
     ctx.fillText('READ IN', left, y);
     ctx.letterSpacing = '0px';
-    ctx.fillStyle = theme.colors.onMasthead;
+    ctx.fillStyle = palettes.light.onMasthead;
     ctx.font = `400 38px ${SANS}`;
     const text =
       card.places.join(' · ') + (card.morePlaces > 0 ? ` and ${card.morePlaces} more` : '');
@@ -141,11 +141,11 @@ export function drawYearCard(ctx: CanvasRenderingContext2D, card: YearCard) {
 
   ctx.textAlign = 'center';
   if (card.mine) {
-    ctx.fillStyle = theme.colors.onMasthead;
+    ctx.fillStyle = palettes.light.onMasthead;
     ctx.font = `italic 400 44px ${SERIF}`;
     ctx.fillText(card.mine, W / 2, 1735);
   }
-  ctx.fillStyle = theme.colors.brass;
+  ctx.fillStyle = palettes.light.brass;
   ctx.font = `400 30px ${SERIF}`;
   ctx.fillText('Read it. Write in it. Pass it on.', W / 2, 1810);
 }

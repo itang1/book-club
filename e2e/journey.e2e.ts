@@ -140,6 +140,16 @@ test('someone can be reported, blocked and unblocked', async ({ page }) => {
   await expect(page.getByLabel('Unblock Bridget Vreeland')).toHaveCount(0);
 });
 
+test('the app follows the device into dark mode', async ({ page }) => {
+  const background = () =>
+    page.evaluate(() =>
+      getComputedStyle(document.documentElement).getPropertyValue('--tb-background').trim(),
+    );
+  expect(await background()).toBe('#f6f1e6');
+  await page.emulateMedia({ colorScheme: 'dark' });
+  expect(await background()).toBe('#161411');
+});
+
 test('the privacy policy is a page of its own', async ({ page }) => {
   await page.goto('/privacy.html');
   await expect(page.getByRole('heading', { name: 'Privacy' })).toBeVisible();
