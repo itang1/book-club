@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { ActivityIndicator, Image, Pressable, StyleSheet, Text, View } from 'react-native';
-import { NavigationContainer } from '@react-navigation/native';
+import { DefaultTheme, NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import {
@@ -67,6 +67,20 @@ const stackHeader = {
   headerTitleStyle: { color: theme.colors.onMasthead, fontFamily: theme.fonts.serif },
   headerShadowVisible: false,
 } as const;
+
+/** The navigator's own surfaces (behind each screen) in the house colours. */
+const navigationTheme = {
+  ...DefaultTheme,
+  colors: {
+    ...DefaultTheme.colors,
+    primary: theme.colors.accent,
+    background: theme.colors.background,
+    card: theme.colors.card,
+    text: theme.colors.text,
+    border: theme.colors.border,
+    notification: theme.colors.stamp,
+  },
+};
 
 const tabStyles = StyleSheet.create({
   root: {
@@ -286,7 +300,7 @@ function Tabs({ club, justJoined = false }: { club: BookClub; justJoined?: boole
     : 0;
 
   return (
-    <NavigationContainer linking={linking}>
+    <NavigationContainer linking={linking} theme={navigationTheme}>
       <Tab.Navigator
         // Someone who has just joined starts at their bookshelf: one photo fills it.
         initialRouteName={justJoined && club.usesAccounts ? 'Shelf' : 'Home'}

@@ -75,5 +75,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     marginTop: 22,
   },
-  buttonText: { ...theme.caps, fontSize: 12, fontWeight: '700', color: theme.colors.accent },
+  buttonText: { ...theme.caps, fontSize: 12, fontWeight: '700', color: theme.colors.letterhead },
 });

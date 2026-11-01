@@ -126,7 +126,7 @@ const styles = StyleSheet.create({
     borderColor: theme.colors.card,
   },
   badgeText: {
-    color: '#fff',
+    color: theme.colors.onAccent,
     fontSize: 9,
     fontWeight: '800',
     lineHeight: 11,
