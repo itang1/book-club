@@ -169,7 +169,11 @@ export function BookDetailScreen({
     }
 
     if (iHoldIt) {
-      if (amReading && !haveFinished && onFinishReading) {
+      const canMarkFinished =
+        onFinishReading &&
+        (amReading || (myQueueEntry && myQueueEntry.status !== 'done'));
+
+      if (canMarkFinished) {
         return (
           <View>
             <Pressable style={styles.primaryButton} onPress={() => onFinishReading(book.id)}>

@@ -49,6 +49,7 @@ export function HomeScreen({
   const [aboutOpen, setAboutOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterMode, setFilterMode] = useState<FilterMode>('all');
+  const [showHomage, setShowHomage] = useState(false);
 
   const cleanQuery = searchQuery.trim().toLowerCase();
   const matchesSearch = (book: Book) =>
@@ -167,14 +168,18 @@ export function HomeScreen({
               </Pressable>
             )}
           </View>
-          {canScanShelf && (
-            <Text style={styles.scanHint}>
-              Take one photo of your shelves and we'll read every spine, so your friends can see
-              what you have and ask to borrow it.
-            </Text>
-          )}
-          <Text style={styles.homage}>{homage}</Text>
+          {showHomage && <Text style={styles.homage}>{homage}</Text>}
         </Letterhead>
+        {!showHomage && (
+          <Pressable
+            onPress={() => setShowHomage(true)}
+            accessibilityRole="button"
+            accessibilityHint="Show about this app"
+            style={{ padding: 8 }}
+          >
+            <Text style={styles.homageToggle}>About</Text>
+          </Pressable>
+        )}
       </View>
 
       {canScanShelf && ownsNothing && (
@@ -402,6 +407,13 @@ const styles = StyleSheet.create({
     opacity: 0.75,
     textAlign: 'center',
     marginTop: 20,
+  },
+
+  homageToggle: {
+    fontSize: 11,
+    color: theme.colors.onMasthead,
+    opacity: 0.6,
+    textAlign: 'center',
   },
 
   lately: {
