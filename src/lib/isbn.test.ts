@@ -21,9 +21,14 @@ describe('lookupIsbn', () => {
       },
     };
 
-    global.fetch = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => fakeData,
+    global.fetch = vi.fn().mockImplementation((url: string) => {
+      if (url.includes('openlibrary.org')) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => fakeData,
+        });
+      }
+      return Promise.resolve({ ok: false });
     }) as unknown as typeof fetch;
 
     const result = await lookupIsbn('978-0-316-55634-7');
@@ -34,7 +39,92 @@ describe('lookupIsbn', () => {
     });
   });
 
-  it('returns null on network failure or missing entry', async () => {
+  it('falls back to Google Books when Open Library has no match', async () => {
+    const googleData = {
+      totalItems: 1,
+      items: [
+        {
+          volumeInfo: {
+            title: 'The Great Gatsby',
+            authors: ['F. Scott Fitzgerald'],
+            imageLinks: {
+              thumbnail: 'http://books.google.com/books/content?id=xyz&zoom=1',
+            },
+          },
+        },
+      ],
+    };
+
+    global.fetch = vi.fn().mockImplementation((url: string) => {
+      if (url.includes('openlibrary.org')) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({}),
+        });
+      }
+      if (url.includes('googleapis.com')) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => googleData,
+        });
+      }
+      return Promise.resolve({ ok: false });
+    }) as unknown as typeof fetch;
+
+    const result = await lookupIsbn('9780743273565');
+    expect(result).toEqual({
+      title: 'The Great Gatsby',
+      author: 'F. Scott Fitzgerald',
+      coverUrl: 'https://books.google.com/books/content?id=xyz&zoom=1',
+    });
+  });
+
+  it('supplements missing Open Library cover with Google Books cover', async () => {
+    const openLibraryData = {
+      'ISBN:9780743273565': {
+        title: 'The Great Gatsby',
+        authors: [{ name: 'F. Scott Fitzgerald' }],
+      },
+    };
+    const googleData = {
+      items: [
+        {
+          volumeInfo: {
+            title: 'The Great Gatsby',
+            authors: ['F. Scott Fitzgerald'],
+            imageLinks: {
+              thumbnail: 'https://books.google.com/cover.jpg',
+            },
+          },
+        },
+      ],
+    };
+
+    global.fetch = vi.fn().mockImplementation((url: string) => {
+      if (url.includes('openlibrary.org')) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => openLibraryData,
+        });
+      }
+      if (url.includes('googleapis.com')) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => googleData,
+        });
+      }
+      return Promise.resolve({ ok: false });
+    }) as unknown as typeof fetch;
+
+    const result = await lookupIsbn('9780743273565');
+    expect(result).toEqual({
+      title: 'The Great Gatsby',
+      author: 'F. Scott Fitzgerald',
+      coverUrl: 'https://books.google.com/cover.jpg',
+    });
+  });
+
+  it('returns null when both services fail', async () => {
     global.fetch = vi.fn().mockResolvedValue({
       ok: false,
     }) as unknown as typeof fetch;

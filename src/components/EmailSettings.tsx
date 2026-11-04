@@ -1,7 +1,13 @@
+import { useEffect, useState } from 'react';
 import { StyleSheet, Switch, Text, View } from 'react-native';
 
 import { EmailPrefs } from '../types';
 import { theme } from '../theme';
+import {
+  getPushNotificationPermission,
+  isWebPushSupported,
+  requestPushPermission,
+} from '../lib/pushNotifications';
 
 type EmailSettingsProps = {
   prefs: EmailPrefs;
@@ -22,6 +28,24 @@ const OPTIONS: { key: keyof EmailPrefs; label: string; detail: string }[] = [
 ];
 
 export function EmailSettings({ prefs, onChange }: EmailSettingsProps) {
+  const [webPushGranted, setWebPushGranted] = useState(false);
+  const pushSupported = isWebPushSupported();
+
+  useEffect(() => {
+    if (pushSupported) {
+      setWebPushGranted(getPushNotificationPermission() === 'granted');
+    }
+  }, [pushSupported]);
+
+  const handleToggleWebPush = async (value: boolean) => {
+    if (value) {
+      const status = await requestPushPermission();
+      setWebPushGranted(status === 'granted');
+    } else {
+      setWebPushGranted(false);
+    }
+  };
+
   const anyOn = OPTIONS.some((option) => prefs[option.key]);
   const setAll = (value: boolean) =>
     onChange(Object.fromEntries(OPTIONS.map((option) => [option.key, value])) as EmailPrefs);
@@ -58,6 +82,24 @@ export function EmailSettings({ prefs, onChange }: EmailSettingsProps) {
           />
         </View>
       ))}
+
+      {pushSupported && (
+        <View style={[styles.row, styles.divider]}>
+          <View style={styles.text}>
+            <Text style={styles.label}>Browser notifications</Text>
+            <Text style={styles.detail}>
+              Hear when a book is sent your way or arrives with a friend directly in your browser.
+            </Text>
+          </View>
+          <Switch
+            value={webPushGranted}
+            onValueChange={handleToggleWebPush}
+            trackColor={{ true: theme.colors.accent, false: theme.colors.border }}
+            thumbColor={theme.colors.card}
+            accessibilityLabel="Browser notifications"
+          />
+        </View>
+      )}
     </View>
   );
 }
@@ -78,17 +120,18 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 14,
-    fontWeight: '600',
     color: theme.colors.text,
+    fontWeight: '600',
   },
   allLabel: {
     fontSize: 15,
-    fontWeight: '700',
     color: theme.colors.text,
+    fontWeight: '700',
   },
   detail: {
     fontSize: 12,
     color: theme.colors.muted,
     marginTop: 2,
+    lineHeight: 16,
   },
 });

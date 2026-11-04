@@ -1,7 +1,8 @@
-import { Image, StyleSheet, Text, View, Pressable } from 'react-native';
+import { StyleSheet, Text, View, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Book } from '../types';
 import { theme } from '../theme';
+import { ArtisticBookCover } from './ArtisticBookCover';
 import {
   friendNameIn,
   holderId,
@@ -58,20 +59,9 @@ export function BookCard({ book, currentUserId, isSample, groupName, onPress }: 
 
   return (
     <Pressable style={styles.card} onPress={() => onPress?.(book)}>
-      {book.coverUrl ? (
-        <Image
-          source={{ uri: book.coverUrl }}
-          style={[styles.cover, styles.coverImage, { backgroundColor: book.coverColor }]}
-          resizeMode="cover"
-          accessibilityIgnoresInvertColors
-        />
-      ) : (
-        <View style={[styles.cover, { backgroundColor: book.coverColor }]}>
-          <Text style={styles.coverText} numberOfLines={4}>
-            {book.title}
-          </Text>
-        </View>
-      )}
+      <View style={styles.coverWrapper}>
+        <ArtisticBookCover book={book} variant="card" />
+      </View>
 
       <View style={styles.details}>
         {groupName ? (
@@ -117,23 +107,8 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     elevation: 2,
   },
-  cover: {
-    width: 90,
-    height: 120,
-    borderRadius: 14,
-    justifyContent: 'flex-end',
-    padding: 10,
+  coverWrapper: {
     marginRight: 12,
-  },
-  coverImage: {
-    padding: 0,
-  },
-  coverText: {
-    color: theme.colors.coverInk,
-    fontFamily: theme.fonts.serif,
-    fontSize: 12,
-    fontWeight: '700',
-    lineHeight: 16,
   },
   details: {
     flex: 1,

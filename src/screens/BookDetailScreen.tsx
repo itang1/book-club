@@ -15,6 +15,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { Book, Group, Letter } from '../types';
 import { theme } from '../theme';
 import { JourneyRoute } from '../components/JourneyRoute';
+import { BookPassportSheet } from '../components/BookPassportSheet';
+import { ArtisticBookCover } from '../components/ArtisticBookCover';
 import { bookLink } from '../lib/links';
 import {
   canReadLetter,
@@ -74,6 +76,7 @@ export function BookDetailScreen({
   const [note, setNote] = useState('');
   // Shown when the browser has no share sheet, to copy by hand.
   const [shownLink, setShownLink] = useState<string | null>(null);
+  const [passportOpen, setPassportOpen] = useState(false);
   const [editingDetails, setEditingDetails] = useState(false);
   const [editTitle, setEditTitle] = useState('');
   const [editAuthor, setEditAuthor] = useState('');
@@ -232,44 +235,44 @@ export function BookDetailScreen({
   return (
     <>
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-        <View
-          style={[styles.cover, { backgroundColor: book.coverColor }, book.coverUrl && styles.coverWithImage]}
-        >
-          <View style={styles.coverSpine} />
-          {book.coverUrl ? (
-            <Image
-              source={{ uri: book.coverUrl }}
-              style={styles.coverImage}
-              resizeMode="cover"
-              accessibilityIgnoresInvertColors
-            />
-          ) : null}
-          <View style={book.coverUrl ? styles.coverTextBeside : undefined}>
+        <View style={styles.coverHeader}>
+          <ArtisticBookCover book={book} variant="detail" />
+          <View style={styles.coverDetailsCol}>
             <Text style={styles.coverTitle}>{book.title}</Text>
             <Text style={styles.coverAuthor}>{book.author}</Text>
             {book.giftedBy ? (
               <View style={styles.gift}>
-                <Ionicons name="gift-outline" size={13} color={theme.colors.coverInk} />
+                <Ionicons name="gift-outline" size={13} color={theme.colors.muted} />
                 <Text style={styles.giftText}>A gift from {book.giftedBy}</Text>
               </View>
             ) : null}
           </View>
         </View>
-        <Pressable
-          style={styles.shareLink}
-          onPress={async () => {
-            const link = bookLink(book.id);
-            try {
-              await Share.share({ message: `${book.title}, on The Traveling Books: ${link}` });
-            } catch {
-              setShownLink(link);
-            }
-          }}
-          accessibilityRole="button"
-        >
-          <Ionicons name="link-outline" size={14} color={theme.colors.accent} />
-          <Text style={styles.shareLinkText}>Share link</Text>
-        </Pressable>
+        <View style={styles.topActionRow}>
+          <Pressable
+            style={styles.shareLink}
+            onPress={async () => {
+              const link = bookLink(book.id);
+              try {
+                await Share.share({ message: `${book.title}, on The Traveling Books: ${link}` });
+              } catch {
+                setShownLink(link);
+              }
+            }}
+            accessibilityRole="button"
+          >
+            <Ionicons name="link-outline" size={14} color={theme.colors.accent} />
+            <Text style={styles.shareLinkText}>Share link</Text>
+          </Pressable>
+          <Pressable
+            style={styles.shareLink}
+            onPress={() => setPassportOpen(true)}
+            accessibilityRole="button"
+          >
+            <Ionicons name="bookmark-outline" size={14} color={theme.colors.accent} />
+            <Text style={styles.shareLinkText}>Print passport</Text>
+          </Pressable>
+        </View>
         {currentUserId !== null && currentUserId === owner && !isSample && (
           <View style={styles.ownerActions}>
             <Pressable
@@ -546,6 +549,13 @@ export function BookDetailScreen({
           </View>
         </View>
       </Modal>
+      <BookPassportSheet
+        visible={passportOpen}
+        onClose={() => setPassportOpen(false)}
+        book={book}
+        groupName={group?.name}
+        ownerName={owner ? first(owner) : undefined}
+      />
     </>
   );
 }
@@ -652,12 +662,17 @@ const styles = StyleSheet.create({
   disabled: {
     opacity: 0.5,
   },
+  topActionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    gap: 16,
+    marginTop: -12,
+    marginBottom: 14,
+  },
   shareLink: {
     flexDirection: 'row',
     alignItems: 'center',
-    alignSelf: 'flex-end',
-    marginTop: -12,
-    marginBottom: 14,
     paddingVertical: 4,
   },
   shareLinkText: {
@@ -758,38 +773,33 @@ const styles = StyleSheet.create({
     padding: 20,
     paddingBottom: 32,
   },
-  cover: {
-    width: '100%',
-    minHeight: 190,
-    borderRadius: 24,
-    overflow: 'hidden',
-    justifyContent: 'flex-end',
-    paddingVertical: 22,
-    paddingRight: 22,
-    paddingLeft: 32,
+  coverHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+    padding: 16,
+    borderRadius: 20,
+    backgroundColor: theme.colors.card,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
     marginBottom: 20,
   },
-  coverSpine: {
-    position: 'absolute',
-    left: 0,
-    top: 0,
-    bottom: 0,
-    width: 9,
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+  coverDetailsCol: {
+    flex: 1,
+    justifyContent: 'center',
   },
   coverTitle: {
-    color: theme.colors.coverInk,
+    color: theme.colors.text,
     fontFamily: theme.fonts.serif,
-    fontSize: 26,
-    lineHeight: 32,
+    fontSize: 22,
+    lineHeight: 28,
     fontWeight: '700',
   },
   coverAuthor: {
-    color: theme.colors.coverInk,
-    opacity: 0.8,
+    color: theme.colors.muted,
     fontSize: 14,
-    fontWeight: '600',
-    marginTop: 6,
+    fontStyle: 'italic',
+    marginTop: 4,
   },
   title: {
     fontFamily: theme.fonts.serif,

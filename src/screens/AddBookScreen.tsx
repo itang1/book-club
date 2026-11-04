@@ -7,6 +7,7 @@ import { theme } from '../theme';
 import { coverColorFor } from '../lib/covers';
 import { lookupIsbn } from '../lib/isbn';
 import { Ionicons } from '@expo/vector-icons';
+import { BarcodeScannerModal } from '../components/BarcodeScannerModal';
 
 type AddBookScreenProps = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'AddBook'>;
@@ -32,6 +33,7 @@ export function AddBookScreen({
   const [lookingUp, setLookingUp] = useState(false);
   const [lookupCoverUrl, setLookupCoverUrl] = useState<string | undefined>(undefined);
   const [lookupMessage, setLookupMessage] = useState<string | null>(null);
+  const [scannerOpen, setScannerOpen] = useState(false);
 
   const [title, setTitle] = useState('');
   const [author, setAuthor] = useState('');
@@ -49,6 +51,22 @@ export function AddBookScreen({
     setLookingUp(true);
     setLookupMessage(null);
     const result = await lookupIsbn(isbn);
+    setLookingUp(false);
+    if (result) {
+      if (result.title) setTitle(result.title);
+      if (result.author) setAuthor(result.author);
+      if (result.coverUrl) setLookupCoverUrl(result.coverUrl);
+      setLookupMessage(`Found ${result.title}.`);
+    } else {
+      setLookupMessage('Add the title and author by hand below to put it into circulation.');
+    }
+  };
+
+  const handleScannedIsbn = async (scanned: string) => {
+    setIsbn(scanned);
+    setLookingUp(true);
+    setLookupMessage(null);
+    const result = await lookupIsbn(scanned);
     setLookingUp(false);
     if (result) {
       if (result.title) setTitle(result.title);
@@ -106,6 +124,7 @@ export function AddBookScreen({
   };
 
   return (
+    <>
     <ScrollView
       style={styles.container}
       contentContainerStyle={styles.contentContainer}
@@ -135,6 +154,14 @@ export function AddBookScreen({
             returnKeyType="search"
             onSubmitEditing={handleIsbnLookup}
           />
+          <Pressable
+            style={styles.scanButton}
+            onPress={() => setScannerOpen(true)}
+            accessibilityRole="button"
+            accessibilityLabel="Scan barcode"
+          >
+            <Ionicons name="camera-outline" size={18} color={theme.colors.accent} />
+          </Pressable>
           <Pressable
             style={[styles.lookupButton, (!isbn.trim() || lookingUp) && styles.disabled]}
             disabled={!isbn.trim() || lookingUp}
@@ -268,6 +295,12 @@ export function AddBookScreen({
         )}
       </View>
     </ScrollView>
+    <BarcodeScannerModal
+      visible={scannerOpen}
+      onClose={() => setScannerOpen(false)}
+      onScan={handleScannedIsbn}
+    />
+    </>
   );
 }
 
@@ -445,6 +478,16 @@ const styles = StyleSheet.create({
     paddingVertical: 9,
     fontSize: 14,
     color: theme.colors.text,
+  },
+  scanButton: {
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: 10,
+    backgroundColor: theme.colors.soft,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   lookupButton: {
     backgroundColor: theme.colors.accent,
