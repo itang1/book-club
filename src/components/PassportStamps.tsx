@@ -60,10 +60,10 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   region: {
-    fontSize: 10,
+    ...theme.caps,
+    fontSize: 12,
     color: theme.colors.muted,
     marginTop: 1,
-    letterSpacing: 0.4,
   },
   empty: {
     color: theme.colors.muted,

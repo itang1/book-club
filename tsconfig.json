@@ -5,14 +5,7 @@
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
     "jsx": "react-jsx",
-    "types": [
-      "react",
-      "react-native",
-      "node"
-    ]
+    "types": ["react", "react-native", "node"]
   },
-  "exclude": [
-    "node_modules",
-    "supabase/functions/**/index.ts"
-  ]
+  "exclude": ["node_modules", "supabase/functions/**/index.ts"]
 }

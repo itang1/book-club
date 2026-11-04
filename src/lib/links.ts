@@ -32,6 +32,13 @@ export const linking: LinkingOptions<RootTabParamList> = {
           AddBook: 'lend',
         },
       },
+      Shelf: {
+        initialRouteName: 'ShelfHome',
+        screens: {
+          ShelfHome: 'shelf',
+          PersonShelf: 'shelf/:personId',
+        },
+      },
       Friends: {
         initialRouteName: 'FriendsHome',
         screens: {
@@ -46,10 +53,9 @@ export const linking: LinkingOptions<RootTabParamList> = {
   getPathFromState: (state, options) => `${BASE_PATH}${getPathFromState(state, options)}`,
 };
 
-const APP_URL = (process.env.EXPO_PUBLIC_APP_URL?.trim() || 'https://itang1.github.io/book-club').replace(
-  /\/+$/,
-  '',
-);
+const APP_URL = (
+  process.env.EXPO_PUBLIC_APP_URL?.trim() || 'https://itang1.github.io/book-club'
+).replace(/\/+$/, '');
 
 /**
  * A book's own address. On web it uses the site you're on (so it works on
@@ -61,6 +67,15 @@ export function bookLink(bookId: string): string {
       ? `${window.location.origin}${BASE_PATH}`
       : APP_URL;
   return `${root}/b/${encodeURIComponent(bookId)}`;
+}
+
+/** The privacy policy, a static page beside the app (public/privacy.html). */
+export function privacyLink(): string {
+  const root =
+    Platform.OS === 'web' && typeof window !== 'undefined'
+      ? `${window.location.origin}${BASE_PATH}`
+      : APP_URL;
+  return `${root}/privacy.html`;
 }
 
 /** The token from a one-tap email link (?do=…), on web. */

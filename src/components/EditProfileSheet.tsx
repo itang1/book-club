@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { Friend } from '../types';
@@ -16,13 +16,16 @@ export function EditProfileSheet({ me, visible, onClose, onSave }: EditProfileSh
   const [city, setCity] = useState(me.city);
   const [region, setRegion] = useState(me.state === '—' ? '' : me.state);
 
-  useEffect(() => {
+  // Fresh each time it opens (React's "adjust state when a prop changes").
+  const [wasVisible, setWasVisible] = useState(visible);
+  if (visible !== wasVisible) {
+    setWasVisible(visible);
     if (visible) {
       setName(me.name);
       setCity(me.city);
       setRegion(me.state === '—' ? '' : me.state);
     }
-  }, [visible, me]);
+  }
 
   const ready = Boolean(name.trim() && city.trim());
 
@@ -32,6 +35,7 @@ export function EditProfileSheet({ me, visible, onClose, onSave }: EditProfileSh
         <View style={styles.sheet}>
           <Text style={styles.title}>Your profile</Text>
           <TextInput
+            accessibilityLabel="Your name"
             value={name}
             onChangeText={setName}
             placeholder="Your name"
@@ -39,6 +43,7 @@ export function EditProfileSheet({ me, visible, onClose, onSave }: EditProfileSh
             style={styles.input}
           />
           <TextInput
+            accessibilityLabel="City"
             value={city}
             onChangeText={setCity}
             placeholder="City"
@@ -46,6 +51,7 @@ export function EditProfileSheet({ me, visible, onClose, onSave }: EditProfileSh
             style={styles.input}
           />
           <TextInput
+            accessibilityLabel="State or country"
             value={region}
             onChangeText={setRegion}
             placeholder="State or country (optional)"
@@ -53,8 +59,8 @@ export function EditProfileSheet({ me, visible, onClose, onSave }: EditProfileSh
             style={styles.input}
           />
           <Text style={styles.note}>
-            Moved, or reading somewhere else for a while? Change your city here. Books
-            you receive from now on count there; places they've already been stay put.
+            Moved, or reading somewhere else for a while? Change your city here. Books you receive
+            from now on count there; places they've already been stay put.
           </Text>
 
           <Pressable
@@ -88,7 +94,10 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 380,
     backgroundColor: theme.colors.card,
-    borderRadius: 20,
+    // The house edge: every pop-up carries the letterhead green.
+    borderTopWidth: 4,
+    borderTopColor: theme.colors.letterhead,
+    borderRadius: theme.radius.md,
     padding: 22,
   },
   title: {
@@ -100,7 +109,7 @@ const styles = StyleSheet.create({
   },
   input: {
     backgroundColor: theme.colors.soft,
-    borderRadius: 12,
+    borderRadius: theme.radius.md,
     padding: 12,
     color: theme.colors.text,
     fontSize: 15,
@@ -116,7 +125,7 @@ const styles = StyleSheet.create({
   },
   save: {
     backgroundColor: theme.colors.accent,
-    borderRadius: 12,
+    borderRadius: theme.radius.md,
     paddingVertical: 13,
     alignItems: 'center',
   },
@@ -124,9 +133,10 @@ const styles = StyleSheet.create({
     opacity: 0.45,
   },
   saveText: {
+    ...theme.caps,
     color: theme.colors.onAccent,
     fontWeight: '700',
-    fontSize: 15,
+    fontSize: 13,
   },
   cancel: {
     marginTop: 8,

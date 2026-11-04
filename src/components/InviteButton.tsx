@@ -109,7 +109,8 @@ export function InviteButton({ group, compact = false }: { group: Group; compact
                   </View>
                 ))}
                 <Text style={styles.warning}>
-                  This link welcomes in whoever has it, so share it with the people you'd love to have.
+                  This link welcomes in whoever has it, so share it with the people you'd love to
+                  have.
                 </Text>
               </>
             ) : (
@@ -132,22 +133,23 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     alignSelf: 'flex-start',
     backgroundColor: theme.colors.accent,
-    borderRadius: 999,
+    borderRadius: theme.radius.sm,
     paddingVertical: 9,
     paddingHorizontal: 14,
   },
   buttonText: {
+    ...theme.caps,
     marginLeft: 6,
     color: theme.colors.onAccent,
     fontWeight: '700',
-    fontSize: 14,
+    fontSize: 12,
   },
   compactButton: {
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1.5,
     borderColor: theme.colors.accent,
-    borderRadius: 999,
+    borderRadius: theme.radius.sm,
     paddingVertical: 6,
     paddingHorizontal: 12,
   },
@@ -168,7 +170,10 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 420,
     backgroundColor: theme.colors.card,
-    borderRadius: 20,
+    // The house edge: every pop-up carries the letterhead green.
+    borderTopWidth: 4,
+    borderTopColor: theme.colors.letterhead,
+    borderRadius: theme.radius.md,
     padding: 22,
   },
   title: {
@@ -182,7 +187,7 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.background,
     borderWidth: 1,
     borderColor: theme.colors.border,
-    borderRadius: 10,
+    borderRadius: theme.radius.md,
     padding: 12,
   },
   link: {
@@ -199,15 +204,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: theme.colors.accent,
-    borderRadius: 12,
+    borderRadius: theme.radius.md,
     paddingVertical: 12,
     marginRight: 8,
   },
   primaryText: {
+    ...theme.caps,
     marginLeft: 6,
     color: theme.colors.onAccent,
     fontWeight: '700',
-    fontSize: 15,
+    fontSize: 13,
   },
   secondary: {
     flex: 1,
@@ -216,14 +222,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderWidth: 1.5,
     borderColor: theme.colors.accent,
-    borderRadius: 12,
+    borderRadius: theme.radius.md,
     paddingVertical: 11,
   },
   secondaryText: {
+    ...theme.caps,
     marginLeft: 6,
     color: theme.colors.accent,
     fontWeight: '700',
-    fontSize: 15,
+    fontSize: 13,
   },
   copiedNote: {
     fontSize: 12,
@@ -231,10 +238,9 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   stepsTitle: {
+    ...theme.caps,
     fontSize: 12,
     fontWeight: '700',
-    letterSpacing: 0.8,
-    textTransform: 'uppercase',
     color: theme.colors.muted,
     marginTop: 20,
     marginBottom: 8,
@@ -268,8 +274,9 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   doneText: {
+    ...theme.caps,
     color: theme.colors.accent,
     fontWeight: '700',
-    fontSize: 15,
+    fontSize: 13,
   },
 });

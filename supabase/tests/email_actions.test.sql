@@ -20,22 +20,23 @@ end $$;
 grant usage on schema test to anon, authenticated;
 grant execute on all functions in schema test to anon, authenticated;
 
+-- Emails start off for everyone; these people have turned them on.
 insert into auth.users values
   ('00000000-0000-0000-0000-0000000000e1', 'ada@x'),
   ('00000000-0000-0000-0000-0000000000e2', 'bo@x'),
   ('00000000-0000-0000-0000-0000000000e3', 'cy@x');
 set role authenticated;
 select test.as_user('00000000-0000-0000-0000-0000000000e1');
-insert into friends (id, name, city, state, user_id, email_book_arrived) values ('e-ada', 'Ada Lane', 'Austin', 'TX', '00000000-0000-0000-0000-0000000000e1', true);
+insert into friends (id, name, city, state, user_id, email_book_arrived, email_new_book, email_book_sent, email_next_in_line, email_friend_request, email_reminders) values ('e-ada', 'Ada Lane', 'Austin', 'TX', '00000000-0000-0000-0000-0000000000e1', true, true, true, true, true, true);
 select create_group('g-e', 'Button club');
 reset role;
 select invite_code as code from groups where id = 'g-e' \gset
 set role authenticated;
 select test.as_user('00000000-0000-0000-0000-0000000000e2');
-insert into friends (id, name, city, state, user_id) values ('e-bo', 'Bo Park', 'Boise', 'ID', '00000000-0000-0000-0000-0000000000e2');
+insert into friends (id, name, city, state, user_id, email_new_book, email_book_sent, email_book_arrived, email_next_in_line, email_friend_request, email_reminders) values ('e-bo', 'Bo Park', 'Boise', 'ID', '00000000-0000-0000-0000-0000000000e2', true, true, true, true, true, true);
 select join_group(:'code');
 select test.as_user('00000000-0000-0000-0000-0000000000e3');
-insert into friends (id, name, city, state, user_id, email_new_book) values ('e-cy', 'Cy Moss', 'Cody', 'WY', '00000000-0000-0000-0000-0000000000e3', false);
+insert into friends (id, name, city, state, user_id, email_new_book, email_book_sent, email_book_arrived, email_next_in_line, email_friend_request, email_reminders) values ('e-cy', 'Cy Moss', 'Cody', 'WY', '00000000-0000-0000-0000-0000000000e3', false, true, true, true, true, true);
 select join_group(:'code');
 
 -- Ada lends; Bo signs up; Ada sends it to Bo. Bo asks Ada to be friends.

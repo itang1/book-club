@@ -1,9 +1,21 @@
-import { Image, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useState } from 'react';
+import {
+  Image,
+  Modal,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Book } from '../types';
 import { theme } from '../theme';
 import { yearInReview } from '../lib/stats';
+import { yearCard } from '../lib/yearCard';
+import { shareYearCard } from '../lib/yearCardImage';
 import { PassportStamps } from './PassportStamps';
 
 type YearInReviewSheetProps = {
@@ -47,9 +59,18 @@ export function YearInReviewSheet({
 }: YearInReviewSheetProps) {
   const insets = useSafeAreaInsets();
   const review = yearInReview(books, year, currentUserId);
+  const [sharing, setSharing] = useState<'idle' | 'busy' | 'downloaded'>('idle');
+  // The picture is drawn on a canvas: web only, and only once there's a year to show.
+  const canShare = Platform.OS === 'web' && review.handoffs > 0;
+
+  const share = async () => {
+    setSharing('busy');
+    const result = await shareYearCard(yearCard(review, year)).catch(() => 'unsupported');
+    setSharing(result === 'downloaded' ? 'downloaded' : 'idle');
+  };
   const tiles = [
     { label: 'Handoffs', value: review.handoffs },
-    { label: 'Letters', value: review.letters },
+    { label: 'Notes', value: review.letters },
     { label: 'Readers', value: review.readers },
     { label: 'Places', value: review.places },
   ];
@@ -72,6 +93,25 @@ export function YearInReviewSheet({
                 ? 'A fresh year: lend a book and this page fills in.'
                 : 'Everything your groups passed around this year, so far.'}
             </Text>
+
+            {canShare && (
+              <View style={styles.shareRow}>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Share your year as a picture"
+                  disabled={sharing === 'busy'}
+                  onPress={share}
+                  style={({ pressed }) => [styles.shareButton, pressed && styles.pressed]}
+                >
+                  <Text style={styles.shareText}>
+                    {sharing === 'busy' ? 'Making the picture…' : 'Share as a picture'}
+                  </Text>
+                </Pressable>
+                {sharing === 'downloaded' && (
+                  <Text style={styles.shareNote}>Saved to your downloads.</Text>
+                )}
+              </View>
+            )}
 
             <View style={styles.tiles}>
               {tiles.map((tile) => (
@@ -104,7 +144,7 @@ export function YearInReviewSheet({
                     book={review.bestLoved.book}
                     detail={`${'★'.repeat(Math.round(review.bestLoved.average))} from ${
                       review.bestLoved.ratings
-                    } ${review.bestLoved.ratings === 1 ? 'letter' : 'letters'}`}
+                    } ${review.bestLoved.ratings === 1 ? 'note' : 'notes'}`}
                   />
                 </View>
               </>
@@ -127,11 +167,9 @@ export function YearInReviewSheet({
                   : `You finished and passed on ${review.mine.finished} ${
                       review.mine.finished === 1 ? 'book' : 'books'
                     }, with ${review.mine.lettersWritten} ${
-                      review.mine.lettersWritten === 1 ? 'letter' : 'letters'
-                    } tucked inside${
-                      review.mine.sentTo.length > 0
-                        ? `, to ${listOf(review.mine.sentTo)}`
-                        : ''
+                      review.mine.lettersWritten === 1 ? 'note' : 'notes'
+                    } left in the app${
+                      review.mine.sentTo.length > 0 ? `, to ${listOf(review.mine.sentTo)}` : ''
                     }.`}
               </Text>
             </View>
@@ -143,6 +181,16 @@ export function YearInReviewSheet({
 }
 
 const styles = StyleSheet.create({
+  shareRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 18 },
+  shareButton: {
+    backgroundColor: theme.colors.accent,
+    borderRadius: theme.radius.sm,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+  },
+  pressed: { opacity: 0.8 },
+  shareText: { ...theme.caps, color: theme.colors.onAccent, fontWeight: '700', fontSize: 12 },
+  shareNote: { fontSize: 13, color: theme.colors.muted },
   container: {
     flex: 1,
     backgroundColor: theme.colors.background,
@@ -150,13 +198,14 @@ const styles = StyleSheet.create({
   topBar: {
     alignItems: 'center',
     paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
+    backgroundColor: theme.colors.letterhead,
+    borderBottomWidth: 3,
+    borderBottomColor: theme.colors.brass,
   },
   topBarTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: theme.colors.text,
+    fontFamily: theme.fonts.serif,
+    fontSize: 16,
+    color: theme.colors.onMasthead,
   },
   done: {
     position: 'absolute',
@@ -164,9 +213,9 @@ const styles = StyleSheet.create({
     bottom: 12,
   },
   doneText: {
-    color: theme.colors.accent,
-    fontWeight: '700',
-    fontSize: 15,
+    ...theme.caps,
+    color: theme.colors.onMasthead,
+    fontSize: 12,
   },
   scroll: {
     paddingHorizontal: 20,
@@ -197,7 +246,7 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.card,
     borderWidth: 1,
     borderColor: theme.colors.border,
-    borderRadius: 16,
+    borderRadius: theme.radius.md,
     paddingVertical: 16,
   },
   tile: {
@@ -205,12 +254,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   tileValue: {
+    fontFamily: theme.fonts.serif,
     fontSize: 26,
-    fontWeight: '600',
+    fontWeight: '700',
     color: theme.colors.text,
   },
   tileLabel: {
-    fontSize: 11,
+    fontSize: 12,
     color: theme.colors.muted,
     marginTop: 2,
   },
@@ -226,7 +276,7 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.card,
     borderWidth: 1,
     borderColor: theme.colors.border,
-    borderRadius: 16,
+    borderRadius: theme.radius.md,
     padding: 16,
   },
   bookLine: {

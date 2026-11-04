@@ -11,7 +11,6 @@ import {
   waitingList,
 } from './bookState';
 
-
 // ---------------------------------------------------------------------------
 // One book's route
 // ---------------------------------------------------------------------------
@@ -224,7 +223,6 @@ export function clubYear(books: Book[], year: number): ClubYear {
   };
 }
 
-
 // ---------------------------------------------------------------------------
 // The year in review
 // ---------------------------------------------------------------------------
@@ -324,7 +322,9 @@ export type GroupTotals = {
 export function groupTotals(books: Book[]): GroupTotals {
   const legs = books.flatMap((book) => book.handoffs.map((leg) => ({ book, leg })));
   const places = new Set(
-    legs.map(({ book, leg }) => placeKey(placeOf(book, leg))).filter((key): key is string => Boolean(key)),
+    legs
+      .map(({ book, leg }) => placeKey(placeOf(book, leg)))
+      .filter((key): key is string => Boolean(key)),
   );
 
   return {

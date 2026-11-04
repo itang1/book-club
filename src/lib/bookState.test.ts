@@ -17,6 +17,7 @@ import {
   recentActivity,
   senderId,
   statusLabel,
+  stayProgress,
   timesRead,
 } from './bookState';
 
@@ -36,7 +37,12 @@ const person = (id: string, position: number, status: ReadingQueueEntry['status'
 
 let legCount = 0;
 /** A leg that has arrived (Got it) the moment it was sent, unless overridden. */
-const leg = (from: string | null, to: string, day: number, extra: Partial<Handoff> = {}): Handoff => {
+const leg = (
+  from: string | null,
+  to: string,
+  day: number,
+  extra: Partial<Handoff> = {},
+): Handoff => {
   const at = new Date(Date.UTC(2026, 0, day)).toISOString();
   return {
     id: `leg-${(legCount += 1)}`,
@@ -175,15 +181,70 @@ describe('rereads and sealed letters', () => {
 });
 
 describe('the feed', () => {
-  it('describes legs as sentences, newest first', () => {
+  it('describes legs as sentences with full names, newest first', () => {
     const b = book(
       [person('ana', 0, 'done'), person('bea', 1, 'done')],
       [leg(null, 'ana', 1), leg('ana', 'bea', 2), leg('bea', 'ana', 3)],
     );
     const recent = recentActivity([b], 2);
     expect(recent.map(({ leg: l }) => describeLeg(b, l))).toEqual([
-      'Circe went home to Ana',
-      'Ana passed Circe to Bea',
+      'Circe went home to Ana Reader',
+      'Ana Reader passed Circe to Bea Reader',
     ]);
+  });
+});
+
+describe('stayProgress', () => {
+  const DAY = 24 * 60 * 60 * 1000;
+  const start = Date.parse('2026-03-01T00:00:00Z');
+  const legAt = (
+    id: string,
+    from: string | null,
+    to: string,
+    receivedDaysAfter?: number,
+  ): Handoff => ({
+    id,
+    bookId: 'b',
+    fromFriend: from,
+    toFriend: to,
+    happenedAt: new Date(start).toISOString(),
+    receivedAt:
+      receivedDaysAfter === undefined
+        ? undefined
+        : new Date(start + receivedDaysAfter * DAY).toISOString(),
+  });
+  const withLegs = (handoffs: Handoff[]): Book => ({
+    id: 'b',
+    title: 'T',
+    author: 'A',
+    coverColor: '#000',
+    queue: [],
+    handoffs,
+  });
+
+  it('counts weeks from when it arrived', () => {
+    const book = withLegs([legAt('1', null, 'owner', 0), legAt('2', 'owner', 'bea', 3)]);
+    expect(stayProgress(book, 4, start + 3 * DAY)).toEqual({
+      week: 1,
+      ofWeeks: 4,
+      days: 0,
+      over: false,
+    });
+    expect(stayProgress(book, 4, start + 20 * DAY)).toEqual({
+      week: 3,
+      ofWeeks: 4,
+      days: 17,
+      over: false,
+    });
+    expect(stayProgress(book, 2, start + 20 * DAY)?.over).toBe(true);
+  });
+
+  it('says nothing without a pace, in the post, or at home with its owner', () => {
+    const reading = withLegs([legAt('1', null, 'owner', 0), legAt('2', 'owner', 'bea', 3)]);
+    expect(stayProgress(reading, null, start)).toBeNull();
+    expect(
+      stayProgress(withLegs([legAt('1', null, 'owner', 0), legAt('2', 'owner', 'bea')]), 4),
+    ).toBeNull();
+    expect(stayProgress(withLegs([legAt('1', null, 'owner', 0)]), 4)).toBeNull();
   });
 });

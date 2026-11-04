@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { theme } from '../theme';
+import { palettes, theme } from '../theme';
 import { TapedNote } from './TapedNote';
 import {
   authorName,
@@ -37,12 +37,7 @@ export function AboutSheet({ visible, onClose }: AboutSheetProps) {
       <View style={styles.container}>
         <View style={[styles.topBar, { paddingTop: insets.top + 10 }]}>
           <Text style={styles.topBarTitle}>Rules & About</Text>
-          <Pressable
-            style={styles.done}
-            onPress={onClose}
-            accessibilityRole="button"
-            hitSlop={8}
-          >
+          <Pressable style={styles.done} onPress={onClose} accessibilityRole="button" hitSlop={8}>
             <Text style={styles.doneText}>Done</Text>
           </Pressable>
         </View>
@@ -66,54 +61,54 @@ export function AboutContent() {
 
   const rulesOfTheBooks = (
     <>
-        <Text style={styles.heading}>The Rules of the Books</Text>
-        <View style={styles.card}>
-          {rules.map((rule, index) => (
-            <View key={rule} style={[styles.rule, index > 0 && styles.ruleDivider]}>
-              <Text style={styles.ruleNumber}>{index + 1}</Text>
-              <Text style={styles.ruleText}>{rule}</Text>
-            </View>
-          ))}
-        </View>
+      <Text style={styles.heading}>The Rules of the Books</Text>
+      <View style={styles.card}>
+        {rules.map((rule, index) => (
+          <View key={rule} style={[styles.rule, index > 0 && styles.ruleDivider]}>
+            <Text style={styles.ruleNumber}>{index + 1}</Text>
+            <Text style={styles.ruleText}>{rule}</Text>
+          </View>
+        ))}
+      </View>
     </>
   );
   const about = (
     <>
-        <Text style={styles.heading}>{noteTitle}</Text>
-        <View style={styles.card}>
-          <View style={styles.polaroid}>
-            {photo ? (
-              <Image source={photo} style={styles.photo} resizeMode="cover" />
-            ) : (
-              <View style={[styles.photo, styles.photoPlaceholder]}>
-                <Text style={styles.exLibris}>Ex Libris</Text>
-                <Text style={styles.exLibrisName}>{authorName}</Text>
-              </View>
-            )}
-            <Text style={styles.caption}>{photoCaption}</Text>
-            {photo && <Text style={styles.credit}>{photoCredit}</Text>}
-          </View>
-
-          {bio.map((paragraph, index) => (
-            <Text key={index} style={styles.bio}>
-              {paragraph.map((run, runIndex) =>
-                typeof run === 'string' ? (
-                  run
-                ) : (
-                  <Text
-                    key={runIndex}
-                    style={[run.italic && styles.italic, run.href && styles.link]}
-                    onPress={run.href ? () => Linking.openURL(run.href as string) : undefined}
-                    accessibilityRole={run.href ? 'link' : undefined}
-                  >
-                    {run.text}
-                  </Text>
-                ),
-              )}
-            </Text>
-          ))}
-          <Text style={styles.signature}>— {authorName}</Text>
+      <Text style={styles.heading}>{noteTitle}</Text>
+      <View style={styles.card}>
+        <View style={styles.polaroid}>
+          {photo ? (
+            <Image source={photo} style={styles.photo} resizeMode="cover" />
+          ) : (
+            <View style={[styles.photo, styles.photoPlaceholder]}>
+              <Text style={styles.exLibris}>Ex Libris</Text>
+              <Text style={styles.exLibrisName}>{authorName}</Text>
+            </View>
+          )}
+          <Text style={styles.caption}>{photoCaption}</Text>
+          {photo && <Text style={styles.credit}>{photoCredit}</Text>}
         </View>
+
+        {bio.map((paragraph, index) => (
+          <Text key={index} style={styles.bio}>
+            {paragraph.map((run, runIndex) =>
+              typeof run === 'string' ? (
+                run
+              ) : (
+                <Text
+                  key={runIndex}
+                  style={[run.italic && styles.italic, run.href && styles.link]}
+                  onPress={run.href ? () => Linking.openURL(run.href as string) : undefined}
+                  accessibilityRole={run.href ? 'link' : undefined}
+                >
+                  {run.text}
+                </Text>
+              ),
+            )}
+          </Text>
+        ))}
+        <Text style={styles.signature}>— {authorName}</Text>
+      </View>
     </>
   );
 
@@ -151,16 +146,15 @@ const styles = StyleSheet.create({
   },
   topBar: {
     alignItems: 'center',
-    justifyContent: 'center',
     paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
-    backgroundColor: theme.colors.background,
+    backgroundColor: theme.colors.letterhead,
+    borderBottomWidth: 3,
+    borderBottomColor: theme.colors.brass,
   },
   topBarTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: theme.colors.text,
+    fontFamily: theme.fonts.serif,
+    fontSize: 16,
+    color: theme.colors.onMasthead,
   },
   done: {
     position: 'absolute',
@@ -168,9 +162,9 @@ const styles = StyleSheet.create({
     bottom: 12,
   },
   doneText: {
-    color: theme.colors.accent,
-    fontWeight: '700',
-    fontSize: 15,
+    ...theme.caps,
+    color: theme.colors.onMasthead,
+    fontSize: 12,
   },
   scroll: {
     paddingHorizontal: 20,
@@ -211,7 +205,7 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.card,
     borderWidth: 1,
     borderColor: theme.colors.border,
-    borderRadius: 16,
+    borderRadius: theme.radius.md,
     paddingHorizontal: 20,
     paddingVertical: 8,
   },
@@ -246,7 +240,8 @@ const styles = StyleSheet.create({
     marginTop: 16,
     marginBottom: 20,
     transform: [{ rotate: '-2deg' }],
-    shadowColor: theme.colors.text,
+    // A canvas-free shadow needs a real colour: always dark ink.
+    shadowColor: palettes.light.text,
     shadowOpacity: 0.14,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 4 },
@@ -283,7 +278,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   credit: {
-    fontSize: 10,
+    fontSize: 12,
     color: theme.colors.muted,
     textAlign: 'center',
     marginTop: 2,
@@ -309,7 +304,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   homage: {
-    fontSize: 11,
+    fontSize: 12,
     lineHeight: 16,
     color: theme.colors.muted,
     marginTop: 28,

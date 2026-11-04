@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import { Linking, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Book, EmailPrefs, Friend } from '../types';
@@ -8,7 +8,9 @@ import { MonthlyColumns } from '../components/MonthlyColumns';
 import { PassportStamps } from '../components/PassportStamps';
 import { EditProfileSheet } from '../components/EditProfileSheet';
 import { EmailSettings } from '../components/EmailSettings';
+import { DeleteAccountSheet } from '../components/DeleteAccountSheet';
 import { finishesByMonth, placesForOwner } from '../lib/stats';
+import { privacyLink } from '../lib/links';
 import {
   friendNameIn,
   hasFinished,
@@ -27,6 +29,7 @@ type ProfileScreenProps = {
   friendCount: number;
   email?: string | null;
   onSignOut?: () => void;
+  onDeleteAccount?: () => Promise<string | null>;
   onUpdateProfile: (changes: Pick<Friend, 'name' | 'city' | 'state'>) => void;
   onUpdateEmailPrefs: (prefs: EmailPrefs) => void;
   onUpdateFriendRequestsFrom: (value: 'groups' | 'nobody') => void;
@@ -38,6 +41,7 @@ export function ProfileScreen({
   friendCount,
   email,
   onSignOut,
+  onDeleteAccount,
   onUpdateProfile,
   onUpdateEmailPrefs,
   onUpdateFriendRequestsFrom,
@@ -45,15 +49,13 @@ export function ProfileScreen({
   const insets = useSafeAreaInsets();
 
   const [editing, setEditing] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   // In your hands means arrived; a book in the post to you is coming, along
   // with any you're next in line for.
-  const withMe = me
-    ? books.filter((book) => holderId(book) === me.id && !isInTransit(book))
-    : [];
+  const withMe = me ? books.filter((book) => holderId(book) === me.id && !isInTransit(book)) : [];
   const comingToMe = me
     ? books.filter(
-        (book) =>
-          (holderId(book) === me.id && isInTransit(book)) || nextInLineId(book) === me.id,
+        (book) => (holderId(book) === me.id && isInTransit(book)) || nextInLineId(book) === me.id,
       )
     : [];
   // From the log, so a reread in progress doesn't un-finish the first read.
@@ -67,19 +69,18 @@ export function ProfileScreen({
     : 0;
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.content}
-    >
+    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <View style={[styles.header, { paddingTop: insets.top + 20 }]}>
         <View style={styles.avatar}>
           <Text style={styles.avatarText}>{me?.name.charAt(0) ?? '?'}</Text>
         </View>
         <View style={styles.headerText}>
+          <Text style={styles.eyebrow}>The Traveling Books</Text>
           <Text style={styles.title}>{me?.name ?? 'You'}</Text>
           {me && (
             <Text style={styles.subtitle}>
-              {[me.city, me.state].filter((part) => part && part !== '—').join(', ')} · {friendCount} {friendCount === 1 ? 'friend' : 'friends'}
+              {[me.city, me.state].filter((part) => part && part !== '—').join(', ')} ·{' '}
+              {friendCount} {friendCount === 1 ? 'friend' : 'friends'}
             </Text>
           )}
         </View>
@@ -113,7 +114,7 @@ export function ProfileScreen({
         </View>
         <View style={styles.statCard}>
           <Text style={styles.statValue}>{lettersWritten}</Text>
-          <Text style={styles.statLabel}>Letters written</Text>
+          <Text style={styles.statLabel}>Notes written</Text>
         </View>
       </View>
 
@@ -127,9 +128,7 @@ export function ProfileScreen({
               <View style={[styles.swatch, { backgroundColor: book.coverColor }]} />
               <View style={styles.bookInfo}>
                 <Text style={styles.bookTitle}>{book.title}</Text>
-                <Text style={styles.bookMeta}>
-                  Arrived {relativeTime(lastActivityAt(book))}
-                </Text>
+                <Text style={styles.bookMeta}>Arrived {relativeTime(lastActivityAt(book))}</Text>
               </View>
             </View>
           ))
@@ -148,10 +147,10 @@ export function ProfileScreen({
                 <Text style={styles.bookTitle}>{book.title}</Text>
                 <Text style={styles.bookMeta}>
                   {isInTransit(book) && holderId(book) === me?.id
-                    ? `In the post from ${friendNameIn(book, senderId(book)).split(' ')[0]}`
+                    ? `In the post from ${friendNameIn(book, senderId(book))}`
                     : isInTransit(book)
-                      ? `You're next. In the post to ${friendNameIn(book, holderId(book)).split(' ')[0]}`
-                      : `You're next. Currently with ${friendNameIn(book, holderId(book)).split(' ')[0]}`}
+                      ? `You're next. In the post to ${friendNameIn(book, holderId(book))}`
+                      : `You're next. Currently with ${friendNameIn(book, holderId(book))}`}
                 </Text>
               </View>
             </View>
@@ -194,7 +193,8 @@ export function ProfileScreen({
             <View style={styles.settingText}>
               <Text style={styles.settingLabel}>Let people in my groups ask</Text>
               <Text style={styles.settingDetail}>
-                On, people in your groups can ask to be friends. Either way, you can always ask them.
+                On, people in your groups can ask to be friends. Either way, you can always ask
+                them.
               </Text>
             </View>
             <Switch
@@ -208,10 +208,33 @@ export function ProfileScreen({
         </View>
       )}
 
+      <Pressable
+        style={styles.signOut}
+        onPress={() => Linking.openURL(privacyLink())}
+        accessibilityRole="link"
+      >
+        <Text style={styles.signOutText}>Privacy policy</Text>
+      </Pressable>
       {email && onSignOut && (
         <Pressable style={styles.signOut} onPress={onSignOut}>
           <Text style={styles.signOutText}>Signed in as {email} · Sign out</Text>
         </Pressable>
+      )}
+      {email && onDeleteAccount && (
+        <Pressable
+          style={styles.signOut}
+          onPress={() => setDeleting(true)}
+          accessibilityRole="button"
+        >
+          <Text style={styles.signOutText}>Delete my account</Text>
+        </Pressable>
+      )}
+      {onDeleteAccount && (
+        <DeleteAccountSheet
+          visible={deleting}
+          onClose={() => setDeleting(false)}
+          onDelete={onDeleteAccount}
+        />
       )}
     </ScrollView>
   );
@@ -234,16 +257,23 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: 32,
   },
+  eyebrow: {
+    ...theme.caps,
+    fontSize: 11,
+    letterSpacing: 2.4,
+    color: theme.colors.brass,
+    marginBottom: 6,
+  },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: theme.colors.masthead,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
+    backgroundColor: theme.colors.letterhead,
+    borderBottomWidth: 3,
+    borderBottomColor: theme.colors.brass,
     marginHorizontal: -20,
     paddingHorizontal: 20,
-    paddingBottom: 16,
+    paddingBottom: 20,
     marginBottom: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   headerText: {
     flex: 1,
@@ -269,16 +299,15 @@ const styles = StyleSheet.create({
   },
   editButton: {
     borderWidth: 1,
-    borderColor: theme.colors.border,
-    backgroundColor: theme.colors.card,
-    borderRadius: 999,
+    borderColor: theme.colors.brass,
+    borderRadius: theme.radius.sm,
     paddingHorizontal: 14,
     paddingVertical: 7,
   },
   editButtonText: {
-    color: theme.colors.accent,
-    fontWeight: '700',
-    fontSize: 13,
+    ...theme.caps,
+    color: theme.colors.onMasthead,
+    fontSize: 12,
   },
   avatar: {
     width: 60,
@@ -299,11 +328,11 @@ const styles = StyleSheet.create({
     fontFamily: theme.fonts.serif,
     fontSize: 28,
     lineHeight: 34,
-    fontWeight: '700',
-    color: theme.colors.text,
+    color: theme.colors.onMasthead,
   },
   subtitle: {
-    color: theme.colors.muted,
+    color: theme.colors.onMasthead,
+    opacity: 0.85,
     fontSize: 14,
     marginTop: 2,
   },
@@ -311,7 +340,7 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.card,
     borderWidth: 1,
     borderColor: theme.colors.border,
-    borderRadius: 16,
+    borderRadius: theme.radius.md,
     padding: 18,
     marginBottom: 16,
   },
@@ -332,13 +361,14 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.card,
     borderWidth: 1,
     borderColor: theme.colors.border,
-    borderRadius: 16,
+    borderRadius: theme.radius.md,
     padding: 18,
     marginBottom: 14,
   },
   statValue: {
+    fontFamily: theme.fonts.serif,
     fontSize: 26,
-    fontWeight: '600',
+    fontWeight: '700',
     color: theme.colors.text,
   },
   statLabel: {
@@ -358,7 +388,7 @@ const styles = StyleSheet.create({
   swatch: {
     width: 34,
     height: 46,
-    borderRadius: 6,
+    borderRadius: theme.radius.md,
     marginRight: 12,
   },
   bookInfo: {
@@ -371,7 +401,7 @@ const styles = StyleSheet.create({
   },
   bookMeta: {
     color: theme.colors.muted,
-    fontSize: 11,
+    fontSize: 12,
     marginTop: 3,
   },
 });

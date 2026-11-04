@@ -109,8 +109,8 @@ create table if not exists public.handoffs (
 );
 
 -- The letter the passer leaves in the book. Written once with the leg and,
--- like the leg, never edited. The app keeps it sealed from anyone who hasn't
--- finished the book yet.
+-- like the leg, never edited. Sealed from anyone who hasn't finished the book
+-- yet: see readable_letters() and the column grants on handoffs.
 alter table public.handoffs add column if not exists note text;
 alter table public.handoffs add column if not exists rating smallint
   check (rating between 1 and 5);
@@ -161,6 +161,10 @@ alter table public.friends drop column if exists email;
 -- sees once, after joining. Null until they do. Set through "edit your own
 -- profile" below, so only by them.
 alter table public.friends add column if not exists agreed_rules_at timestamptz;
+-- Whoever already had an account when the agreement was switched on (November
+-- 2026) isn't asked; it's for people who join after. Set once, below.
+alter table public.friends
+  add column if not exists joined_before_rules boolean not null default false;
 
 -- Retired: an email-to-profile table that had to be filled in by hand before
 -- anyone could sign in. Claiming is now done in the app.
@@ -190,6 +194,18 @@ alter table public.friendships
   add column if not exists status text not null default 'accepted'
   check (status in ('pending', 'accepted'));
 
+-- Blocks: one person blocking another. While it stands, neither can ask the
+-- other to be friends or borrow from the other's shelf, and any friendship
+-- between them ends. Nobody is told. Shared groups stay shared; whoever runs
+-- a group can remove someone. See block_person() below.
+create table if not exists public.blocks (
+  blocker text not null references public.friends (id) on delete cascade,
+  blocked text not null references public.friends (id) on delete cascade,
+  created_at timestamptz not null default now(),
+  primary key (blocker, blocked),
+  check (blocker <> blocked)
+);
+
 -- ---------------------------------------------------------------
 -- Groups: the circles books are lent within. Every book belongs to one,
 -- and only its members (plus whoever is reading or waiting for it) can see
@@ -199,10 +215,18 @@ create table if not exists public.groups (
   id text primary key,
   name text not null,
   created_by text references public.friends (id) on delete set null,
-  invite_code text not null unique
-    default substr(md5(random()::text || clock_timestamp()::text), 1, 10),
+  invite_code text not null unique,
   created_at timestamptz not null default now()
 );
+
+-- The invite code is the only key to a group, so it comes from the
+-- cryptographic generator behind gen_random_uuid(), not random(), which is
+-- predictable: 16 hex characters from the random parts of two UUIDs, 64
+-- bits. Set here rather than in the create table so existing databases pick
+-- it up; codes already handed out keep working.
+alter table public.groups alter column invite_code
+  set default substr(replace(gen_random_uuid()::text, '-', ''), 1, 12)
+    || substr(replace(gen_random_uuid()::text, '-', ''), 1, 4);
 
 create table if not exists public.group_members (
   group_id text not null references public.groups (id) on delete cascade,
@@ -369,6 +393,17 @@ as $$
   )
 $$;
 
+-- Whether you and this person have a block between you, either way round.
+create or replace function public.blocked_between(p_person_id text) returns boolean
+language sql stable security definer set search_path = public
+as $$
+  select exists (
+    select 1 from public.blocks
+    where (blocker = public.me() and blocked = p_person_id)
+       or (blocker = p_person_id and blocked = public.me())
+  )
+$$;
+
 -- ---------------------------------------------------------------
 -- Data API privileges
 --
@@ -391,7 +426,14 @@ grant select on public.books to authenticated;
 grant select, insert, update, delete on public.reading_queue to authenticated;
 -- No insert, update or delete on handoffs at all: the journey log is written
 -- only by pass_on() and lend_book(), and history can't be rewritten.
-grant select on public.handoffs to authenticated;
+--
+-- Every column but the letter (note and rating). Row security can only hide
+-- whole rows, and anyone who can see a book must see its journey, so the
+-- letters are kept out by column and served by readable_letters() instead,
+-- which applies the sealing rule. Without this, a sealed letter was hidden
+-- only on screen and anyone in the group could read it through the API.
+grant select (id, book_id, from_friend, to_friend, happened_at, received_at,
+  place_city, place_region) on public.handoffs to authenticated;
 grant select, insert, update, delete on public.friendships to authenticated;
 -- Groups are created, joined and left through functions only.
 grant select on public.groups, public.group_members to authenticated;
@@ -520,6 +562,7 @@ create policy "ask to be friends"
     and public.can_see_person(case when friend_a = public.me() then friend_b else friend_a end)
     and public.has_account(case when friend_a = public.me() then friend_b else friend_a end)
     and public.accepts_requests(case when friend_a = public.me() then friend_b else friend_a end)
+    and not public.blocked_between(case when friend_a = public.me() then friend_b else friend_a end)
   );
 drop policy if exists "accept a request" on public.friendships;
 create policy "accept a request"
@@ -574,6 +617,59 @@ begin
   end if;
 
   return person;
+end;
+$$;
+
+-- Delete my account. The journey log is shared history, so the person's stops
+-- stay on every book they touched, anonymised: the profile row stays as
+-- "A reader" with just their city, and loses its account, name, friendships,
+-- groups, queue places and queued emails. Then the sign-in itself is deleted.
+-- Refused while they hold a copy or own one still in circulation: those are
+-- physical books that someone has to hand on or put to rest first.
+create or replace function public.delete_my_account() returns void
+language plpgsql security definer set search_path = public
+as $$
+declare
+  person text := public.me();
+  title text;
+begin
+  if auth.uid() is null or person is null then
+    raise exception 'Not signed in';
+  end if;
+
+  select b.title into title
+  from public.books b
+  where (
+      select h.to_friend from public.handoffs h
+      where h.book_id = b.id order by h.happened_at desc, h.id desc limit 1
+    ) = person
+  limit 1;
+  if title is not null then
+    raise exception 'You''re holding "%". Pass it on or send it home before deleting your account.', title;
+  end if;
+
+  select b.title into title
+  from public.books b
+  where b.archived_at is null
+    and (
+      select h.to_friend from public.handoffs h
+      where h.book_id = b.id and h.from_friend is null limit 1
+    ) = person
+  limit 1;
+  if title is not null then
+    raise exception 'You lent "%", and it''s still travelling. Ask for it back and rest it before deleting your account.', title;
+  end if;
+
+  delete from public.friendships where friend_a = person or friend_b = person;
+  delete from public.reading_queue where friend_id = person;
+  delete from public.group_members where person_id = person;
+  delete from public.shelf_books where owner_id = person;
+  delete from public.shelf_requests where requester_id = person;
+  delete from public.notifications where person_id = person or about_person = person;
+  delete from public.email_actions where person_id = person or about_person = person;
+  update public.groups set created_by = null where created_by = person;
+  update public.friends set name = 'A reader', user_id = null where id = person;
+  delete from auth.users where id = auth.uid();
 end;
 $$;
 
@@ -650,6 +746,122 @@ as $$
     and q.friend_id = public.me() and q.status = 'waiting';
   delete from public.group_members where group_id = p_group_id and person_id = public.me();
 $$;
+
+-- ---------------------------------------------------------------
+-- Running a group: rename it, remove a member, hand it to someone else,
+-- and reset its invite link if it leaks. One person runs each group:
+-- whoever started it while they're still in it, and after that whoever has
+-- been in it longest, so a group is never left with nobody at the helm.
+-- Only members can ask who that is; sample groups have nobody.
+-- ---------------------------------------------------------------
+create or replace function public.group_admin(p_group_id text) returns text
+language sql stable security definer set search_path = public
+as $$
+  select case when public.is_member(p_group_id) and not public.is_sample_group(p_group_id) then
+    coalesce(
+      (select g.created_by from public.groups g
+       join public.group_members m on m.group_id = g.id and m.person_id = g.created_by
+       where g.id = p_group_id),
+      (select person_id from public.group_members where group_id = p_group_id
+       order by joined_at, person_id limit 1)
+    )
+  end
+$$;
+
+-- The same, as a column the app can select on groups (`admin_id`).
+create or replace function public.admin_id(public.groups) returns text
+language sql stable set search_path = public
+as $$
+  select public.group_admin($1.id)
+$$;
+
+create or replace function public.require_group_admin(p_group_id text) returns void
+language plpgsql stable security definer set search_path = public
+as $$
+begin
+  if public.me() is null or public.group_admin(p_group_id) is distinct from public.me() then
+    raise exception 'Only the person who runs this group can do that';
+  end if;
+end;
+$$;
+
+create or replace function public.rename_group(p_group_id text, p_name text) returns void
+language plpgsql security definer set search_path = public
+as $$
+begin
+  perform public.require_group_admin(p_group_id);
+  if nullif(trim(p_name), '') is null then
+    raise exception 'A group needs a name';
+  end if;
+  update public.groups set name = trim(p_name) where id = p_group_id;
+end;
+$$;
+
+-- Like leaving, done for them: off the group's waiting lines, out of the
+-- group. A book they hold or are being sent stays with them until it's
+-- passed on; their own copies stay in the group.
+create or replace function public.remove_from_group(p_group_id text, p_person_id text)
+returns void
+language plpgsql security definer set search_path = public
+as $$
+begin
+  perform public.require_group_admin(p_group_id);
+  if p_person_id = public.me() then
+    raise exception 'To step away from your own group, leave it';
+  end if;
+  delete from public.reading_queue q
+  using public.books b
+  where q.book_id = b.id and b.group_id = p_group_id
+    and q.friend_id = p_person_id and q.status = 'waiting';
+  delete from public.group_members where group_id = p_group_id and person_id = p_person_id;
+end;
+$$;
+
+create or replace function public.hand_over_group(p_group_id text, p_person_id text)
+returns void
+language plpgsql security definer set search_path = public
+as $$
+begin
+  perform public.require_group_admin(p_group_id);
+  if not exists (
+    select 1 from public.group_members where group_id = p_group_id and person_id = p_person_id
+  ) or p_person_id = public.me() then
+    raise exception 'Hand the group to someone else in it';
+  end if;
+  update public.groups set created_by = p_person_id where id = p_group_id;
+end;
+$$;
+
+-- A gentle pace: about how many weeks each reader keeps a copy. A shared
+-- expectation, shown to whoever holds it; nothing is enforced. Null: none.
+alter table public.groups add column if not exists pace_weeks smallint
+  check (pace_weeks between 1 and 12);
+
+create or replace function public.set_group_pace(p_group_id text, p_weeks smallint)
+returns void
+language plpgsql security definer set search_path = public
+as $$
+begin
+  perform public.require_group_admin(p_group_id);
+  update public.groups set pace_weeks = p_weeks where id = p_group_id;
+end;
+$$;
+
+-- A new invite link; the old one stops working. Returns the new code.
+create or replace function public.reset_invite_code(p_group_id text) returns text
+language plpgsql security definer set search_path = public
+as $$
+declare
+  code text;
+begin
+  perform public.require_group_admin(p_group_id);
+  update public.groups set invite_code = default where id = p_group_id
+  returning invite_code into code;
+  return code;
+end;
+$$;
+
+revoke all on function public.require_group_admin(text) from public, anon, authenticated;
 
 -- Everyone is in the sample group(s) from the start, so a new member has
 -- a group with some history to look around before their own is busy.
@@ -779,6 +991,51 @@ begin
 end;
 $$;
 
+-- Call a copy home: the owner wants it back. Whoever has it sends it home
+-- next (pass_on refuses anyone else), and the line waits as it is. Going
+-- home clears the call; so can the owner, if they change their mind.
+alter table public.books add column if not exists called_home_at timestamptz;
+
+create or replace function public.call_home(p_book_id text) returns void
+language plpgsql security definer set search_path = public
+as $$
+declare
+  holder text;
+begin
+  if not exists (
+    select 1 from public.handoffs
+    where book_id = p_book_id and from_friend is null and to_friend = public.me()
+  ) then
+    raise exception 'Only the book''s owner can call it home';
+  end if;
+  select to_friend into holder from public.handoffs
+  where book_id = p_book_id order by happened_at desc limit 1;
+  if holder = public.me() then
+    raise exception 'It''s already home with you';
+  end if;
+
+  update public.books set called_home_at = now()
+  where id = p_book_id and called_home_at is null and archived_at is null;
+  if found then
+    perform public.notify(holder, 'called_home', p_book_id, public.me());
+  end if;
+end;
+$$;
+
+create or replace function public.cancel_call_home(p_book_id text) returns void
+language plpgsql security definer set search_path = public
+as $$
+begin
+  if not exists (
+    select 1 from public.handoffs
+    where book_id = p_book_id and from_friend is null and to_friend = public.me()
+  ) then
+    raise exception 'Only the book''s owner can change that';
+  end if;
+  update public.books set called_home_at = null where id = p_book_id;
+end;
+$$;
+
 -- Send the book you're holding to the next reader in line, or home to its
 -- owner, with an optional letter. It's in the post until they say Got it.
 create or replace function public.pass_on(
@@ -810,6 +1067,11 @@ begin
   ) then
     raise exception 'They are not in line for this book';
   end if;
+  if p_to is distinct from owner and exists (
+    select 1 from public.books where id = p_book_id and called_home_at is not null
+  ) then
+    raise exception 'Its owner has called it home, so it goes back to them next';
+  end if;
 
   -- Passing it on means you had it, even if you never tapped Got it.
   update public.handoffs set received_at = coalesce(received_at, now())
@@ -823,6 +1085,10 @@ begin
   where book_id = p_book_id and friend_id = me_id;
   update public.reading_queue set status = 'reading'
   where book_id = p_book_id and friend_id = p_to and status = 'waiting';
+  -- Going home answers a call home.
+  if p_to = owner then
+    update public.books set called_home_at = null where id = p_book_id;
+  end if;
 end;
 $$;
 
@@ -850,31 +1116,66 @@ begin
 end;
 $$;
 
+-- ---------------------------------------------------------------
+-- The letters (note and stars) this person may open: the ones they wrote,
+-- and every letter in a copy they've finished themselves (passed on at least
+-- once), so nobody's opinion colours their read. The same rule as
+-- canReadLetter() in src/lib/bookState.ts; the database is what enforces it.
+-- ---------------------------------------------------------------
+create or replace function public.readable_letters()
+returns table (handoff_id text, note text, rating smallint)
+language sql stable security definer set search_path = public
+as $$
+  select h.id, h.note, h.rating
+  from public.handoffs h
+  where (h.note is not null or h.rating is not null)
+    and public.can_see_book(h.book_id)
+    and (
+      h.from_friend = public.me()
+      or exists (
+        select 1 from public.handoffs mine
+        where mine.book_id = h.book_id and mine.from_friend = public.me()
+      )
+    )
+$$;
+
 revoke all on function public.me(), public.is_member(text), public.can_see_book(text),
   public.is_sample_group(text), public.is_sample_book(text), public.has_account(text),
   public.is_character(text), public.accepts_requests(text),
-  public.can_see_person(text), public.claim_profile(text, text),
+  public.can_see_person(text), public.blocked_between(text), public.claim_profile(text, text),
   public.unclaimed_in_group(text), public.group_preview(text),
   public.create_group(text, text), public.join_group(text), public.leave_group(text),
+  public.group_admin(text), public.admin_id(public.groups),
+  public.rename_group(text, text), public.remove_from_group(text, text),
+  public.hand_over_group(text, text), public.reset_invite_code(text),
+  public.set_group_pace(text, smallint),
+  public.delete_my_account(),
   public.lend_book(text, text, text, text, text, text, text, text),
   public.set_cover(text, text),
   public.update_book(text, text, text),
   public.retire_book(text), public.unretire_book(text),
+  public.call_home(text), public.cancel_call_home(text),
   public.pass_on(text, text, text, text, smallint),
-  public.mark_received(text)
+  public.mark_received(text), public.readable_letters()
   from public, anon;
 grant execute on function public.me(), public.is_member(text), public.can_see_book(text),
   public.is_sample_group(text), public.is_sample_book(text), public.has_account(text),
   public.is_character(text), public.accepts_requests(text),
-  public.can_see_person(text), public.claim_profile(text, text),
+  public.can_see_person(text), public.blocked_between(text), public.claim_profile(text, text),
   public.unclaimed_in_group(text), public.group_preview(text),
   public.create_group(text, text), public.join_group(text), public.leave_group(text),
+  public.group_admin(text), public.admin_id(public.groups),
+  public.rename_group(text, text), public.remove_from_group(text, text),
+  public.hand_over_group(text, text), public.reset_invite_code(text),
+  public.set_group_pace(text, smallint),
+  public.delete_my_account(),
   public.lend_book(text, text, text, text, text, text, text, text),
   public.set_cover(text, text),
   public.update_book(text, text, text),
   public.retire_book(text), public.unretire_book(text),
+  public.call_home(text), public.cancel_call_home(text),
   public.pass_on(text, text, text, text, smallint),
-  public.mark_received(text)
+  public.mark_received(text), public.readable_letters()
   to authenticated;
 
 -- Someone opening an invite link isn't signed in yet, so the sign-in screen
@@ -884,7 +1185,7 @@ grant execute on function public.group_preview(text) to anon;
 
 -- ---------------------------------------------------------------
 -- Email. Which emails each person wants (all on by default; they change
--- them under You → Emails), and an outbox the database fills when
+-- them under Profile → Emails), and an outbox the database fills when
 -- something worth an email happens. A Supabase Edge Function
 -- (supabase/functions/notify) sends what's in the outbox and stamps it
 -- sent. Nobody can read or write the outbox through the API.
@@ -909,6 +1210,22 @@ create table if not exists public.notifications (
   sent_at timestamptz,
   error text
 );
+-- Retries: a send that fails (say, a Gmail hiccup) is tried again up to three
+-- times in all, with growing gaps. Rows that can never succeed (no address,
+-- too old) are marked as used up straight away. Rows that failed before this
+-- existed were final, so they're used up too, once, as the column is added.
+do $$
+begin
+  if not exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'notifications' and column_name = 'attempts'
+  ) then
+    alter table public.notifications add column attempts int not null default 0;
+    update public.notifications set attempts = 3 where error is not null;
+  end if;
+end $$;
+alter table public.notifications add column if not exists next_attempt_at timestamptz;
+
 alter table public.notifications enable row level security;
 revoke all on public.notifications from anon, authenticated;
 
@@ -930,6 +1247,7 @@ begin
     when 'new_book' then email_new_book
     when 'arrival_check' then email_reminders
     when 'still_reading' then email_reminders
+    when 'called_home' then email_book_sent
   end into wants
   from public.friends
   where id = p_person and user_id is not null and not is_character;
@@ -1155,6 +1473,43 @@ grant execute on function public.email_action_preview(text), public.redeem_email
 -- ---------------------------------------------------------------
 alter table public.friends
   add column if not exists email_reminders boolean not null default true;
+
+-- Quiet by default (October 2026): every email starts off, for new people
+-- and, once, for everyone already here. People turn on what they want under
+-- Profile → Emails. applied_once records one-off data changes, so a deploy
+-- never repeats them and undoes someone's choice.
+alter table public.friends
+  alter column email_new_book set default false,
+  alter column email_book_sent set default false,
+  alter column email_book_arrived set default false,
+  alter column email_next_in_line set default false,
+  alter column email_friend_request set default false,
+  alter column email_reminders set default false;
+
+create table if not exists public.applied_once (
+  name text primary key,
+  applied_at timestamptz not null default now()
+);
+alter table public.applied_once enable row level security;
+revoke all on public.applied_once from anon, authenticated;
+
+with first_time as (
+  insert into public.applied_once (name) values ('emails-off-2026-10')
+  on conflict do nothing returning name
+)
+update public.friends
+set email_new_book = false, email_book_sent = false, email_book_arrived = false,
+    email_next_in_line = false, email_friend_request = false, email_reminders = false
+where exists (select 1 from first_time);
+
+-- The rules agreement is for new members: everyone with an account the day it
+-- was switched on counts as already here.
+with first_time as (
+  insert into public.applied_once (name) values ('rules-for-new-members-2026-11')
+  on conflict do nothing returning name
+)
+update public.friends set joined_before_rules = true
+where user_id is not null and exists (select 1 from first_time);
 alter table public.notifications drop constraint if exists notifications_kind_check;
 alter table public.notifications add constraint notifications_kind_check
   check (kind in ('book_sent', 'book_arrived', 'next_in_line', 'friend_request', 'new_book',
@@ -1234,6 +1589,400 @@ exception when others then
   -- A scheduling hiccup shouldn't stop the rest of the deploy.
   raise warning 'Reminders left unscheduled: %', sqlerrm;
 end $$;
+
+-- ---------------------------------------------------------------
+-- The sample groups stay current. sample.sql writes their dates relative to
+-- now on every deploy; between deploys this moves every sample leg forward by
+-- the time that has passed, so a copy "sent 5 hours ago" stays 5 hours ago
+-- and the groups always look the way they did on day one: alive.
+-- ---------------------------------------------------------------
+create table if not exists public.sample_clock (
+  only_row boolean primary key default true check (only_row),
+  anchored_at timestamptz not null default now()
+);
+insert into public.sample_clock default values on conflict do nothing;
+alter table public.sample_clock enable row level security;
+revoke all on public.sample_clock from anon, authenticated;
+
+create or replace function public.refresh_sample_dates() returns void
+language plpgsql security definer set search_path = public
+as $$
+declare
+  shift interval;
+begin
+  select now() - anchored_at into shift from public.sample_clock for update;
+  update public.handoffs h
+  set happened_at = h.happened_at + shift,
+      received_at = h.received_at + shift
+  from public.books b join public.groups g on g.id = b.group_id and g.is_sample
+  where h.book_id = b.id;
+  update public.sample_clock set anchored_at = now();
+end;
+$$;
+revoke all on function public.refresh_sample_dates() from public, anon, authenticated;
+
+do $$
+begin
+  if exists (select 1 from pg_extension where extname = 'pg_cron') then
+    perform cron.schedule('refresh-sample-dates', '7 * * * *', 'select public.refresh_sample_dates()');
+  end if;
+exception when others then
+  raise warning 'Sample dates left unscheduled: %', sqlerrm;
+end $$;
+
+
+-- ---------------------------------------------------------------
+-- Bookshelves. What a person owns, scanned from a photo or typed in. Seen by
+-- people who share a (real) group with them, the same circle that sees their
+-- books. A shelf book is not in circulation until its owner lends it to a
+-- group, which makes a real book with a line and a journey.
+-- ---------------------------------------------------------------
+create table if not exists public.shelf_books (
+  id text primary key,
+  owner_id text not null references public.friends (id) on delete cascade,
+  title text not null,
+  author text not null default '',
+  cover_color text not null default '#d9a77d',
+  lent_book_id text references public.books (id) on delete set null,
+  created_at timestamptz not null default now()
+);
+create index if not exists shelf_books_owner on public.shelf_books (owner_id);
+
+create table if not exists public.shelf_requests (
+  id text primary key,
+  shelf_book_id text not null references public.shelf_books (id) on delete cascade,
+  requester_id text not null references public.friends (id) on delete cascade,
+  status text not null default 'pending' check (status in ('pending', 'accepted', 'declined')),
+  created_at timestamptz not null default now(),
+  unique (shelf_book_id, requester_id)
+);
+
+-- Whoever shares a real group with this person (the shelf's circle).
+create or replace function public.shares_group(p_person_id text) returns boolean
+language sql stable security definer set search_path = public
+as $$
+  select p_person_id = public.me() or exists (
+    select 1 from public.group_members mine
+    join public.group_members theirs on theirs.group_id = mine.group_id
+    join public.groups g on g.id = mine.group_id and not g.is_sample
+    where mine.person_id = public.me() and theirs.person_id = p_person_id
+  )
+$$;
+
+alter table public.shelf_books enable row level security;
+alter table public.shelf_requests enable row level security;
+revoke all on public.shelf_books, public.shelf_requests from anon, authenticated;
+grant select, insert, delete on public.shelf_books to authenticated;
+-- Only the description is editable; lent_book_id is set by lend_from_shelf.
+revoke update on public.shelf_books from authenticated;
+grant update (title, author, cover_color) on public.shelf_books to authenticated;
+grant select on public.shelf_requests to authenticated;
+
+drop policy if exists "see shelves in your groups" on public.shelf_books;
+create policy "see shelves in your groups"
+  on public.shelf_books for select to authenticated
+  using (public.shares_group(owner_id) and not public.blocked_between(owner_id));
+drop policy if exists "shelve your own books" on public.shelf_books;
+create policy "shelve your own books"
+  on public.shelf_books for insert to authenticated
+  with check (owner_id = public.me() and lent_book_id is null);
+drop policy if exists "edit your own shelf" on public.shelf_books;
+create policy "edit your own shelf"
+  on public.shelf_books for update to authenticated
+  using (owner_id = public.me()) with check (owner_id = public.me());
+drop policy if exists "clear your own shelf" on public.shelf_books;
+create policy "clear your own shelf"
+  on public.shelf_books for delete to authenticated using (owner_id = public.me());
+
+drop policy if exists "see requests you made or received" on public.shelf_requests;
+create policy "see requests you made or received"
+  on public.shelf_requests for select to authenticated using (
+    requester_id = public.me()
+    or exists (select 1 from public.shelf_books s where s.id = shelf_book_id and s.owner_id = public.me())
+  );
+
+alter table public.notifications
+  add column if not exists shelf_book_id text references public.shelf_books (id) on delete cascade;
+alter table public.notifications drop constraint if exists notifications_kind_check;
+alter table public.notifications add constraint notifications_kind_check
+  check (kind in ('book_sent', 'book_arrived', 'next_in_line', 'friend_request', 'new_book',
+                  'arrival_check', 'still_reading', 'shelf_request', 'called_home'));
+
+-- Ask to borrow someone's book: only from a shelf you can see, once each.
+create or replace function public.request_shelf_book(p_request_id text, p_shelf_book_id text)
+returns void
+language plpgsql security definer set search_path = public
+as $$
+declare
+  shelved public.shelf_books;
+  asker text := public.me();
+begin
+  select * into shelved from public.shelf_books where id = p_shelf_book_id;
+  if asker is null or shelved.id is null or shelved.owner_id = asker
+     or not public.shares_group(shelved.owner_id) or public.blocked_between(shelved.owner_id) then
+    raise exception 'You can only ask for a book on a shelf you can see';
+  end if;
+  if shelved.lent_book_id is not null then
+    raise exception 'That copy is already out travelling';
+  end if;
+
+  insert into public.shelf_requests (id, shelf_book_id, requester_id)
+  values (p_request_id, p_shelf_book_id, asker)
+  on conflict (shelf_book_id, requester_id) do update
+    set status = 'pending', created_at = now()
+    where public.shelf_requests.status = 'declined';
+  if not found then
+    return;
+  end if;
+
+  -- An email, if the owner takes request emails (the same switch as friend requests).
+  if exists (
+    select 1 from public.friends
+    where id = shelved.owner_id and user_id is not null and not is_character and email_friend_request
+  ) then
+    insert into public.notifications (person_id, kind, about_person, shelf_book_id)
+    values (shelved.owner_id, 'shelf_request', asker, p_shelf_book_id);
+  end if;
+end;
+$$;
+
+-- The owner's answer. Saying yes doesn't lend anything by itself: they lend it
+-- to a group (lend_from_shelf) when they're ready, and the asker joins the line.
+create or replace function public.answer_shelf_request(p_request_id text, p_accept boolean)
+returns void
+language plpgsql security definer set search_path = public
+as $$
+begin
+  update public.shelf_requests r
+  set status = case when p_accept then 'accepted' else 'declined' end
+  from public.shelf_books s
+  where r.id = p_request_id and s.id = r.shelf_book_id and s.owner_id = public.me();
+  if not found then
+    raise exception 'That request isn''t yours to answer';
+  end if;
+end;
+$$;
+
+-- Lend a shelf book to one of your groups: it becomes a real book (lend_book
+-- does the rest), and the shelf remembers which one.
+create or replace function public.lend_from_shelf(
+  p_shelf_book_id text, p_book_id text, p_handoff_id text, p_group_id text
+) returns void
+language plpgsql security definer set search_path = public
+as $$
+declare
+  shelved public.shelf_books;
+begin
+  select * into shelved from public.shelf_books
+  where id = p_shelf_book_id and owner_id = public.me() for update;
+  if shelved.id is null then
+    raise exception 'That isn''t on your shelf';
+  end if;
+  if shelved.lent_book_id is not null and exists (
+    select 1 from public.books where id = shelved.lent_book_id and archived_at is null
+  ) then
+    raise exception 'That copy is already out travelling';
+  end if;
+
+  perform public.lend_book(
+    p_book_id, shelved.title, shelved.author, shelved.cover_color, p_handoff_id, null, p_group_id
+  );
+  update public.shelf_books set lent_book_id = p_book_id where id = p_shelf_book_id;
+end;
+$$;
+
+revoke all on function public.shares_group(text), public.request_shelf_book(text, text),
+  public.answer_shelf_request(text, boolean), public.lend_from_shelf(text, text, text, text)
+  from public, anon;
+grant execute on function public.shares_group(text), public.request_shelf_book(text, text),
+  public.answer_shelf_request(text, boolean), public.lend_from_shelf(text, text, text, text)
+  to authenticated;
+
+-- ---------------------------------------------------------------
+-- Error monitoring. The app reports crashes here (src/lib/monitoring.ts);
+-- .github/workflows/errors.yml checks daily and fails, which emails the
+-- owner, when there are new ones. Write-only for the app, rate-limited, and
+-- kept 90 days. No book contents or notes: just the message, stack and screen.
+-- ---------------------------------------------------------------
+create table if not exists public.client_errors (
+  id bigserial primary key,
+  at timestamptz not null default now(),
+  person_id text references public.friends (id) on delete set null,
+  message text not null,
+  stack text,
+  screen text,
+  url text,
+  user_agent text
+);
+create index if not exists client_errors_at on public.client_errors (at);
+alter table public.client_errors enable row level security;
+revoke all on public.client_errors from anon, authenticated;
+
+create or replace function public.report_error(
+  p_message text, p_stack text, p_screen text, p_url text, p_user_agent text
+) returns void
+language plpgsql security definer set search_path = public
+as $$
+declare
+  reporter text := public.me();
+begin
+  -- A broken screen can throw in a loop: a few a minute per person, and a
+  -- ceiling for everyone signed out, keep the table (and the alert) sane.
+  if (select count(*) from public.client_errors
+      where at > now() - interval '1 minute'
+        and person_id is not distinct from reporter) >= 5 then
+    return;
+  end if;
+  insert into public.client_errors (person_id, message, stack, screen, url, user_agent)
+  values (reporter, left(coalesce(p_message, '(no message)'), 500), left(p_stack, 4000),
+          left(p_screen, 100), left(p_url, 300), left(p_user_agent, 300));
+  delete from public.client_errors where at < now() - interval '90 days';
+end;
+$$;
+revoke all on function public.report_error(text, text, text, text, text) from public;
+grant execute on function public.report_error(text, text, text, text, text) to anon, authenticated;
+
+-- ---------------------------------------------------------------
+-- A group's wishlist: books nobody in the group owns yet. A member suggests
+-- one, others say "I'd read that", and whoever finds a copy can see there's
+-- a line waiting before they lend it. Members only; not in sample groups.
+-- The suggester or whoever runs the group can take a wish down.
+-- ---------------------------------------------------------------
+create table if not exists public.wishes (
+  id text primary key,
+  group_id text not null references public.groups (id) on delete cascade,
+  suggested_by text references public.friends (id) on delete set null,
+  title text not null check (length(trim(title)) between 1 and 200),
+  author text not null default '' check (length(author) <= 200),
+  created_at timestamptz not null default now()
+);
+create index if not exists wishes_group_idx on public.wishes (group_id, created_at);
+
+create table if not exists public.wish_votes (
+  wish_id text not null references public.wishes (id) on delete cascade,
+  person_id text not null references public.friends (id) on delete cascade,
+  created_at timestamptz not null default now(),
+  primary key (wish_id, person_id)
+);
+
+alter table public.wishes enable row level security;
+alter table public.wish_votes enable row level security;
+revoke all on public.wishes, public.wish_votes from anon, authenticated;
+grant select, insert, delete on public.wishes, public.wish_votes to authenticated;
+
+drop policy if exists "members see their wishlist" on public.wishes;
+create policy "members see their wishlist"
+  on public.wishes for select to authenticated using (public.is_member(group_id));
+drop policy if exists "members add wishes" on public.wishes;
+create policy "members add wishes"
+  on public.wishes for insert to authenticated
+  with check (
+    suggested_by = public.me() and public.is_member(group_id)
+    and not public.is_sample_group(group_id)
+  );
+drop policy if exists "suggester or organiser takes a wish down" on public.wishes;
+create policy "suggester or organiser takes a wish down"
+  on public.wishes for delete to authenticated
+  using (suggested_by = public.me() or public.group_admin(group_id) = public.me());
+
+drop policy if exists "members see who'd read it" on public.wish_votes;
+create policy "members see who'd read it"
+  on public.wish_votes for select to authenticated
+  using (exists (select 1 from public.wishes w where w.id = wish_id and public.is_member(w.group_id)));
+drop policy if exists "say you'd read it" on public.wish_votes;
+create policy "say you'd read it"
+  on public.wish_votes for insert to authenticated
+  with check (
+    person_id = public.me()
+    and exists (
+      select 1 from public.wishes w
+      where w.id = wish_id and public.is_member(w.group_id) and not public.is_sample_group(w.group_id)
+    )
+  );
+drop policy if exists "take it back" on public.wish_votes;
+create policy "take it back"
+  on public.wish_votes for delete to authenticated using (person_id = public.me());
+
+-- ---------------------------------------------------------------
+-- Block and report. You see only your own blocks; nobody can read reports
+-- through the API. .github/workflows/errors.yml lists new reports daily and
+-- fails, which emails the owner, so someone looks at each one.
+-- ---------------------------------------------------------------
+alter table public.blocks enable row level security;
+revoke all on public.blocks from anon, authenticated;
+grant select on public.blocks to authenticated;
+drop policy if exists "see who you've blocked" on public.blocks;
+create policy "see who you've blocked"
+  on public.blocks for select to authenticated using (blocker = public.me());
+
+create or replace function public.block_person(p_person_id text) returns void
+language plpgsql security definer set search_path = public
+as $$
+declare
+  v_me text := public.me();
+begin
+  if v_me is null or p_person_id is null or p_person_id = v_me
+     or not public.can_see_person(p_person_id) then
+    raise exception 'You can only block someone you can see';
+  end if;
+  insert into public.blocks (blocker, blocked) values (v_me, p_person_id)
+  on conflict do nothing;
+  -- Friends or a request either way: it goes, as an unfriend would.
+  delete from public.friendships
+  where friend_a = least(v_me, p_person_id) and friend_b = greatest(v_me, p_person_id);
+  -- Open asks to borrow from each other's shelves go too.
+  delete from public.shelf_requests r
+  using public.shelf_books s
+  where s.id = r.shelf_book_id and r.status = 'pending'
+    and ((s.owner_id = v_me and r.requester_id = p_person_id)
+      or (s.owner_id = p_person_id and r.requester_id = v_me));
+end;
+$$;
+
+create or replace function public.unblock_person(p_person_id text) returns void
+language sql security definer set search_path = public
+as $$
+  delete from public.blocks where blocker = public.me() and blocked = p_person_id
+$$;
+
+create table if not exists public.reports (
+  id bigserial primary key,
+  at timestamptz not null default now(),
+  reporter text references public.friends (id) on delete set null,
+  reported text references public.friends (id) on delete set null,
+  reason text not null check (reason in ('unkind', 'kept_book', 'fake', 'other')),
+  details text
+);
+alter table public.reports enable row level security;
+revoke all on public.reports from anon, authenticated;
+revoke all on sequence public.reports_id_seq from anon, authenticated;
+
+-- Report someone you can see (or have blocked). A few a day per person.
+create or replace function public.report_person(p_person_id text, p_reason text, p_details text)
+returns void
+language plpgsql security definer set search_path = public
+as $$
+declare
+  v_me text := public.me();
+begin
+  if v_me is null or p_person_id is null or p_person_id = v_me
+     or not (public.can_see_person(p_person_id)
+             or exists (select 1 from public.blocks where blocker = v_me and blocked = p_person_id)) then
+    raise exception 'You can only report someone you can see';
+  end if;
+  if (select count(*) from public.reports
+      where reporter = v_me and at > now() - interval '1 day') >= 10 then
+    raise exception 'That''s a lot of reports for one day. Try again tomorrow';
+  end if;
+  insert into public.reports (reporter, reported, reason, details)
+  values (v_me, p_person_id, p_reason, nullif(left(trim(coalesce(p_details, '')), 2000), ''));
+end;
+$$;
+
+revoke all on function public.block_person(text), public.unblock_person(text),
+  public.report_person(text, text, text) from public, anon;
+grant execute on function public.block_person(text), public.unblock_person(text),
+  public.report_person(text, text, text) to authenticated;
 
 -- ---------------------------------------------------------------
 -- Tell the API about any new tables or columns straight away, rather than

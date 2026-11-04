@@ -110,9 +110,7 @@ export function suggestionsFor(
     .map((person) => {
       const theirs = friendIdsOf(friendships, person.id);
       const mutual = [...theirs].filter((id) => mine.has(id)).length;
-      const shared = myBooks.filter((book) =>
-        book.queue.some((entry) => entry.id === person.id),
-      );
+      const shared = myBooks.filter((book) => book.queue.some((entry) => entry.id === person.id));
 
       let reason = `In ${sharedGroup(person.id)?.name ?? 'your group'}`;
       if (mutual > 0) {

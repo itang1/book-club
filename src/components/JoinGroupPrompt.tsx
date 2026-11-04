@@ -23,7 +23,10 @@ export function JoinGroupPrompt({ groups, currentUserId, onJoin }: JoinGroupProm
 
     groupPreview(code).then((group) => {
       const alreadyIn = groups.some(
-        (candidate) => candidate.id === group?.id && currentUserId && candidate.memberIds.includes(currentUserId),
+        (candidate) =>
+          candidate.id === group?.id &&
+          currentUserId &&
+          candidate.memberIds.includes(currentUserId),
       );
       if (group && !alreadyIn) {
         setInvite({ code, id: group.id, name: group.name });
@@ -32,6 +35,7 @@ export function JoinGroupPrompt({ groups, currentUserId, onJoin }: JoinGroupProm
       }
     });
     // Only on arrival: the link is answered once.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const close = () => {
@@ -45,8 +49,8 @@ export function JoinGroupPrompt({ groups, currentUserId, onJoin }: JoinGroupProm
         <View style={styles.sheet}>
           <Text style={styles.title}>Join {invite?.name}?</Text>
           <Text style={styles.body}>
-            Members see each other's books and can join their lines. You can leave any
-            time, and your invite link keeps working whenever you're ready.
+            Members see each other's books and can join their lines. You can leave any time, and
+            your invite link keeps working whenever you're ready.
           </Text>
           <Pressable
             style={styles.join}
@@ -80,7 +84,10 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 380,
     backgroundColor: theme.colors.card,
-    borderRadius: 20,
+    // The house edge: every pop-up carries the letterhead green.
+    borderTopWidth: 4,
+    borderTopColor: theme.colors.letterhead,
+    borderRadius: theme.radius.md,
     padding: 22,
   },
   title: {
@@ -98,14 +105,15 @@ const styles = StyleSheet.create({
   },
   join: {
     backgroundColor: theme.colors.accent,
-    borderRadius: 12,
+    borderRadius: theme.radius.md,
     paddingVertical: 13,
     alignItems: 'center',
   },
   joinText: {
+    ...theme.caps,
     color: theme.colors.onAccent,
     fontWeight: '700',
-    fontSize: 15,
+    fontSize: 13,
   },
   notNow: {
     marginTop: 8,

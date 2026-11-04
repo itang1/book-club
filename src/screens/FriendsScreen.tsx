@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -14,6 +14,8 @@ import {
   relativeTime,
 } from '../lib/bookState';
 import { InviteButton } from '../components/InviteButton';
+import { PersonSafetySheet } from '../components/PersonSafetySheet';
+import type { Blocks } from '../lib/blocks';
 import {
   friendIdsOf,
   groupmateIdsOf,
@@ -33,6 +35,7 @@ type FriendsScreenProps = {
   onRemoveFriend: (personId: string) => void;
   onCreateGroup: (name: string) => void;
   onOpenGroup: (groupId: string) => void;
+  blocks: Blocks;
 };
 
 /**
@@ -122,17 +125,17 @@ function GroupCard({
           </View>
         ))}
         <Text style={styles.facesNames} numberOfLines={1}>
-          {shown.map((person) => (person.id === currentUserId ? 'You' : person.name.split(' ')[0])).join(', ')}
+          {shown
+            .map((person) => (person.id === currentUserId ? 'You' : person.name.split(' ')[0]))
+            .join(', ')}
           {people.length > shown.length ? ` and ${people.length - shown.length} more` : ''}
         </Text>
       </View>
 
       <Text style={styles.latest} numberOfLines={2} pointerEvents="none">
-        {group.isSample
-          ? 'A pretend group with some history, so you can see how it all works.'
-          : latest
-            ? `${describeLeg(latest.book, latest.leg)} · ${relativeTime(latest.leg.happenedAt)}`
-            : 'Ready for its first book. Lend one to start.'}
+        {latest
+          ? `${describeLeg(latest.book, latest.leg)} · ${relativeTime(latest.leg.happenedAt)}`
+          : 'Ready for its first book. Lend one to start.'}
       </Text>
     </View>
   );
@@ -153,6 +156,7 @@ function StartGroup({ onCreate }: { onCreate: (name: string) => void }) {
   return (
     <View style={styles.card}>
       <TextInput
+        accessibilityLabel="Group name"
         value={name}
         onChangeText={setName}
         placeholder="Group name, e.g. Sunday Book Club"
@@ -191,9 +195,12 @@ export function FriendsScreen({
   onRemoveFriend,
   onCreateGroup,
   onOpenGroup,
+  blocks,
 }: FriendsScreenProps) {
   const insets = useSafeAreaInsets();
-  const [unfriending, setUnfriending] = useState<Friend | null>(null);
+  const [about, setAbout] = useState<Friend | null>(null);
+  const blocked = new Set(blocks.blockedIds);
+  const notBlocked = (candidate: Friend) => !blocked.has(candidate.id);
 
   const person = (id: string) => members.find((candidate) => candidate.id === id);
   const myGroups = groups
@@ -204,13 +211,17 @@ export function FriendsScreen({
     );
   const hasRealGroup = myGroups.some((group) => !group.isSample);
   const friendIds = friendIdsOf(friendships, currentUserId);
-  const friends = members.filter((candidate) => friendIds.has(candidate.id));
+  const friends = members.filter((candidate) => friendIds.has(candidate.id)).filter(notBlocked);
   const requests = incomingRequests(friendships, currentUserId)
     .map(person)
-    .filter((candidate): candidate is Friend => Boolean(candidate));
+    .filter((candidate): candidate is Friend => Boolean(candidate))
+    .filter(notBlocked);
   const asked = outgoingRequests(friendships, currentUserId);
-  const askedPeople = members.filter((candidate) => asked.has(candidate.id));
-  const suggestions = suggestionsFor(currentUserId, members, friendships, books, groups);
+  const askedPeople = members.filter((candidate) => asked.has(candidate.id)).filter(notBlocked);
+  const suggestions = suggestionsFor(currentUserId, members, friendships, books, groups).filter(
+    ({ person: candidate }) => notBlocked(candidate),
+  );
+  const blockedPeople = members.filter((candidate) => blocked.has(candidate.id));
   const groupmates = groupmateIdsOf(groups, currentUserId);
 
   return (
@@ -220,6 +231,7 @@ export function FriendsScreen({
       keyboardShouldPersistTaps="handled"
     >
       <View style={[styles.headerWrap, { paddingTop: insets.top + 20 }]}>
+        <Text style={styles.eyebrow}>The Traveling Books</Text>
         <Text style={styles.title}>Friends and Groups</Text>
         <Text style={styles.subtitle}>
           Friends see what you're reading. To lend to each other, share a group.
@@ -235,13 +247,28 @@ export function FriendsScreen({
               <View style={styles.personInfo}>
                 <Text style={styles.personName}>{requester.name}</Text>
                 <Text style={styles.muted}>wants to be friends</Text>
+                <View style={styles.requestActions}>
+                  <Pressable
+                    style={styles.primarySmall}
+                    onPress={() => onAcceptFriend(requester.id)}
+                  >
+                    <Text style={styles.primarySmallText}>Accept</Text>
+                  </Pressable>
+                  <Pressable
+                    style={styles.plainButton}
+                    onPress={() => onRemoveFriend(requester.id)}
+                  >
+                    <Text style={styles.plainButtonText}>Not now</Text>
+                  </Pressable>
+                  <Pressable
+                    onPress={() => setAbout(requester)}
+                    hitSlop={10}
+                    accessibilityLabel={`More for ${requester.name}`}
+                  >
+                    <Ionicons name="ellipsis-horizontal" size={18} color={theme.colors.muted} />
+                  </Pressable>
+                </View>
               </View>
-              <Pressable style={styles.primarySmall} onPress={() => onAcceptFriend(requester.id)}>
-                <Text style={styles.primarySmallText}>Accept</Text>
-              </Pressable>
-              <Pressable style={styles.plainButton} onPress={() => onRemoveFriend(requester.id)}>
-                <Text style={styles.plainButtonText}>Not now</Text>
-              </Pressable>
             </View>
           ))}
         </>
@@ -250,8 +277,8 @@ export function FriendsScreen({
       <Text style={styles.sectionTitle}>Your groups</Text>
       {!hasRealGroup && (
         <Text style={styles.empty}>
-          Books are lent within groups. Start one for the friends you pass books to, or ask a
-          friend for their group's invite link.
+          Books are lent within groups. Start one for the friends you pass books to, or ask a friend
+          for their group's invite link.
         </Text>
       )}
       {myGroups.map((group) => (
@@ -268,9 +295,7 @@ export function FriendsScreen({
 
       <Text style={styles.sectionTitle}>Friends</Text>
       {friends.length === 0 ? (
-        <Text style={styles.empty}>
-          Add someone from your groups below to get started.
-        </Text>
+        <Text style={styles.empty}>Add someone from your groups below to get started.</Text>
       ) : (
         friends.map((friend) => (
           <View key={friend.id} style={styles.card}>
@@ -283,13 +308,11 @@ export function FriendsScreen({
                 </Text>
                 <Text style={styles.activity}>{activityFor(friend, books)}</Text>
                 {!groupmates.has(friend.id) && (
-                  <Text style={styles.activity}>
-                    Share a group to lend each other books.
-                  </Text>
+                  <Text style={styles.activity}>Share a group to lend each other books.</Text>
                 )}
               </View>
               <Pressable
-                onPress={() => setUnfriending(friend)}
+                onPress={() => setAbout(friend)}
                 hitSlop={10}
                 accessibilityLabel={`More for ${friend.name}`}
               >
@@ -331,35 +354,35 @@ export function FriendsScreen({
         </>
       )}
 
-      <Modal
-        visible={unfriending !== null}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setUnfriending(null)}
-      >
-        <View style={styles.backdrop}>
-          <View style={styles.sheet}>
-            <Text style={styles.sheetTitle}>Unfriend {unfriending?.name.split(' ')[0]}?</Text>
-            <Text style={styles.note}>
-              This stays private, and you'll keep sharing any groups you're both in.
-            </Text>
-            <Pressable
-              style={styles.dangerButtonWide}
-              onPress={() => {
-                if (unfriending) {
-                  onRemoveFriend(unfriending.id);
-                }
-                setUnfriending(null);
-              }}
-            >
-              <Text style={styles.dangerButtonText}>Unfriend</Text>
-            </Pressable>
-            <Pressable style={styles.plainButtonWide} onPress={() => setUnfriending(null)}>
-              <Text style={styles.plainButtonText}>Cancel</Text>
-            </Pressable>
-          </View>
-        </View>
-      </Modal>
+      {blockedPeople.length > 0 && (
+        <>
+          <Text style={styles.sectionTitle}>Blocked</Text>
+          {blockedPeople.map((candidate) => (
+            <View key={candidate.id} style={styles.personRow}>
+              <Avatar name={candidate.name} />
+              <View style={styles.personInfo}>
+                <Text style={styles.personName}>{candidate.name}</Text>
+                <Text style={styles.muted}>Can't ask you to be friends or borrow</Text>
+              </View>
+              <Pressable
+                style={styles.plainButton}
+                onPress={() => blocks.unblock(candidate.id)}
+                accessibilityLabel={`Unblock ${candidate.name}`}
+              >
+                <Text style={styles.plainButtonText}>Unblock</Text>
+              </Pressable>
+            </View>
+          ))}
+        </>
+      )}
+
+      <PersonSafetySheet
+        person={about}
+        blocks={blocks}
+        onUnfriend={about && friendIds.has(about.id) ? () => onRemoveFriend(about.id) : undefined}
+        onBlocked={onRemoveFriend}
+        onClose={() => setAbout(null)}
+      />
     </ScrollView>
   );
 }
@@ -373,27 +396,33 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: 32,
   },
+  eyebrow: {
+    ...theme.caps,
+    fontSize: 11,
+    letterSpacing: 2.4,
+    color: theme.colors.brass,
+    marginBottom: 6,
+  },
   headerWrap: {
-    backgroundColor: theme.colors.masthead,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
+    backgroundColor: theme.colors.letterhead,
+    borderBottomWidth: 3,
+    borderBottomColor: theme.colors.brass,
     marginHorizontal: -20,
     paddingHorizontal: 20,
-    paddingBottom: 16,
-    marginBottom: 16,
+    paddingBottom: 20,
+    marginBottom: 20,
   },
   title: {
     fontFamily: theme.fonts.serif,
     fontSize: 30,
-    fontWeight: '700',
+    lineHeight: 36,
     marginBottom: 6,
-    color: theme.colors.text,
+    color: theme.colors.onMasthead,
   },
   subtitle: {
-    color: theme.colors.muted,
+    color: theme.colors.onMasthead,
     fontSize: 15,
     lineHeight: 21,
-    marginBottom: 8,
   },
   sectionTitle: {
     fontFamily: theme.fonts.serif,
@@ -422,7 +451,7 @@ const styles = StyleSheet.create({
   },
   card: {
     backgroundColor: theme.colors.card,
-    borderRadius: 16,
+    borderRadius: theme.radius.md,
     padding: 14,
     marginBottom: 10,
     borderWidth: 1,
@@ -479,14 +508,15 @@ const styles = StyleSheet.create({
     marginLeft: 10,
   },
   groupName: {
+    fontFamily: theme.fonts.serif,
     fontSize: 16,
     fontWeight: '700',
     color: theme.colors.text,
   },
   sampleTag: {
-    fontSize: 11,
+    ...theme.caps,
+    fontSize: 12,
     fontWeight: '700',
-    letterSpacing: 0.8,
     color: theme.colors.muted,
     marginBottom: 1,
   },
@@ -502,6 +532,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 8,
+  },
+  requestActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 8,
   },
   avatar: {
     width: 40,
@@ -523,6 +559,7 @@ const styles = StyleSheet.create({
     paddingRight: 8,
   },
   personName: {
+    fontFamily: theme.fonts.serif,
     fontSize: 16,
     fontWeight: '700',
     color: theme.colors.text,
@@ -535,7 +572,7 @@ const styles = StyleSheet.create({
   },
   input: {
     backgroundColor: theme.colors.soft,
-    borderRadius: 12,
+    borderRadius: theme.radius.md,
     padding: 12,
     color: theme.colors.text,
     fontSize: 15,
@@ -544,19 +581,20 @@ const styles = StyleSheet.create({
   },
   addButton: {
     backgroundColor: theme.colors.soft,
-    borderRadius: 999,
+    borderRadius: theme.radius.sm,
     paddingHorizontal: 16,
     paddingVertical: 8,
   },
   addButtonText: {
+    ...theme.caps,
     color: theme.colors.accent,
     fontWeight: '700',
-    fontSize: 13,
+    fontSize: 12,
   },
   requested: {
     borderWidth: 1,
     borderColor: theme.colors.border,
-    borderRadius: 999,
+    borderRadius: theme.radius.sm,
     paddingHorizontal: 14,
     paddingVertical: 7,
   },
@@ -567,42 +605,46 @@ const styles = StyleSheet.create({
   },
   primarySmall: {
     backgroundColor: theme.colors.accent,
-    borderRadius: 999,
+    borderRadius: theme.radius.sm,
     paddingHorizontal: 16,
     paddingVertical: 8,
   },
   primarySmallText: {
+    ...theme.caps,
     color: theme.colors.onAccent,
     fontWeight: '700',
-    fontSize: 13,
+    fontSize: 12,
   },
   plainButton: {
     paddingHorizontal: 12,
     paddingVertical: 8,
   },
   plainButtonText: {
+    ...theme.caps,
     color: theme.colors.muted,
     fontWeight: '700',
-    fontSize: 13,
+    fontSize: 12,
   },
   disabled: {
     opacity: 0.45,
   },
   secondaryButton: {
     backgroundColor: theme.colors.soft,
-    borderRadius: 12,
+    borderRadius: theme.radius.md,
     paddingVertical: 12,
     alignItems: 'center',
   },
   secondaryButtonText: {
+    ...theme.caps,
     color: theme.colors.text,
     fontWeight: '700',
-    fontSize: 14,
+    fontSize: 12,
   },
   dangerButtonText: {
+    ...theme.caps,
     color: theme.colors.text,
     fontWeight: '700',
-    fontSize: 14,
+    fontSize: 12,
   },
   backdrop: {
     flex: 1,
@@ -615,7 +657,10 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 380,
     backgroundColor: theme.colors.card,
-    borderRadius: 20,
+    // The house edge: every pop-up carries the letterhead green.
+    borderTopWidth: 4,
+    borderTopColor: theme.colors.letterhead,
+    borderRadius: theme.radius.md,
     padding: 22,
   },
   sheetTitle: {
@@ -628,7 +673,7 @@ const styles = StyleSheet.create({
   dangerButtonWide: {
     borderWidth: 1.5,
     borderColor: theme.colors.text,
-    borderRadius: 12,
+    borderRadius: theme.radius.md,
     paddingVertical: 12,
     alignItems: 'center',
   },

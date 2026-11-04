@@ -19,6 +19,8 @@ type AddBookScreenProps = {
   onAddBook: (book: Book) => void;
   /** Start a group from here, if you're not in one yet. Returns its id. */
   onCreateGroup: (name: string) => string | null;
+  /** Whether there's a Bookshelf tab to scan into (accounts only). */
+  canScanShelf?: boolean;
 };
 
 export function AddBookScreen({
@@ -28,6 +30,7 @@ export function AddBookScreen({
   groups,
   onAddBook,
   onCreateGroup,
+  canScanShelf = false,
 }: AddBookScreenProps) {
   const [isbn, setIsbn] = useState('');
   const [lookingUp, setLookingUp] = useState(false);
@@ -131,9 +134,25 @@ export function AddBookScreen({
       keyboardShouldPersistTaps="handled"
     >
       <Text style={styles.subtitle}>
-        Send a copy out into the world. Friends sign up for it, read it, write
-        you a letter, and eventually it comes home a little more loved.
+        Send a copy out into the world. Friends sign up for it, read it, mail it on with a
+        handwritten letter, and eventually it comes home a little more loved.
       </Text>
+
+      {canScanShelf && (
+        <Pressable
+          style={styles.scanCard}
+          onPress={() => navigation.getParent()?.navigate('Shelf')}
+          accessibilityRole="button"
+        >
+          <Ionicons name="camera-outline" size={22} color={theme.colors.onMasthead} />
+          <View style={styles.scanText}>
+            <Text style={styles.scanTitle}>Skip the typing: scan your bookshelf</Text>
+            <Text style={styles.scanHint}>
+              One photo of your shelves adds every book we can read. Lend any of them from there.
+            </Text>
+          </View>
+        </Pressable>
+      )}
 
       <View style={styles.lookupCard}>
         <Text style={styles.lookupTitle}>Have an ISBN or barcode?</Text>
@@ -142,6 +161,7 @@ export function AddBookScreen({
         </Text>
         <View style={styles.lookupRow}>
           <TextInput
+            accessibilityLabel="ISBN"
             value={isbn}
             onChangeText={(text) => {
               setIsbn(text);
@@ -177,6 +197,7 @@ export function AddBookScreen({
       <View style={styles.formCard}>
         <Text style={styles.fieldLabel}>Title</Text>
         <TextInput
+          accessibilityLabel="Title"
           value={title}
           onChangeText={setTitle}
           placeholder="The Secret Life of Bees"
@@ -186,6 +207,7 @@ export function AddBookScreen({
 
         <Text style={styles.fieldLabel}>Author</Text>
         <TextInput
+          accessibilityLabel="Author"
           value={author}
           onChangeText={setAuthor}
           placeholder="Sue Monk Kidd"
@@ -200,6 +222,7 @@ export function AddBookScreen({
               Books are lent within a group. Start one for the friends you'll pass this to.
             </Text>
             <TextInput
+              accessibilityLabel="Group name"
               value={newGroupName}
               onChangeText={setNewGroupName}
               placeholder="Group name, e.g. Sunday Book Club"
@@ -207,7 +230,11 @@ export function AddBookScreen({
               style={styles.input}
             />
             <Pressable
-              style={[styles.groupChip, styles.groupChipOn, !newGroupName.trim() && styles.primaryButtonDisabled]}
+              style={[
+                styles.groupChip,
+                styles.groupChipOn,
+                !newGroupName.trim() && styles.primaryButtonDisabled,
+              ]}
               disabled={!newGroupName.trim()}
               onPress={() => {
                 const id = onCreateGroup(newGroupName);
@@ -228,7 +255,9 @@ export function AddBookScreen({
                 style={[styles.groupChip, groupId === candidate.id && styles.groupChipOn]}
                 onPress={() => setGroupId(candidate.id)}
               >
-                <Text style={[styles.groupChipText, groupId === candidate.id && styles.groupChipTextOn]}>
+                <Text
+                  style={[styles.groupChipText, groupId === candidate.id && styles.groupChipTextOn]}
+                >
                   {candidate.name}
                 </Text>
               </Pressable>
@@ -236,7 +265,9 @@ export function AddBookScreen({
           </View>
         )}
         {group && (
-          <Text style={styles.hint}>Shared with {group.name}: they can see it and join the line.</Text>
+          <Text style={styles.hint}>
+            Shared with {group.name}: they can see it and join the line.
+          </Text>
         )}
 
         <Pressable
@@ -254,6 +285,7 @@ export function AddBookScreen({
         {isGift && (
           <View>
             <TextInput
+              accessibilityLabel="Who gave it to you"
               value={giftedBy}
               onChangeText={setGiftedBy}
               placeholder="Who gave it to you?"
@@ -278,8 +310,8 @@ export function AddBookScreen({
 
         {owner && (
           <Text style={styles.hint}>
-            Your copy, starting with you in {owner.city}. It comes back to you once
-            everyone who signs up has read it.
+            Your copy, starting with you in {owner.city}. It comes back to you once everyone who
+            signs up has read it.
           </Text>
         )}
 
@@ -305,6 +337,26 @@ export function AddBookScreen({
 }
 
 const styles = StyleSheet.create({
+  scanCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    backgroundColor: theme.colors.letterhead,
+    borderLeftWidth: 4,
+    borderLeftColor: theme.colors.brass,
+    borderRadius: theme.radius.md,
+    padding: 16,
+    marginBottom: 16,
+  },
+  scanText: { flex: 1 },
+  scanTitle: {
+    fontFamily: theme.fonts.serif,
+    fontSize: 17,
+    lineHeight: 22,
+    fontWeight: '700',
+    color: theme.colors.onMasthead,
+  },
+  scanHint: { fontSize: 14, lineHeight: 20, color: theme.colors.onMasthead, marginTop: 4 },
   container: {
     flex: 1,
     backgroundColor: theme.colors.background,
@@ -321,24 +373,23 @@ const styles = StyleSheet.create({
   },
   formCard: {
     backgroundColor: theme.colors.card,
-    borderRadius: 16,
+    borderRadius: theme.radius.md,
     borderWidth: 1,
     borderColor: theme.colors.border,
     padding: 18,
     marginBottom: 18,
   },
   fieldLabel: {
+    ...theme.caps,
     fontSize: 12,
     color: theme.colors.muted,
     marginBottom: 8,
     marginTop: 8,
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
     fontWeight: '700',
   },
   input: {
     backgroundColor: theme.colors.soft,
-    borderRadius: 12,
+    borderRadius: theme.radius.md,
     padding: 12,
     color: theme.colors.text,
     fontSize: 15,
@@ -348,7 +399,7 @@ const styles = StyleSheet.create({
   groupChip: {
     borderWidth: 1.5,
     borderColor: theme.colors.accent,
-    borderRadius: 999,
+    borderRadius: theme.radius.sm,
     paddingHorizontal: 14,
     paddingVertical: 8,
     marginRight: 8,
@@ -375,7 +426,7 @@ const styles = StyleSheet.create({
   checkbox: {
     width: 20,
     height: 20,
-    borderRadius: 6,
+    borderRadius: theme.radius.md,
     borderWidth: 1.5,
     borderColor: theme.colors.accent,
     alignItems: 'center',
@@ -398,7 +449,7 @@ const styles = StyleSheet.create({
   },
   giverChip: {
     backgroundColor: theme.colors.soft,
-    borderRadius: 999,
+    borderRadius: theme.radius.sm,
     paddingHorizontal: 12,
     paddingVertical: 7,
     marginRight: 8,
@@ -424,7 +475,7 @@ const styles = StyleSheet.create({
   primaryButton: {
     marginTop: 18,
     backgroundColor: theme.colors.accent,
-    borderRadius: 12,
+    borderRadius: theme.radius.md,
     paddingVertical: 12,
     alignItems: 'center',
   },
@@ -432,9 +483,10 @@ const styles = StyleSheet.create({
     opacity: 0.45,
   },
   primaryButtonText: {
+    ...theme.caps,
     color: theme.colors.onAccent,
     fontWeight: '700',
-    fontSize: 15,
+    fontSize: 13,
   },
   missing: {
     marginTop: 8,
@@ -444,7 +496,7 @@ const styles = StyleSheet.create({
   },
   lookupCard: {
     backgroundColor: theme.colors.card,
-    borderRadius: 16,
+    borderRadius: theme.radius.md,
     padding: 16,
     borderWidth: 1,
     borderColor: theme.colors.border,
@@ -472,7 +524,7 @@ const styles = StyleSheet.create({
     flex: 1,
     borderWidth: 1,
     borderColor: theme.colors.border,
-    borderRadius: 10,
+    borderRadius: theme.radius.md,
     backgroundColor: theme.colors.background,
     paddingHorizontal: 12,
     paddingVertical: 9,
@@ -491,16 +543,17 @@ const styles = StyleSheet.create({
   },
   lookupButton: {
     backgroundColor: theme.colors.accent,
-    borderRadius: 10,
+    borderRadius: theme.radius.md,
     paddingHorizontal: 14,
     paddingVertical: 10,
     alignItems: 'center',
     justifyContent: 'center',
   },
   lookupButtonText: {
+    ...theme.caps,
     color: theme.colors.onAccent,
     fontWeight: '700',
-    fontSize: 13,
+    fontSize: 12,
   },
   lookupMessage: {
     marginTop: 10,

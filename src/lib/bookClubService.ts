@@ -10,6 +10,7 @@ import type {
   ReadingQueueEntry,
 } from '../types';
 import { supabase } from './supabase';
+import { looksOffline, OutboxOp, SendResult } from './outbox';
 
 /**
  * Supabase returns snake_case columns; the app speaks camelCase. Every row
@@ -24,6 +25,7 @@ type FriendRow = {
   state: string;
   user_id: string | null;
   agreed_rules_at: string | null;
+  joined_before_rules?: boolean;
   email_new_book?: boolean;
   email_book_sent?: boolean;
   email_book_arrived?: boolean;
@@ -42,6 +44,7 @@ type BookRow = {
   group_id: string | null;
   cover_url: string | null;
   archived_at?: string | null;
+  called_home_at?: string | null;
 };
 
 export type QueueRow = {
@@ -64,6 +67,15 @@ type HandoffRow = {
   received_at: string | null;
 };
 
+/**
+ * Every handoffs column but the letter. The database refuses note and rating
+ * to the app (a `select *` fails); letters come from readable_letters().
+ */
+const HANDOFF_COLUMNS =
+  'id, book_id, from_friend, to_friend, happened_at, place_city, place_region, received_at';
+
+type LetterRow = { handoff_id: string; note: string | null; rating: number | null };
+
 type FriendshipRow = {
   friend_a: string;
   friend_b: string;
@@ -76,6 +88,8 @@ type GroupRow = {
   name: string;
   invite_code: string;
   is_sample: boolean;
+  admin_id: string | null;
+  pace_weeks: number | null;
 };
 
 type MemberRow = {
@@ -120,13 +134,14 @@ function toFriend(row: FriendRow): Friend {
     state: row.state,
     userId: row.user_id ?? undefined,
     agreedRulesAt: row.agreed_rules_at ?? undefined,
+    joinedBeforeRules: row.joined_before_rules ?? false,
     emails: {
-      newBook: row.email_new_book ?? true,
-      bookSent: row.email_book_sent ?? true,
+      newBook: row.email_new_book ?? false,
+      bookSent: row.email_book_sent ?? false,
       bookArrived: row.email_book_arrived ?? false,
       nextInLine: row.email_next_in_line ?? false,
-      friendRequest: row.email_friend_request ?? true,
-      reminders: row.email_reminders ?? true,
+      friendRequest: row.email_friend_request ?? false,
+      reminders: row.email_reminders ?? false,
     },
     friendRequestsFrom: row.friend_requests_from ?? 'groups',
   };
@@ -192,10 +207,9 @@ function assembleBooks(
       groupId: row.group_id ?? undefined,
       coverUrl: row.cover_url ?? undefined,
       archivedAt: row.archived_at ?? undefined,
+      calledHomeAt: row.called_home_at ?? undefined,
       queue,
-      handoffs: handoffRows
-        .filter((entry) => entry.book_id === row.id)
-        .map(toHandoff),
+      handoffs: handoffRows.filter((entry) => entry.book_id === row.id).map(toHandoff),
     };
   });
 }
@@ -206,14 +220,26 @@ export async function fetchBookClubData(): Promise<BookClubData> {
   }
 
   try {
-    const [booksRes, friendsRes, queueRes, handoffsRes, friendshipsRes, groupsRes, membersRes] =
-      await Promise.all([
+    const [
+      booksRes,
+      friendsRes,
+      queueRes,
+      handoffsRes,
+      lettersRes,
+      friendshipsRes,
+      groupsRes,
+      membersRes,
+    ] = await Promise.all([
       supabase.from('books').select('*').order('created_at', { ascending: false }),
       supabase.from('friends').select('*').order('name', { ascending: true }),
       supabase.from('reading_queue').select('*'),
-      supabase.from('handoffs').select('*').order('happened_at', { ascending: true }),
+      supabase.from('handoffs').select(HANDOFF_COLUMNS).order('happened_at', { ascending: true }),
+      supabase.rpc('readable_letters'),
       supabase.from('friendships').select('friend_a, friend_b, requested_by, status'),
-      supabase.from('groups').select('id, name, invite_code, is_sample').order('name'),
+      supabase
+        .from('groups')
+        .select('id, name, invite_code, is_sample, admin_id, pace_weeks')
+        .order('name'),
       supabase.from('group_members').select('group_id, person_id'),
     ]);
 
@@ -226,6 +252,24 @@ export async function fetchBookClubData(): Promise<BookClubData> {
     }
 
     const friendRows = (friendsRes.data ?? []) as FriendRow[];
+
+    // Letters come separately, only the ones this person may open (see
+    // readable_letters() in schema.sql). Not fatal: without them the journey
+    // still shows, just with every letter sealed.
+    if (lettersRes.error) {
+      console.warn('Supabase letters fetch failed:', lettersRes.error.message);
+    }
+    const letters = new Map(
+      ((lettersRes.error ? [] : (lettersRes.data ?? [])) as LetterRow[]).map((row) => [
+        row.handoff_id,
+        row,
+      ]),
+    );
+    const handoffRows = ((handoffsRes.data ?? []) as HandoffRow[]).map((row) => ({
+      ...row,
+      note: letters.get(row.id)?.note ?? null,
+      rating: letters.get(row.id)?.rating ?? null,
+    }));
 
     // Not fatal: a database from before friendships existed still loads, and
     // everyone just starts with no friends until schema.sql is re-run.
@@ -241,22 +285,22 @@ export async function fetchBookClubData(): Promise<BookClubData> {
         (booksRes.data ?? []) as BookRow[],
         friendRows,
         (queueRes.data ?? []) as QueueRow[],
-        (handoffsRes.data ?? []) as HandoffRow[],
+        handoffRows,
       ),
       friends: friendRows.map(toFriend),
-      friendships: friendshipRows.map(
-        (row): Friendship => ({
-          a: row.friend_a,
-          b: row.friend_b,
-          status: row.status,
-          requestedBy: row.requested_by ?? row.friend_a,
-        }),
-      ),
+      friendships: friendshipRows.map((row): Friendship => ({
+        a: row.friend_a,
+        b: row.friend_b,
+        status: row.status,
+        requestedBy: row.requested_by ?? row.friend_a,
+      })),
       groups: ((groupsRes.data ?? []) as GroupRow[]).map((row) => ({
         id: row.id,
         name: row.name,
         inviteCode: row.invite_code,
         isSample: row.is_sample,
+        adminId: row.admin_id ?? undefined,
+        paceWeeks: row.pace_weeks ?? undefined,
         memberIds: ((membersRes.data ?? []) as MemberRow[])
           .filter((member) => member.group_id === row.id)
           .map((member) => member.person_id),
@@ -404,6 +448,13 @@ export const retireBook = (bookId: string) =>
 export const unretireBook = (bookId: string) =>
   save('unretireBook', (db) => db.rpc('unretire_book', { p_book_id: bookId }));
 
+/** Ask for a copy back: whoever has it sends it home next (owner only). */
+export const callHome = (bookId: string) =>
+  save('callHome', (db) => db.rpc('call_home', { p_book_id: bookId }));
+
+export const cancelCallHome = (bookId: string) =>
+  save('cancelCallHome', (db) => db.rpc('cancel_call_home', { p_book_id: bookId }));
+
 /** Rows store each pair once, smaller id first (see schema.sql). */
 const pairOf = (x: string, y: string) =>
   x < y ? { friend_a: x, friend_b: y } : { friend_a: y, friend_b: x };
@@ -432,6 +483,26 @@ export const joinGroup = (inviteCode: string) =>
 export const leaveGroup = (groupId: string) =>
   save('leaveGroup', (db) => db.rpc('leave_group', { p_group_id: groupId }));
 
+// Running a group; the database checks it's you who runs it.
+export const renameGroup = (groupId: string, name: string) =>
+  save('renameGroup', (db) => db.rpc('rename_group', { p_group_id: groupId, p_name: name }));
+
+export const removeFromGroup = (groupId: string, personId: string) =>
+  save('removeFromGroup', (db) =>
+    db.rpc('remove_from_group', { p_group_id: groupId, p_person_id: personId }),
+  );
+
+export const handOverGroup = (groupId: string, personId: string) =>
+  save('handOverGroup', (db) =>
+    db.rpc('hand_over_group', { p_group_id: groupId, p_person_id: personId }),
+  );
+
+export const setGroupPace = (groupId: string, weeks: number | null) =>
+  save('setGroupPace', (db) => db.rpc('set_group_pace', { p_group_id: groupId, p_weeks: weeks }));
+
+export const resetInviteCode = (groupId: string) =>
+  save('resetInviteCode', (db) => db.rpc('reset_invite_code', { p_group_id: groupId }));
+
 /** The group behind an invite code, for "You're invited to …". */
 export async function groupPreview(
   inviteCode: string,
@@ -457,7 +528,13 @@ export type EmailAction = {
 export async function previewEmailAction(token: string): Promise<EmailAction> {
   if (!supabase) {
     const book = booksSeed[0];
-    return { state: 'ready', action: 'join_line', bookId: book.id, title: book.title, about: 'Lena' };
+    return {
+      state: 'ready',
+      action: 'join_line',
+      bookId: book.id,
+      title: book.title,
+      about: 'Lena',
+    };
   }
 
   const { data, error } = await supabase.rpc('email_action_preview', { p_token: token });
@@ -489,87 +566,6 @@ export async function unclaimedInGroup(
   return (data as { id: string; name: string; city: string }[] | null) ?? [];
 }
 
-/**
- * Sign someone up for a book, at the back of the line. An upsert, because a
- * past reader signing up again reuses their row: it goes back to "waiting"
- * with a new position. Their earlier read is still in the handoff log.
- */
-export async function joinLine(entry: QueueRow): Promise<SaveError> {
-  if (!supabase) {
-    return null;
-  }
-
-  try {
-    const { error } = await supabase
-      .from('reading_queue')
-      .upsert([entry], { onConflict: 'book_id,friend_id' });
-    if (error) {
-      console.warn('Supabase joinLine failed:', error.message);
-      return error.message;
-    }
-
-    return null;
-  } catch (error) {
-    console.warn('Join line error:', error);
-    return describe(error);
-  }
-}
-
-/**
- * Take back a sign-up. Someone who never had the book is removed outright;
- * someone who signed up for a second read goes back to "done", keeping their
- * row so their name stays attached to the history.
- */
-export async function leaveLine(
-  bookId: string,
-  friendId: string,
-  readBefore: boolean,
-): Promise<SaveError> {
-  if (!supabase) {
-    return null;
-  }
-
-  try {
-    const query = supabase.from('reading_queue');
-    const { error } = await (readBefore
-      ? query.update({ status: 'done' })
-      : query.delete()
-    )
-      .eq('book_id', bookId)
-      .eq('friend_id', friendId)
-      .eq('status', 'waiting');
-    if (error) {
-      console.warn('Supabase leaveLine failed:', error.message);
-      return error.message;
-    }
-
-    return null;
-  } catch (error) {
-    console.warn('Leave line error:', error);
-    return describe(error);
-  }
-}
-
-/** "Got it": the book posted to you has arrived. */
-export async function markReceived(bookId: string): Promise<SaveError> {
-  if (!supabase) {
-    return null;
-  }
-
-  try {
-    const { error } = await supabase.rpc('mark_received', { p_book_id: bookId });
-    if (error) {
-      console.warn('Supabase mark_received failed:', error.message);
-      return error.message;
-    }
-
-    return null;
-  } catch (error) {
-    console.warn('Mark received error:', error);
-    return describe(error);
-  }
-}
-
 /** Change your own name or city. Past stops keep the city they had. */
 export async function updateProfile(person: Friend): Promise<SaveError> {
   if (!supabase) {
@@ -594,31 +590,77 @@ export async function updateProfile(person: Friend): Promise<SaveError> {
 }
 
 /**
- * Append one leg to a book's journey: pass_on() in the database checks that
- * you're the one holding it and that the recipient is in line (or is the
- * owner), then writes the leg and moves both queue statuses together.
+ * Send one of the changes that can wait for a connection (see outbox.ts):
+ *
+ * - passOn: append a leg. pass_on() in the database checks that you're the
+ *   one holding it and that the recipient is in line (or is the owner), then
+ *   writes the leg and moves both queue statuses together.
+ * - markReceived: "Got it", the book posted to you has arrived.
+ * - joinLine: sign up at the back of the line. An upsert, because a past
+ *   reader signing up again reuses their row; their earlier read is still in
+ *   the handoff log.
+ * - leaveLine: take back a sign-up. Someone who never had the book is
+ *   removed; someone signed up for a second read goes back to "done".
+ *
+ * Each is safe to send twice. A pass-on whose first try did arrive (only the
+ * answer was lost) is refused the second time, as the book has moved; that's
+ * recognised by its handoff already being there.
  */
-export async function recordHandoff(handoff: Handoff): Promise<SaveError> {
+export async function sendOutboxOp(op: OutboxOp): Promise<SendResult> {
   if (!supabase) {
-    return null;
+    return { ok: true };
   }
+  const db = supabase;
 
-  try {
-    const { error } = await supabase.rpc('pass_on', {
-      p_handoff_id: handoff.id,
-      p_book_id: handoff.bookId,
-      p_to: handoff.toFriend,
-      p_note: handoff.note ?? null,
-      p_rating: handoff.rating ?? null,
-    });
-    if (error) {
-      console.warn('Supabase pass_on failed:', error.message);
-      return error.message;
+  const run = async (): Promise<{ message: string } | null> => {
+    switch (op.kind) {
+      case 'passOn':
+        return (
+          await db.rpc('pass_on', {
+            p_handoff_id: op.handoffId,
+            p_book_id: op.bookId,
+            p_to: op.to,
+            p_note: op.note,
+            p_rating: op.rating,
+          })
+        ).error;
+      case 'markReceived':
+        return (await db.rpc('mark_received', { p_book_id: op.bookId })).error;
+      case 'joinLine':
+        return (
+          await db.from('reading_queue').upsert([op.entry], { onConflict: 'book_id,friend_id' })
+        ).error;
+      case 'leaveLine': {
+        const query = db.from('reading_queue');
+        return (
+          await (op.readBefore ? query.update({ status: 'done' }) : query.delete())
+            .eq('book_id', op.bookId)
+            .eq('friend_id', op.friendId)
+            .eq('status', 'waiting')
+        ).error;
+      }
     }
+  };
 
-    return null;
+  let reason: string;
+  try {
+    const error = await run();
+    if (!error) {
+      return { ok: true };
+    }
+    reason = error.message;
   } catch (error) {
-    console.warn('Pass on error:', error);
-    return describe(error);
+    reason = describe(error);
   }
+
+  const offline =
+    looksOffline(reason) || (typeof navigator !== 'undefined' && navigator.onLine === false);
+  if (!offline && op.kind === 'passOn') {
+    const { data } = await db.from('handoffs').select('id').eq('id', op.handoffId);
+    if (data && data.length > 0) {
+      return { ok: true };
+    }
+  }
+  console.warn(`Supabase ${op.kind} failed:`, reason);
+  return { ok: false, offline, reason };
 }

@@ -4,6 +4,10 @@ import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-nati
 import { Book, Friend, Group } from '../types';
 import { theme } from '../theme';
 import { InviteButton } from '../components/InviteButton';
+import { GroupAdminPanel } from '../components/GroupAdminPanel';
+import { WishlistSection } from '../components/WishlistSection';
+import { PersonSafetySheet } from '../components/PersonSafetySheet';
+import type { Blocks } from '../lib/blocks';
 import {
   describeLeg,
   formatDate,
@@ -24,6 +28,14 @@ type GroupScreenProps = {
   onOpenBook: (bookId: string) => void;
   onLeave: (groupId: string) => void;
   onLeft: () => void;
+  onRename: (groupId: string, name: string) => void;
+  onRemoveMember: (groupId: string, personId: string) => void;
+  onHandOver: (groupId: string, personId: string) => void;
+  onResetInvite: (groupId: string) => void;
+  onSetPace: (groupId: string, weeks: number | null) => void;
+  blocks: Blocks;
+  /** After a block, so any friendship goes too. */
+  onBlocked: (personId: string) => void;
 };
 
 export function GroupScreen({
@@ -35,8 +47,16 @@ export function GroupScreen({
   onOpenBook,
   onLeave,
   onLeft,
+  onRename,
+  onRemoveMember,
+  onHandOver,
+  onResetInvite,
+  onSetPace,
+  blocks,
+  onBlocked,
 }: GroupScreenProps) {
   const [confirmLeave, setConfirmLeave] = useState(false);
+  const [about, setAbout] = useState<Friend | null>(null);
   const group = groups.find((candidate) => candidate.id === route.params.groupId);
 
   if (!group) {
@@ -58,7 +78,7 @@ export function GroupScreen({
   const tiles = [
     { label: 'Books', value: totals.books },
     { label: 'Handoffs', value: totals.handoffs },
-    { label: 'Letters', value: totals.letters },
+    { label: 'Notes', value: totals.letters },
     { label: 'Places', value: totals.places },
   ];
 
@@ -67,12 +87,15 @@ export function GroupScreen({
       <View style={styles.column}>
         <Text style={styles.title}>
           {group.name}
-          {group.isSample ? <Text style={styles.sampleTag}>  Sample</Text> : null}
+          {group.isSample ? <Text style={styles.sampleTag}> Sample</Text> : null}
         </Text>
         <Text style={styles.subtitle}>
           {group.isSample
-            ? "A sample club with some history, so you can see how a group comes together. It's for looking around: lending and lines happen in your own groups, and fellow visitors stay private."
+            ? "A sample group, already in motion, so you can see how a group comes together. It's for looking around: lending and lines happen in your own groups, and fellow visitors stay private."
             : "Members see each other's books and join their lines. It's all just for the group."}
+          {group.paceWeeks
+            ? ` The group's pace: about ${group.paceWeeks} weeks with each reader.`
+            : ''}
         </Text>
 
         <View style={styles.tiles}>
@@ -88,14 +111,29 @@ export function GroupScreen({
         <View style={styles.card}>
           <View style={styles.memberRow}>
             {people.map((person) => (
-              <View key={person.id} style={styles.member}>
+              <Pressable
+                key={person.id}
+                style={styles.member}
+                // Block or report someone from the group, never yourself or a sample character.
+                disabled={person.id === currentUserId || group.isSample}
+                onPress={() => setAbout(person)}
+                accessibilityRole={
+                  person.id === currentUserId || group.isSample ? undefined : 'button'
+                }
+                accessibilityLabel={
+                  person.id === currentUserId || group.isSample
+                    ? undefined
+                    : `More for ${person.name}`
+                }
+              >
                 <View style={styles.avatar}>
                   <Text style={styles.avatarText}>{person.name.charAt(0)}</Text>
                 </View>
                 <Text style={styles.memberName} numberOfLines={1}>
                   {person.id === currentUserId ? 'You' : person.name.split(' ')[0]}
                 </Text>
-              </View>
+                {person.id === group.adminId && <Text style={styles.adminTag}>Runs it</Text>}
+              </Pressable>
             ))}
           </View>
           {!group.isSample && (
@@ -104,6 +142,19 @@ export function GroupScreen({
             </View>
           )}
         </View>
+
+        {!group.isSample && group.adminId === currentUserId && (
+          <GroupAdminPanel
+            key={group.id}
+            group={group}
+            others={people.filter((person) => person.id !== currentUserId)}
+            onRename={(name) => onRename(group.id, name)}
+            onRemove={(personId) => onRemoveMember(group.id, personId)}
+            onHandOver={(personId) => onHandOver(group.id, personId)}
+            onResetInvite={() => onResetInvite(group.id)}
+            onSetPace={(weeks) => onSetPace(group.id, weeks)}
+          />
+        )}
 
         <Text style={styles.heading}>Books</Text>
         {groupBooks.length === 0 ? (
@@ -129,7 +180,7 @@ export function GroupScreen({
                       ? ` · with ${
                           holderId(book) === currentUserId
                             ? 'you'
-                            : (book.queue.find((entry) => entry.id === holderId(book))?.name.split(' ')[0] ??
+                            : (book.queue.find((entry) => entry.id === holderId(book))?.name ??
                               'someone')
                         }`
                       : ''}
@@ -139,6 +190,16 @@ export function GroupScreen({
               </Pressable>
             ))}
           </View>
+        )}
+
+        {!group.isSample && (
+          <WishlistSection
+            key={group.id}
+            groupId={group.id}
+            currentUserId={currentUserId}
+            adminId={group.adminId}
+            members={people}
+          />
         )}
 
         <Text style={styles.heading}>History</Text>
@@ -156,7 +217,7 @@ export function GroupScreen({
                 <View style={styles.historyText}>
                   <Text style={styles.historyLine}>
                     {describeLeg(book, leg)}
-                    {hasLetter(leg) ? ' · left a letter' : ''}
+                    {hasLetter(leg) ? ' · left a note' : ''}
                   </Text>
                   <Text style={styles.historyDate}>{formatDate(leg.happenedAt)}</Text>
                 </View>
@@ -193,6 +254,12 @@ export function GroupScreen({
             </Pressable>
           ))}
       </View>
+      <PersonSafetySheet
+        person={about}
+        blocks={blocks}
+        onBlocked={onBlocked}
+        onClose={() => setAbout(null)}
+      />
     </ScrollView>
   );
 }
@@ -220,6 +287,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   sampleTag: {
+    ...theme.caps,
     fontSize: 13,
     fontWeight: '700',
     color: theme.colors.muted,
@@ -236,7 +304,7 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.card,
     borderWidth: 1,
     borderColor: theme.colors.border,
-    borderRadius: 16,
+    borderRadius: theme.radius.md,
     paddingVertical: 14,
   },
   tile: {
@@ -244,12 +312,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   tileValue: {
+    fontFamily: theme.fonts.serif,
     fontSize: 24,
-    fontWeight: '600',
+    fontWeight: '700',
     color: theme.colors.text,
   },
   tileLabel: {
-    fontSize: 11,
+    fontSize: 12,
     color: theme.colors.muted,
     marginTop: 2,
   },
@@ -265,7 +334,7 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.card,
     borderWidth: 1,
     borderColor: theme.colors.border,
-    borderRadius: 16,
+    borderRadius: theme.radius.md,
     paddingHorizontal: 16,
     paddingVertical: 6,
   },
@@ -298,6 +367,12 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: theme.colors.text,
     marginTop: 4,
+  },
+  adminTag: {
+    ...theme.caps,
+    fontSize: 11,
+    color: theme.colors.muted,
+    marginTop: 2,
   },
   invite: {
     paddingBottom: 12,
@@ -391,22 +466,24 @@ const styles = StyleSheet.create({
   dangerButton: {
     borderWidth: 1.5,
     borderColor: theme.colors.text,
-    borderRadius: 999,
+    borderRadius: theme.radius.sm,
     paddingHorizontal: 16,
     paddingVertical: 7,
   },
   dangerButtonText: {
+    ...theme.caps,
     color: theme.colors.text,
     fontWeight: '700',
-    fontSize: 14,
+    fontSize: 12,
   },
   plainButton: {
     paddingHorizontal: 12,
     paddingVertical: 8,
   },
   plainButtonText: {
+    ...theme.caps,
     color: theme.colors.muted,
     fontWeight: '700',
-    fontSize: 13,
+    fontSize: 12,
   },
 });

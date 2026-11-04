@@ -1,32 +1,21 @@
 import { useState } from 'react';
-import {
-  Image,
-  Modal,
-  Pressable,
-  ScrollView,
-  Share,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { Image, Platform, Pressable, ScrollView, Share, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import { Book, Group, Letter } from '../types';
 import { theme } from '../theme';
 import { JourneyRoute } from '../components/JourneyRoute';
 import { BookPassportSheet } from '../components/BookPassportSheet';
-import { ArtisticBookCover } from '../components/ArtisticBookCover';
+import { EditDetailsSheet, PassOnSheet, RetireSheet } from './book/BookSheets';
+import { TravelHistory } from './book/TravelHistory';
+import { styles } from './book/styles';
 import { bookLink } from '../lib/links';
+import { printBookplate } from '../lib/bookplate';
 import {
-  canReadLetter,
   canReturnHome,
   copyOwnerId,
   daysInCirculation,
-  formatDate,
   friendNameIn,
-  hasLetter,
-  heldForDays,
   holderId,
   isBackHome,
   isInTransit,
@@ -37,6 +26,7 @@ import {
   placesVisited,
   readersSoFar,
   senderId,
+  stayProgress,
   timesRead,
 } from '../lib/bookState';
 
@@ -51,6 +41,8 @@ type BookDetailScreenProps = {
   onUpdateBookDetails?: (bookId: string, title: string, author: string) => void;
   onRetireBook?: (bookId: string) => void;
   onUnretireBook?: (bookId: string) => void;
+  onCallHome?: (bookId: string) => void;
+  onCancelCallHome?: (bookId: string) => void;
   onJoinLine: (bookId: string) => void;
   onLeaveLine: (bookId: string) => void;
 };
@@ -66,20 +58,18 @@ export function BookDetailScreen({
   onUpdateBookDetails,
   onRetireBook,
   onUnretireBook,
+  onCallHome,
+  onCancelCallHome,
   onJoinLine,
   onLeaveLine,
 }: BookDetailScreenProps) {
   const { bookId } = route.params;
   // Who the pending handoff is going to; non-null while the confirm sheet is up.
   const [confirmingTo, setConfirmingTo] = useState<string | null>(null);
-  const [rating, setRating] = useState<number | undefined>(undefined);
-  const [note, setNote] = useState('');
   // Shown when the browser has no share sheet, to copy by hand.
   const [shownLink, setShownLink] = useState<string | null>(null);
   const [passportOpen, setPassportOpen] = useState(false);
   const [editingDetails, setEditingDetails] = useState(false);
-  const [editTitle, setEditTitle] = useState('');
-  const [editAuthor, setEditAuthor] = useState('');
   const [confirmingRetire, setConfirmingRetire] = useState(false);
   const book = books.find((item) => item.id === bookId);
 
@@ -91,19 +81,13 @@ export function BookDetailScreen({
     );
   }
 
-  const closeSheet = () => {
-    setConfirmingTo(null);
-    setRating(undefined);
-    setNote('');
-  };
-
-  const first = (id: string | null) => friendNameIn(book, id).split(' ')[0];
+  // Full names everywhere, for consistency (the letter's "Dear …" keeps it friendly).
+  const first = (id: string | null) => friendNameIn(book, id);
   const holder = holderId(book);
   const owner = copyOwnerId(book);
   const nextId = nextInLineId(book);
   const sender = senderId(book);
   const inPost = isInTransit(book);
-  const legs = journey(book).reverse();
   const group = groups.find((candidate) => candidate.id === book.groupId);
   const groupName = group?.name;
   const isSample = Boolean(group?.isSample);
@@ -112,6 +96,7 @@ export function BookDetailScreen({
   const iSentIt = inPost && currentUserId !== null && sender === currentUserId;
   const iHoldIt = !inPost && currentUserId !== null && currentUserId === holder;
   const myPlace = placeInLine(book, currentUserId);
+  const stay = stayProgress(book, group?.paceWeeks);
   const goingHome = confirmingTo !== null && confirmingTo === owner && confirmingTo !== nextId;
 
   const whereItIs = (() => {
@@ -130,23 +115,21 @@ export function BookDetailScreen({
     const latest = journey(book).slice(-1)[0];
     const place = latest ? placeOf(book, latest) : null;
     const where = place ? ` in ${place.city}` : '';
-    return isBackHome(book) ? `Back home with ${first(holder)}${where}` : `With ${first(holder)}${where}`;
+    return isBackHome(book)
+      ? `Back home with ${first(holder)}${where}`
+      : `With ${first(holder)}${where}`;
   })();
 
   const renderAction = () => {
     if (book.archivedAt) {
-      return (
-        <Text style={styles.actionNote}>
-          Resting on the home shelf after its travels.
-        </Text>
-      );
+      return <Text style={styles.actionNote}>Resting on the home shelf after its travels.</Text>;
     }
 
     if (isSample) {
       return (
         <Text style={styles.actionNote}>
-          This is the sample club: a look at a group with some history. Start your own
-          group, or ask a friend for an invite, to lend and borrow for real.
+          This is a sample group: a look at a group in motion. Start your own group, or ask a friend
+          for an invite, to lend and borrow for real.
         </Text>
       );
     }
@@ -164,9 +147,21 @@ export function BookDetailScreen({
 
     if (iSentIt) {
       return (
-        <Text style={styles.actionNote}>
-          It becomes {first(holder)}'s once they tap Got it.
-        </Text>
+        <Text style={styles.actionNote}>It becomes {first(holder)}'s once they tap Got it.</Text>
+      );
+    }
+
+    if (iHoldIt && book.calledHomeAt && owner && owner !== currentUserId) {
+      return (
+        <View>
+          <Pressable style={styles.primaryButton} onPress={() => setConfirmingTo(owner)}>
+            <Text style={styles.primaryButtonText}>Send home to {first(owner)}</Text>
+          </Pressable>
+          <Text style={styles.actionNote}>
+            {first(owner)} has called this copy home. Send it back when you finish; the line waits
+            for it to travel again.
+          </Text>
+        </View>
       );
     }
 
@@ -188,9 +183,7 @@ export function BookDetailScreen({
       }
 
       return (
-        <Text style={styles.actionNote}>
-          It's yours to enjoy until someone joins the line.
-        </Text>
+        <Text style={styles.actionNote}>It's yours to enjoy until someone joins the line.</Text>
       );
     }
 
@@ -235,14 +228,28 @@ export function BookDetailScreen({
   return (
     <>
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-        <View style={styles.coverHeader}>
-          <ArtisticBookCover book={book} variant="detail" />
-          <View style={styles.coverDetailsCol}>
+        <View
+          style={[
+            styles.cover,
+            { backgroundColor: book.coverColor },
+            book.coverUrl && styles.coverWithImage,
+          ]}
+        >
+          <View style={styles.coverSpine} />
+          {book.coverUrl ? (
+            <Image
+              source={{ uri: book.coverUrl }}
+              style={styles.coverImage}
+              resizeMode="cover"
+              accessibilityIgnoresInvertColors
+            />
+          ) : null}
+          <View style={book.coverUrl ? styles.coverTextBeside : undefined}>
             <Text style={styles.coverTitle}>{book.title}</Text>
             <Text style={styles.coverAuthor}>{book.author}</Text>
             {book.giftedBy ? (
               <View style={styles.gift}>
-                <Ionicons name="gift-outline" size={13} color={theme.colors.muted} />
+                <Ionicons name="gift-outline" size={13} color={theme.colors.coverInk} />
                 <Text style={styles.giftText}>A gift from {book.giftedBy}</Text>
               </View>
             ) : null}
@@ -288,13 +295,28 @@ export function BookDetailScreen({
               <Pressable
                 style={styles.ownerAction}
                 onPress={() => {
-                  setEditTitle(book.title);
-                  setEditAuthor(book.author);
                   setEditingDetails(true);
                 }}
                 accessibilityRole="button"
               >
                 <Text style={styles.ownerActionText}>Edit title & author</Text>
+              </Pressable>
+            )}
+            {Platform.OS === 'web' && (
+              <Pressable
+                style={styles.ownerAction}
+                onPress={() =>
+                  printBookplate({
+                    title: book.title,
+                    author: book.author,
+                    owner: friendNameIn(book, owner),
+                    link: bookLink(book.id),
+                  })
+                }
+                accessibilityRole="button"
+                accessibilityHint="Opens a page to print a bookplate with a QR code to this book"
+              >
+                <Text style={styles.ownerActionText}>Print a bookplate</Text>
               </Pressable>
             )}
             {!book.archivedAt && iHoldIt && onRetireBook && (
@@ -306,6 +328,22 @@ export function BookDetailScreen({
                 <Text style={styles.ownerActionText}>Rest this copy</Text>
               </Pressable>
             )}
+            {!book.archivedAt &&
+              !isSample &&
+              owner === currentUserId &&
+              holder !== currentUserId && (
+                <Pressable
+                  style={styles.ownerAction}
+                  onPress={() =>
+                    book.calledHomeAt ? onCancelCallHome?.(book.id) : onCallHome?.(book.id)
+                  }
+                  accessibilityRole="button"
+                >
+                  <Text style={styles.ownerActionText}>
+                    {book.calledHomeAt ? 'Let it keep travelling' : 'Call it home'}
+                  </Text>
+                </Pressable>
+              )}
             {book.archivedAt && onUnretireBook && (
               <Pressable
                 style={styles.ownerAction}
@@ -323,19 +361,43 @@ export function BookDetailScreen({
           </Text>
         )}
 
+        {book.calledHomeAt && !book.archivedAt && holder !== owner && (
+          <Text style={styles.calledHome}>
+            {owner === currentUserId
+              ? `You've called it home. ${first(holder)} sends it back to you next.`
+              : `${first(owner)} has called it home. It goes back to them next.`}
+          </Text>
+        )}
         <Text style={styles.ownership}>
           {first(owner)}'s copy
-          {isSample
-            ? ' · in the sample club'
-            : groupName
-              ? ` · shared with ${groupName}`
-              : ''}
+          {isSample ? ' · in a sample group' : groupName ? ` · shared with ${groupName}` : ''}
         </Text>
 
         <View style={styles.statusCard}>
           <Text style={[styles.whereItIs, (iHoldIt || comingToMe) && styles.whereItIsMine]}>
             {whereItIs}
           </Text>
+          {stay && (
+            <View style={styles.pace} accessibilityRole="progressbar">
+              <View style={styles.paceTrack}>
+                <View
+                  style={[
+                    styles.paceFill,
+                    { width: `${Math.min(100, (stay.days / (stay.ofWeeks * 7)) * 100)}%` },
+                    stay.over && styles.paceFillOver,
+                  ]}
+                />
+              </View>
+              <Text style={styles.paceText}>
+                {iHoldIt
+                  ? `Week ${stay.week} of about ${stay.ofWeeks}, the group's pace.`
+                  : `${first(holder)} is in week ${stay.week} of about ${stay.ofWeeks}.`}
+                {iHoldIt && stay.over && nextId
+                  ? ` ${first(nextId)} is next whenever you're ready.`
+                  : ''}
+              </Text>
+            </View>
+          )}
           <View style={styles.action}>{renderAction()}</View>
         </View>
 
@@ -360,592 +422,36 @@ export function BookDetailScreen({
           <JourneyRoute book={book} />
         </View>
 
-        <View style={styles.box}>
-          <Text style={styles.boxTitle}>Travel history</Text>
-          <Text style={styles.boxCaption}>Every leg of the journey, newest first.</Text>
-          {legs.length === 0 ? (
-            <Text style={styles.legMeta}>This copy's journey starts with its first handoff.</Text>
-          ) : (
-            legs.map((leg, index) => {
-              // `legs` is newest-first, so the held duration comes from the
-              // original chronological ordering.
-              const held = heldForDays(journey(book), legs.length - 1 - index);
-              const place = placeOf(book, leg);
-
-              return (
-                <View key={leg.id} style={styles.legItem}>
-                  <Text style={styles.legRoute}>
-                    {leg.fromFriend
-                      ? `${friendNameIn(book, leg.fromFriend)} → ${friendNameIn(book, leg.toFriend)}`
-                      : book.giftedBy
-                        ? `A gift from ${book.giftedBy} to ${friendNameIn(book, leg.toFriend)}`
-                        : `Entered circulation with ${friendNameIn(book, leg.toFriend)}`}
-                  </Text>
-                  <Text style={styles.legMeta}>
-                    {formatDate(leg.happenedAt)}
-                    {place ? ` · ${place.city}` : ''}
-                    {leg.fromFriend && !leg.receivedAt
-                      ? ' · in the post'
-                      : held !== null
-                        ? ` · held ${held} ${held === 1 ? 'day' : 'days'}`
-                        : isBackHome(book)
-                          ? ' · back home'
-                          : ' · still reading'}
-                  </Text>
-                  {leg.fromFriend && hasLetter(leg) && (
-                    canReadLetter(book, leg, currentUserId) ? (
-                      <View style={styles.letter}>
-                        {leg.rating ? <Stars value={leg.rating} size={13} /> : null}
-                        {leg.note ? <Text style={styles.letterText}>“{leg.note}”</Text> : null}
-                        <Text style={styles.letterSign}>— {friendNameIn(book, leg.fromFriend)}</Text>
-                      </View>
-                    ) : (
-                      <View style={[styles.letter, styles.letterSealed]}>
-                        <Text style={styles.letterSealedText}>
-                          ✉ Sealed letter from {friendNameIn(book, leg.fromFriend)}. It opens
-                          once you've finished the book.
-                        </Text>
-                      </View>
-                    )
-                  )}
-                </View>
-              );
-            })
-          )}
-        </View>
+        <TravelHistory book={book} currentUserId={currentUserId} />
       </ScrollView>
-      {/* A handoff is append-only, so an accidental tap cannot be undone.
-          A custom modal rather than Alert.alert, which react-native-web
-          does not implement reliably. */}
-      <Modal
-        visible={confirmingTo !== null}
-        transparent
-        animationType="fade"
-        onRequestClose={closeSheet}
-      >
-        <View style={styles.backdrop}>
-          <View style={styles.sheet}>
-            <Text style={styles.sheetTitle}>
-              {goingHome ? 'Send it home?' : 'Send it on its way?'}
-            </Text>
-            <Text style={styles.sheetBody}>
-              Tap this once it's in the post. {first(confirmingTo)} taps Got it when it
-              arrives. The leg goes into the travel history for good.
-            </Text>
-
-            {/* The letter. Readers who come after see it only once they've
-                finished the book too. */}
-            <Text style={styles.sheetLabel}>Leave a letter in the book</Text>
-            <Stars value={rating} size={28} onChange={setRating} />
-            <TextInput
-              value={note}
-              onChangeText={setNote}
-              placeholder={`Dear ${friendNameIn(book, confirmingTo).split(' ')[0]}, …`}
-              placeholderTextColor={theme.colors.faint}
-              multiline
-              maxLength={500}
-              style={styles.sheetInput}
-            />
-
-            <Pressable
-              style={styles.sheetConfirm}
-              onPress={() => {
-                if (confirmingTo) {
-                  onHandOff(book.id, confirmingTo, { note, rating });
-                }
-                closeSheet();
-              }}
-            >
-              <Text style={styles.sheetConfirmText}>
-                Yes, {goingHome ? 'return' : 'pass'} to {friendNameIn(book, confirmingTo)}
-              </Text>
-            </Pressable>
-
-            <Pressable style={styles.sheetCancel} onPress={closeSheet}>
-              <Text style={styles.sheetCancelText}>Cancel</Text>
-            </Pressable>
-          </View>
-        </View>
-      </Modal>
-
-      <Modal
-        visible={editingDetails}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setEditingDetails(false)}
-      >
-        <View style={styles.backdrop}>
-          <View style={styles.sheet}>
-            <Text style={styles.sheetTitle}>Edit book details</Text>
-            <Text style={styles.sheetBody}>
-              Fix typos in the title or author. The changes will show for everyone reading this copy.
-            </Text>
-            <Text style={styles.sheetLabel}>Title</Text>
-            <TextInput
-              value={editTitle}
-              onChangeText={setEditTitle}
-              placeholder="Title"
-              placeholderTextColor={theme.colors.faint}
-              style={styles.fieldInput}
-            />
-            <Text style={styles.sheetLabel}>Author</Text>
-            <TextInput
-              value={editAuthor}
-              onChangeText={setEditAuthor}
-              placeholder="Author"
-              placeholderTextColor={theme.colors.faint}
-              style={styles.fieldInput}
-            />
-            <Pressable
-              style={[
-                styles.sheetConfirm,
-                (!editTitle.trim() || !editAuthor.trim()) && styles.disabled,
-              ]}
-              disabled={!editTitle.trim() || !editAuthor.trim()}
-              onPress={() => {
-                if (onUpdateBookDetails && editTitle.trim() && editAuthor.trim()) {
-                  onUpdateBookDetails(book.id, editTitle.trim(), editAuthor.trim());
-                }
-                setEditingDetails(false);
-              }}
-              accessibilityRole="button"
-            >
-              <Text style={styles.sheetConfirmText}>Save changes</Text>
-            </Pressable>
-            <Pressable style={styles.sheetCancel} onPress={() => setEditingDetails(false)}>
-              <Text style={styles.sheetCancelText}>Cancel</Text>
-            </Pressable>
-          </View>
-        </View>
-      </Modal>
-
-      <Modal
+      {/* A handoff is append-only, so an accidental tap cannot be undone. */}
+      <PassOnSheet
+        book={book}
+        to={confirmingTo}
+        goingHome={goingHome}
+        onConfirm={(to, letter) => onHandOff(book.id, to, letter)}
+        onClose={() => setConfirmingTo(null)}
+      />
+      {editingDetails && (
+        <EditDetailsSheet
+          book={book}
+          visible
+          onSave={(title, author) => onUpdateBookDetails?.(book.id, title, author)}
+          onClose={() => setEditingDetails(false)}
+        />
+      )}
+      <RetireSheet
         visible={confirmingRetire}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setConfirmingRetire(false)}
-      >
-        <View style={styles.backdrop}>
-          <View style={styles.sheet}>
-            <Text style={styles.sheetTitle}>Keep this copy home?</Text>
-            <Text style={styles.sheetBody}>
-              Put this copy to rest on the home shelf. Its past travels, stamps, and letters stay safe to look back on, and the line will rest.
-            </Text>
-            <Pressable
-              style={styles.sheetConfirm}
-              onPress={() => {
-                if (onRetireBook) {
-                  onRetireBook(book.id);
-                }
-                setConfirmingRetire(false);
-              }}
-              accessibilityRole="button"
-            >
-              <Text style={styles.sheetConfirmText}>Yes, rest this copy</Text>
-            </Pressable>
-            <Pressable style={styles.sheetCancel} onPress={() => setConfirmingRetire(false)}>
-              <Text style={styles.sheetCancelText}>Keep travelling</Text>
-            </Pressable>
-          </View>
-        </View>
-      </Modal>
+        onConfirm={() => onRetireBook?.(book.id)}
+        onClose={() => setConfirmingRetire(false)}
+      />
       <BookPassportSheet
         visible={passportOpen}
         onClose={() => setPassportOpen(false)}
         book={book}
-        groupName={group?.name}
+        groupName={groupName}
         ownerName={owner ? first(owner) : undefined}
       />
     </>
   );
 }
-
-/** Whole stars, 1–5. Read-only unless `onChange` is given; tap a star again to clear. */
-function Stars({
-  value,
-  size,
-  onChange,
-}: {
-  value?: number;
-  size: number;
-  onChange?: (value: number | undefined) => void;
-}) {
-  return (
-    <View style={styles.stars} accessibilityLabel={value ? `${value} of 5 stars` : 'Unrated'}>
-      {[1, 2, 3, 4, 5].map((star) => {
-        const icon = (
-          <Ionicons
-            name={value !== undefined && star <= value ? 'star' : 'star-outline'}
-            size={size}
-            color={theme.colors.accent}
-          />
-        );
-
-        return onChange ? (
-          <Pressable
-            key={star}
-            onPress={() => onChange(star === value ? undefined : star)}
-            hitSlop={4}
-            style={styles.starButton}
-            accessibilityLabel={`${star} star${star === 1 ? '' : 's'}`}
-          >
-            {icon}
-          </Pressable>
-        ) : (
-          <View key={star}>{icon}</View>
-        );
-      })}
-    </View>
-  );
-}
-
-const styles = StyleSheet.create({
-  stars: {
-    flexDirection: 'row',
-  },
-  starButton: {
-    marginRight: 6,
-  },
-  gift: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 12,
-    opacity: 0.85,
-  },
-  giftText: {
-    marginLeft: 6,
-    fontFamily: theme.fonts.serif,
-    fontStyle: 'italic',
-    fontSize: 13,
-    color: theme.colors.coverInk,
-  },
-  coverWithImage: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-  },
-  coverImage: {
-    width: 96,
-    height: 144,
-    borderRadius: 4,
-    marginRight: 16,
-  },
-  coverTextBeside: {
-    flex: 1,
-  },
-  ownerActions: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-    alignSelf: 'flex-start',
-    marginTop: -8,
-    marginBottom: 12,
-  },
-  ownerAction: {
-    paddingVertical: 2,
-  },
-  ownerActionText: {
-    color: theme.colors.muted,
-    fontSize: 12,
-    textDecorationLine: 'underline',
-  },
-  fieldInput: {
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    borderRadius: 10,
-    backgroundColor: theme.colors.background,
-    paddingHorizontal: 12,
-    paddingVertical: 9,
-    fontSize: 14,
-    color: theme.colors.text,
-    marginBottom: 12,
-  },
-  disabled: {
-    opacity: 0.5,
-  },
-  topActionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-    gap: 16,
-    marginTop: -12,
-    marginBottom: 14,
-  },
-  shareLink: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 4,
-  },
-  shareLinkText: {
-    marginLeft: 4,
-    color: theme.colors.accent,
-    fontWeight: '700',
-    fontSize: 13,
-  },
-  shownLink: {
-    fontSize: 12,
-    color: theme.colors.text,
-    textAlign: 'right',
-    marginTop: -10,
-    marginBottom: 12,
-  },
-  ownership: {
-    fontSize: 12,
-    color: theme.colors.muted,
-    textAlign: 'center',
-    marginBottom: 16,
-  },
-  statusCard: {
-    backgroundColor: theme.colors.card,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 18,
-  },
-  whereItIs: {
-    fontFamily: theme.fonts.serif,
-    fontSize: 19,
-    fontWeight: '700',
-    color: theme.colors.text,
-    textAlign: 'center',
-  },
-  whereItIsMine: {
-    color: theme.colors.stamp,
-  },
-  routeBox: {
-    marginTop: 0,
-    marginBottom: 18,
-  },
-  letter: {
-    marginTop: 8,
-    backgroundColor: theme.colors.background,
-    borderRadius: 10,
-    padding: 10,
-  },
-  letterText: {
-    fontFamily: theme.fonts.serif,
-    fontStyle: 'italic',
-    fontSize: 14,
-    lineHeight: 20,
-    color: theme.colors.text,
-    marginTop: 4,
-  },
-  letterSign: {
-    fontSize: 11,
-    color: theme.colors.muted,
-    marginTop: 4,
-  },
-  letterSealed: {
-    borderWidth: 1,
-    borderStyle: 'dashed',
-    borderColor: theme.colors.border,
-    backgroundColor: theme.colors.card,
-  },
-  letterSealedText: {
-    fontSize: 12,
-    color: theme.colors.muted,
-    lineHeight: 17,
-  },
-  sheetLabel: {
-    fontSize: 12,
-    color: theme.colors.muted,
-    marginBottom: 8,
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
-    fontWeight: '700',
-  },
-  sheetInput: {
-    backgroundColor: theme.colors.soft,
-    borderRadius: 12,
-    padding: 12,
-    marginTop: 14,
-    marginBottom: 16,
-    minHeight: 72,
-    color: theme.colors.text,
-    fontSize: 14,
-    textAlignVertical: 'top',
-  },
-  container: {
-    flex: 1,
-    backgroundColor: theme.colors.background,
-  },
-  content: {
-    padding: 20,
-    paddingBottom: 32,
-  },
-  coverHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 16,
-    padding: 16,
-    borderRadius: 20,
-    backgroundColor: theme.colors.card,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    marginBottom: 20,
-  },
-  coverDetailsCol: {
-    flex: 1,
-    justifyContent: 'center',
-  },
-  coverTitle: {
-    color: theme.colors.text,
-    fontFamily: theme.fonts.serif,
-    fontSize: 22,
-    lineHeight: 28,
-    fontWeight: '700',
-  },
-  coverAuthor: {
-    color: theme.colors.muted,
-    fontSize: 14,
-    fontStyle: 'italic',
-    marginTop: 4,
-  },
-  title: {
-    fontFamily: theme.fonts.serif,
-    fontSize: 28,
-    fontWeight: '700',
-    color: theme.colors.text,
-  },
-  statRow: {
-    flexDirection: 'row',
-    backgroundColor: theme.colors.card,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    borderRadius: 16,
-    paddingVertical: 14,
-    marginBottom: 18,
-  },
-  stat: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  statValue: {
-    fontSize: 22,
-    fontWeight: '600',
-    color: theme.colors.text,
-  },
-  statLabel: {
-    fontSize: 11,
-    color: theme.colors.muted,
-    marginTop: 2,
-  },
-  action: {
-    marginTop: 10,
-  },
-  actionNote: {
-    color: theme.colors.muted,
-    fontSize: 13,
-    textAlign: 'center',
-    paddingVertical: 6,
-  },
-  primaryButton: {
-    backgroundColor: theme.colors.accent,
-    borderRadius: 12,
-    paddingVertical: 13,
-    alignItems: 'center',
-  },
-  primaryButtonText: {
-    color: theme.colors.onAccent,
-    fontWeight: '700',
-    fontSize: 15,
-  },
-  secondaryButton: {
-    marginTop: 8,
-    backgroundColor: theme.colors.soft,
-    borderRadius: 12,
-    paddingVertical: 12,
-    alignItems: 'center',
-  },
-  secondaryButtonText: {
-    color: theme.colors.text,
-    fontWeight: '700',
-    fontSize: 14,
-  },
-  backdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(31, 26, 23, 0.45)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 24,
-  },
-  sheet: {
-    width: '100%',
-    maxWidth: 380,
-    backgroundColor: theme.colors.card,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    padding: 22,
-  },
-  sheetTitle: {
-    fontFamily: theme.fonts.serif,
-    fontSize: 21,
-    fontWeight: '700',
-    color: theme.colors.text,
-    marginBottom: 8,
-  },
-  sheetBody: {
-    fontSize: 14,
-    lineHeight: 20,
-    color: theme.colors.muted,
-    marginBottom: 20,
-  },
-  sheetConfirm: {
-    backgroundColor: theme.colors.accent,
-    borderRadius: 12,
-    paddingVertical: 13,
-    alignItems: 'center',
-  },
-  sheetConfirmText: {
-    color: theme.colors.onAccent,
-    fontWeight: '700',
-    fontSize: 15,
-  },
-  sheetCancel: {
-    marginTop: 10,
-    paddingVertical: 12,
-    alignItems: 'center',
-  },
-  sheetCancelText: {
-    color: theme.colors.muted,
-    fontWeight: '700',
-    fontSize: 14,
-  },
-  box: {
-    backgroundColor: theme.colors.card,
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    padding: 18,
-    marginTop: 20,
-  },
-  boxTitle: {
-    fontFamily: theme.fonts.serif,
-    fontSize: 19,
-    fontWeight: '700',
-    color: theme.colors.text,
-  },
-  boxCaption: {
-    color: theme.colors.muted,
-    fontSize: 12,
-    marginTop: 4,
-    marginBottom: 14,
-  },
-  legItem: {
-    marginBottom: 14,
-    paddingBottom: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
-  },
-  legRoute: {
-    color: theme.colors.text,
-    fontWeight: '700',
-    fontSize: 14,
-  },
-  legMeta: {
-    color: theme.colors.muted,
-    fontSize: 11,
-    marginTop: 4,
-  },
-});

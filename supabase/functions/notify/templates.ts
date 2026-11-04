@@ -12,7 +12,9 @@ export type EmailKind =
   | 'friend_request'
   | 'new_book'
   | 'arrival_check'
-  | 'still_reading';
+  | 'still_reading'
+  | 'shelf_request'
+  | 'called_home';
 
 export type EmailFacts = {
   kind: EmailKind;
@@ -38,10 +40,15 @@ export type EmailFacts = {
 
 export type Email = { subject: string; html: string; text: string };
 
-const first = (name: string) => name.trim().split(/\s+/)[0] ?? name;
+/** People are named in full everywhere, emails included. */
+const fullName = (name: string) => name.trim().replace(/\s+/g, ' ');
 
 const unescape = (value: string) =>
-  value.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&amp;/g, '&');
+  value
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&amp;/g, '&');
 
 const escape = (value: string) =>
   value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -65,7 +72,7 @@ type Content = {
  * are escaped here: a name is never markup.
  */
 function content(facts: EmailFacts): Content {
-  const otherText = first(facts.other);
+  const otherText = fullName(facts.other);
   const titleText = facts.book?.title ?? 'a book';
   const other = escape(otherText);
   const title = escape(titleText);
@@ -83,7 +90,7 @@ function content(facts: EmailFacts): Content {
           "Take your time with it. Someone's next after you, so send it on when you're done.",
         ],
         aside: facts.hasLetter
-          ? `&#9993; ${other} tucked a letter inside. It opens once you've finished the book.`
+          ? `&#9993; ${other} left a note about the book. It opens once you've finished it. Look for their handwritten letter in the package.`
           : undefined,
         button: `Open ${titleText}`,
         action: "Got it, it's here",
@@ -127,6 +134,17 @@ function content(facts: EmailFacts): Content {
         action: 'Accept',
         why: `You're getting this because ${otherText} sent you a friend request.`,
       };
+    case 'shelf_request':
+      return {
+        subject: `${otherText} would like to borrow ${titleText}`,
+        preheader: 'It is on your shelf. You decide.',
+        heading: `${otherText} asked to borrow ${titleText}`,
+        paragraphs: [
+          `${other} saw <i>${title}</i> on your shelf and would like to read it. Open your shelf to say yes or no. If it's yes, lend it to a group you share with ${other} and ${other} can join the line.`,
+        ],
+        button: 'Open your shelf',
+        why: `You're getting this because ${otherText} asked for a book on your shelf.`,
+      };
     case 'new_book': {
       const author = facts.book ? ` by ${escape(facts.book.author)}` : '';
       return {
@@ -154,6 +172,18 @@ function content(facts: EmailFacts): Content {
         action: "Got it, it's here",
         why: `You're getting this because ${otherText} sent you ${titleText}. Reminders come once a month at most.`,
       };
+    case 'called_home':
+      return {
+        subject: `${otherText} has called ${titleText} home`,
+        preheader: 'When you finish, it goes back to them. The line will wait.',
+        heading: `${otherText} would like ${titleText} back`,
+        paragraphs: [
+          `${other} has called their copy home. When you're ready, send it back to ${other} in the app instead of on to the next reader.`,
+          'Nobody loses their place: the line waits for the book to travel again.',
+        ],
+        button: `Open ${titleText}`,
+        why: `You're getting this because ${titleText} is with you.`,
+      };
     case 'still_reading':
       return {
         subject: `How's ${titleText} going?`,
@@ -172,59 +202,64 @@ function content(facts: EmailFacts): Content {
 export function renderEmail(facts: EmailFacts): Email {
   const c = content(facts);
   const root = facts.appUrl.endsWith('/') ? facts.appUrl : `${facts.appUrl}/`;
-  // The button opens the thing the email is about; settings live on You.
+  // The button opens the thing the email is about; settings live on Profile.
   const target =
     facts.kind === 'friend_request'
       ? `${root}friends`
-      : facts.bookId
-        ? `${root}b/${encodeURIComponent(facts.bookId)}`
-        : root;
+      : facts.kind === 'shelf_request'
+        ? `${root}shelf`
+        : facts.bookId
+          ? `${root}b/${encodeURIComponent(facts.bookId)}`
+          : root;
   const settings = `${root}you`;
   const action = c.action && facts.actionUrl ? { label: c.action, url: facts.actionUrl } : null;
   const cover = facts.book
     ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td style="background:${escape(
         facts.book.coverColor,
-      )};border-radius:12px;padding:26px 20px 18px 26px;border-left:7px solid rgba(255,255,255,0.35);">
-    <div style="font-family:Georgia,'Times New Roman',serif;font-size:24px;font-weight:bold;color:#1f1a17;">${escape(
+      )};border-radius:3px;padding:26px 20px 18px 26px;border-left:7px solid rgba(255,255,255,0.35);">
+    <div style="font-family:Georgia,'Times New Roman',serif;font-size:24px;font-weight:bold;color:#1c1b17;">${escape(
       facts.book.title,
     )}</div>
-    <div style="font-size:13px;color:#1f1a17;opacity:0.8;margin-top:4px;">${escape(facts.book.author)}</div>
+    <div style="font-size:13px;color:#1c1b17;opacity:0.8;margin-top:4px;">${escape(facts.book.author)}</div>
   </td></tr></table>`
     : '';
   const paragraphs = c.paragraphs
     .map(
-      (p) =>
-        `<p style="margin:0 0 14px;font-size:16px;line-height:24px;color:#1f1a17;">${p}</p>`,
+      (p) => `<p style="margin:0 0 14px;font-size:16px;line-height:24px;color:#1c1b17;">${p}</p>`,
     )
     .join('');
   const aside = c.aside
-    ? `<div style="border:1px dashed #d8c9bc;border-radius:10px;padding:12px 14px;margin:4px 0 18px;font-size:14px;line-height:20px;color:#54473f;">${c.aside}</div>`
+    ? `<div style="border:1px dashed #d6c9b1;border-radius:3px;padding:12px 14px;margin:4px 0 18px;font-size:14px;line-height:20px;color:#575046;">${c.aside}</div>`
     : '';
 
   const html = `<!doctype html><html><head><meta charset="utf-8"><title>${escape(c.subject)}</title></head>
-<body style="margin:0;padding:0;background:#f7f1ea;">
+<body style="margin:0;padding:0;background:#f6f1e6;">
 <span style="display:none;max-height:0;overflow:hidden;">${escape(c.preheader)}</span>
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f7f1ea;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f6f1e6;">
 <tr><td align="center" style="padding:20px 16px 32px;">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;">
-<tr><td style="padding:0 4px 14px;font-family:Georgia,'Times New Roman',serif;font-size:13px;letter-spacing:1px;text-transform:uppercase;color:#7a5c48;">The Traveling Books</td></tr>
-<tr><td style="background:#fffdfb;border:1px solid #eaded3;border-radius:16px;padding:22px;font-family:-apple-system,Helvetica,Arial,sans-serif;">
+<tr><td align="center" style="background:#1f3b2c;border-bottom:3px solid #b4925a;border-radius:4px 4px 0 0;padding:22px 16px 18px;font-family:Georgia,'Times New Roman',serif;">
+  <img src="${escape(root)}crest.png" width="40" height="48" alt="" style="display:block;margin:0 auto 10px;border:0;">
+  <div style="font-size:20px;color:#f6f1e6;">The Traveling Books</div>
+  <div style="font-size:10px;letter-spacing:3px;color:#b4925a;margin-top:6px;">LEGE &middot; SCRIBE &middot; TRADE</div>
+</td></tr>
+<tr><td style="background:#fffdf7;border:1px solid #d6c9b1;border-top:0;border-radius:0 0 4px 4px;padding:22px;font-family:-apple-system,Helvetica,Arial,sans-serif;">
   ${cover}
-  <h1 style="font-family:Georgia,'Times New Roman',serif;font-size:24px;line-height:30px;color:#1f1a17;margin:22px 0 12px;">${escape(c.heading)}</h1>
+  <h1 style="font-family:Georgia,'Times New Roman',serif;font-size:24px;line-height:30px;color:#1c1b17;margin:22px 0 12px;">${escape(c.heading)}</h1>
   ${paragraphs}
   ${aside}
-  <table role="presentation" cellpadding="0" cellspacing="0" style="margin-top:8px;"><tr><td style="background:#7a5c48;border-radius:12px;">
-    <a href="${escape(action ? action.url : target)}" style="display:inline-block;padding:13px 22px;color:#fffdfb;font-weight:bold;font-size:15px;text-decoration:none;">${escape(action ? action.label : c.button)}</a>
+  <table role="presentation" cellpadding="0" cellspacing="0" style="margin-top:8px;"><tr><td style="background:#1f3b2c;border-radius:3px;">
+    <a href="${escape(action ? action.url : target)}" style="display:inline-block;padding:13px 22px;color:#fffdf7;font-family:Georgia,'Times New Roman',serif;font-weight:bold;font-size:13px;letter-spacing:2px;text-transform:uppercase;text-decoration:none;">${escape(action ? action.label : c.button)}</a>
   </td></tr></table>
   ${
     action
-      ? `<p style="margin:14px 0 0;font-size:14px;"><a href="${escape(target)}" style="color:#7a5c48;font-weight:bold;">${escape(c.button)}</a></p>`
+      ? `<p style="margin:14px 0 0;font-size:14px;"><a href="${escape(target)}" style="color:#1f3b2c;font-weight:bold;">${escape(c.button)}</a></p>`
       : ''
   }
 </td></tr>
-<tr><td style="padding:16px 6px 0;font-family:-apple-system,Helvetica,Arial,sans-serif;font-size:12px;line-height:18px;color:#54473f;text-align:center;">
+<tr><td style="padding:16px 6px 0;font-family:-apple-system,Helvetica,Arial,sans-serif;font-size:12px;line-height:18px;color:#575046;text-align:center;">
   ${escape(c.why)}<br><i style="font-family:Georgia,serif;">Read it, write in it, and pass it on.</i><br>
-  <a href="${escape(settings)}" style="color:#54473f;">Choose which emails you get: You &rarr; Emails</a>
+  <a href="${escape(settings)}" style="color:#575046;">Choose which emails you get: Profile &rarr; Emails</a> &middot; <a href="${escape(root)}privacy.html" style="color:#575046;">Privacy</a>
 </td></tr>
 </table></td></tr></table></body></html>`;
 

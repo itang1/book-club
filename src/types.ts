@@ -26,6 +26,13 @@ export type Group = {
    * and real members can't see each other through it.
    */
   isSample?: boolean;
+  /**
+   * Who runs the group (rename, remove members, hand over, reset the link):
+   * whoever started it, or after they leave, its longest-standing member.
+   */
+  adminId?: string;
+  /** About how many weeks each reader keeps a copy; a shared expectation. */
+  paceWeeks?: number;
 };
 
 export type FriendStatus = 'waiting' | 'reading' | 'done';
@@ -39,7 +46,9 @@ export type Friend = {
   userId?: string;
   /** When they agreed to the Rules of the Books; unset until they do. */
   agreedRulesAt?: string;
-  /** Which emails they want. All on unless they turn one off. */
+  /** Already a member when the rules agreement was switched on, so never asked. */
+  joinedBeforeRules?: boolean;
+  /** Which emails they want. All off until they turn one on. */
   emails?: EmailPrefs;
   /** Who can send them friend requests: groupmates (default) or nobody. */
   friendRequestsFrom?: 'groups' | 'nobody';
@@ -72,8 +81,9 @@ export type ReadingQueueEntry = Friend & {
  * book's current location is derived from the most recent one.
  * `fromFriend` is null for the handoff that put the book into circulation.
  *
- * `note` and `rating` are the letter `fromFriend` tucks into the book as they
- * pass it on, the way the girls in the novel wrote letters with the pants.
+ * `note` and `rating` are what `fromFriend` says about the book in the app as
+ * they pass it on. They are not the letter: that is handwritten and travels in
+ * the package, the way the girls in the novel wrote letters with the pants.
  * Both optional, and as permanent as the leg itself.
  */
 export type Handoff = {
@@ -110,12 +120,15 @@ export type Book = {
   coverUrl?: string;
   /** When the owner rested this copy from circulation. */
   archivedAt?: string;
+  /** The owner has asked for it back: it goes home next, and the line waits. */
+  calledHomeAt?: string;
   queue: ReadingQueueEntry[];
   handoffs: Handoff[];
 };
 
 export type RootTabParamList = {
   Home: NavigatorScreenParams<RootStackParamList> | undefined;
+  Shelf: NavigatorScreenParams<ShelfStackParamList> | undefined;
   Friends: NavigatorScreenParams<FriendsStackParamList> | undefined;
   Profile: undefined;
 };
@@ -130,4 +143,41 @@ export type RootStackParamList = {
   /** bookTitle is a nicety when navigating in-app; a link carries only the id. */
   BookDetail: { bookId: string; bookTitle?: string };
   AddBook: undefined;
+};
+
+/** A book someone owns, on their shelf. Not in circulation until lent to a group. */
+export type ShelfBook = {
+  id: string;
+  ownerId: string;
+  title: string;
+  author: string;
+  coverColor: string;
+  /** The circulating book made from this one, once it has been lent. */
+  lentBookId: string | null;
+};
+
+export type ShelfRequest = {
+  id: string;
+  shelfBookId: string;
+  requesterId: string;
+  status: 'pending' | 'accepted' | 'declined';
+};
+
+/** What the scanner thinks it saw; nothing is saved until the person confirms it. */
+export type ScannedBook = { title: string; author: string };
+
+export type ShelfStackParamList = {
+  ShelfHome: undefined;
+  PersonShelf: { personId: string };
+};
+
+/** A book a group would like to read that nobody in it owns yet. */
+export type Wish = {
+  id: string;
+  groupId: string;
+  title: string;
+  author: string;
+  suggestedBy: string | null;
+  /** Everyone who said "I'd read that", the suggester usually included. */
+  voters: string[];
 };

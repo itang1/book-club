@@ -4,8 +4,8 @@
   "description": "Read it, write in it, and pass it on.",
   "start_url": "./",
   "display": "standalone",
-  "background_color": "#f7f1ea",
-  "theme_color": "#f7f1ea",
+  "background_color": "#f6f1e6",
+  "theme_color": "#1f3b2c",
   "icons": [
     {
       "src": "icon.png",

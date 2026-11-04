@@ -32,3 +32,8 @@ deno.lock
 
 # Files saved by Claude apps (decks, documents): local, never published.
 Claude outputs/
+
+# End-to-end test build and results
+e2e-dist/
+test-results/
+playwright-report/

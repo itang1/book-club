@@ -69,6 +69,21 @@ export async function claimProfile(
   return { personId: (data as string | null) ?? null, error: null };
 }
 
+/** Erases the account but keeps its stops on shared journeys, anonymised. Resolves to a message when refused. */
+export async function deleteMyAccount(): Promise<string | null> {
+  if (!supabase) {
+    return null;
+  }
+
+  const { error } = await supabase.rpc('delete_my_account');
+  if (error) {
+    return error.message;
+  }
+
+  await supabase.auth.signOut();
+  return null;
+}
+
 export async function signOutEverywhere(): Promise<void> {
   await supabase?.auth.signOut();
 }

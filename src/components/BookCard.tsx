@@ -1,9 +1,9 @@
 import { StyleSheet, Text, View, Pressable } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { BookCover } from './BookCover';
 import { Book } from '../types';
 import { theme } from '../theme';
-import { ArtisticBookCover } from './ArtisticBookCover';
 import {
+  copyOwnerId,
   friendNameIn,
   holderId,
   isInTransit,
@@ -18,7 +18,7 @@ type BookCardProps = {
   book: Book;
   currentUserId: string | null;
   isSample?: boolean;
-  /** Shown as a labelled pill when the card isn't already under its group's heading. */
+  /** Shown as a typed label when the card isn't already under its group's heading. */
   groupName?: string;
   onPress?: (book: Book) => void;
 };
@@ -31,10 +31,10 @@ function whereLine(book: Book, currentUserId: string | null): string {
   if (isInTransit(book)) {
     return holder === currentUserId
       ? 'On its way to you'
-      : `In the post to ${friendNameIn(book, holder).split(' ')[0]}`;
+      : `In the post to ${friendNameIn(book, holder)}`;
   }
   if (holder === currentUserId) {
-    return 'With you';
+    return 'In your hands';
   }
 
   const entry = book.queue.find((person) => person.id === holder);
@@ -42,6 +42,12 @@ function whereLine(book: Book, currentUserId: string | null): string {
 }
 
 function nextLine(book: Book, currentUserId: string | null): string {
+  const owner = copyOwnerId(book);
+  if (book.calledHomeAt && owner && holderId(book) !== owner) {
+    return owner === currentUserId
+      ? "You've called it home"
+      : `Called home by ${friendNameIn(book, owner)}`;
+  }
   const myPlace = placeInLine(book, currentUserId);
   if (myPlace === 1) {
     return "You're next";
@@ -56,35 +62,44 @@ function nextLine(book: Book, currentUserId: string | null): string {
 
 export function BookCard({ book, currentUserId, isSample, groupName, onPress }: BookCardProps) {
   const withMe = currentUserId !== null && holderId(book) === currentUserId;
+  const owner = copyOwnerId(book);
+  const mine = currentUserId !== null && owner === currentUserId;
 
   return (
-    <Pressable style={styles.card} onPress={() => onPress?.(book)}>
-      <View style={styles.coverWrapper}>
-        <ArtisticBookCover book={book} variant="card" />
-      </View>
+    <Pressable
+      style={({ pressed }) => [styles.row, pressed && styles.pressed]}
+      onPress={() => onPress?.(book)}
+    >
+      <BookCover
+        title={book.title}
+        author={book.author}
+        color={book.coverColor}
+        imageUrl={book.coverUrl}
+        width={78}
+      />
 
       <View style={styles.details}>
         {groupName ? (
-          <View style={styles.groupPill}>
-            <Ionicons name="people" size={11} color={theme.colors.accent} />
-            <Text style={styles.groupPillText} numberOfLines={1}>
-              {groupName}
-            </Text>
-          </View>
+          <Text style={styles.group} numberOfLines={1}>
+            {groupName}
+          </Text>
         ) : null}
+        <Text style={[styles.owner, mine && styles.ownerMine]} numberOfLines={1}>
+          {mine ? 'Your copy' : `${friendNameIn(book, owner)}'s copy`}
+        </Text>
         <Text style={styles.title}>{book.title}</Text>
         <Text style={styles.author} numberOfLines={1}>
           {book.author}
         </Text>
 
-        <Text style={[styles.line, withMe && styles.lineMine]}>{whereLine(book, currentUserId)}</Text>
+        <Text style={[styles.line, withMe && styles.lineMine]}>
+          {whereLine(book, currentUserId)}
+        </Text>
         <Text style={styles.lineQuiet}>{nextLine(book, currentUserId)}</Text>
 
         <View style={styles.footer}>
-          <View style={styles.tags}>
-            <Text style={styles.status}>{statusLabel(book)}</Text>
-            {isSample && <Text style={styles.sample}>Sample</Text>}
-          </View>
+          <Text style={[styles.stamp, withMe && styles.stampMine]}>{statusLabel(book)}</Text>
+          {isSample && <Text style={styles.sample}>Sample</Text>}
           <Text style={styles.updated}>{relativeTime(lastActivityAt(book))}</Text>
         </View>
       </View>
@@ -93,41 +108,53 @@ export function BookCard({ book, currentUserId, isSample, groupName, onPress }: 
 }
 
 const styles = StyleSheet.create({
-  card: {
+  row: {
     flexDirection: 'row',
-    backgroundColor: theme.colors.card,
-    borderRadius: 18,
-    padding: 12,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    shadowColor: theme.colors.text,
-    shadowOpacity: 0.04,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 2,
+    alignItems: 'flex-start',
+    paddingVertical: 16,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: theme.colors.rule,
   },
-  coverWrapper: {
-    marginRight: 12,
+  pressed: {
+    backgroundColor: theme.colors.soft,
   },
   details: {
     flex: 1,
-    justifyContent: 'center',
+    marginLeft: 16,
+  },
+  group: {
+    ...theme.caps,
+    fontSize: 12,
+    color: theme.colors.accent,
+    marginBottom: 4,
+  },
+  owner: {
+    ...theme.caps,
+    fontSize: 11,
+    letterSpacing: 1.2,
+    color: theme.colors.faint,
+    marginBottom: 3,
+  },
+  ownerMine: {
+    color: theme.colors.stamp,
+    fontWeight: '700',
   },
   title: {
     fontFamily: theme.fonts.serif,
     fontSize: 18,
+    lineHeight: 23,
     fontWeight: '700',
     color: theme.colors.text,
-    marginBottom: 2,
   },
   author: {
-    fontSize: 13,
+    fontFamily: theme.fonts.serif,
+    fontSize: 14,
     color: theme.colors.muted,
+    marginTop: 1,
     marginBottom: 10,
   },
   line: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
     color: theme.colors.text,
   },
@@ -142,53 +169,43 @@ const styles = StyleSheet.create({
   footer: {
     marginTop: 10,
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
   },
-  status: {
-    backgroundColor: theme.colors.soft,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 999,
-    fontSize: 10,
-    fontWeight: '700',
-    color: theme.colors.accent,
-    overflow: 'hidden',
-  },
-  groupPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    backgroundColor: theme.colors.soft,
-    borderRadius: 999,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    marginBottom: 6,
-    maxWidth: '100%',
-  },
-  groupPillText: {
-    marginLeft: 4,
+  stamp: {
+    ...theme.caps,
     fontSize: 11,
     fontWeight: '700',
+    letterSpacing: 0.6,
+    textTransform: 'uppercase',
     color: theme.colors.accent,
+    borderWidth: 1,
+    borderColor: theme.colors.accent,
+    borderRadius: theme.radius.sm,
+    paddingHorizontal: 5,
+    paddingVertical: 1,
   },
-  tags: {
-    flexDirection: 'row',
+  stampMine: {
+    color: theme.colors.stamp,
+    borderColor: theme.colors.stamp,
   },
   sample: {
     marginLeft: 6,
+    ...theme.caps,
+    fontSize: 11,
+    letterSpacing: 0.6,
+    textTransform: 'uppercase',
+    color: theme.colors.faint,
     borderWidth: 1,
-    borderColor: theme.colors.border,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 999,
-    fontSize: 10,
-    fontWeight: '700',
-    color: theme.colors.muted,
-    overflow: 'hidden',
+    borderStyle: 'dashed',
+    borderColor: theme.colors.faint,
+    borderRadius: theme.radius.sm,
+    paddingHorizontal: 5,
+    paddingVertical: 1,
   },
   updated: {
-    fontSize: 11,
-    color: theme.colors.muted,
+    marginLeft: 'auto',
+    ...theme.caps,
+    fontSize: 12,
+    color: theme.colors.faint,
   },
 });

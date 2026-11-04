@@ -5,8 +5,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { theme } from '../theme';
 
-const ICONS: Record<string, { active: keyof typeof Ionicons.glyphMap; idle: keyof typeof Ionicons.glyphMap }> = {
+const ICONS: Record<
+  string,
+  { active: keyof typeof Ionicons.glyphMap; idle: keyof typeof Ionicons.glyphMap }
+> = {
   Home: { active: 'book', idle: 'book-outline' },
+  Shelf: { active: 'library', idle: 'library-outline' },
   Friends: { active: 'people', idle: 'people-outline' },
   Profile: { active: 'person', idle: 'person-outline' },
 };
@@ -48,7 +52,7 @@ export function TabBar({ state, descriptors, navigation }: BottomTabBarProps) {
               <Ionicons
                 name={focused ? icons.active : icons.idle}
                 size={20}
-                color={focused ? theme.colors.onAccent : theme.colors.faint}
+                color={focused ? theme.colors.text : theme.colors.faint}
               />
               {badge !== undefined && (
                 <View style={styles.badge}>
@@ -58,7 +62,9 @@ export function TabBar({ state, descriptors, navigation }: BottomTabBarProps) {
                 </View>
               )}
             </View>
-            <Text style={[styles.label, focused && styles.labelActive]}>{label}</Text>
+            <Text style={[styles.label, focused && styles.labelActive]} numberOfLines={1}>
+              {label}
+            </Text>
           </Pressable>
         );
       })}
@@ -71,46 +77,44 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     backgroundColor: theme.colors.card,
     borderTopWidth: 1,
-    borderTopColor: theme.colors.border,
-    paddingHorizontal: 8,
+    borderTopColor: theme.colors.rule,
+    paddingHorizontal: 4,
   },
   item: {
     flex: 1,
     alignItems: 'center',
-    paddingTop: 12,
-    paddingBottom: 6,
-    marginHorizontal: 4,
-    borderBottomLeftRadius: 14,
-    borderBottomRightRadius: 14,
+    paddingTop: 10,
+    paddingBottom: 4,
+    marginHorizontal: 2,
+    borderTopWidth: 2,
+    borderTopColor: 'transparent',
+    marginTop: -1,
   },
   itemActive: {
-    backgroundColor: theme.colors.soft,
+    borderTopColor: theme.colors.text,
   },
   iconWrap: {
-    width: 44,
-    height: 28,
-    borderRadius: 14,
+    width: 32,
+    height: 24,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 4,
+    marginBottom: 3,
   },
-  iconWrapActive: {
-    backgroundColor: theme.colors.accent,
-  },
+  iconWrapActive: {},
+  // Steady labels: the same face, size and weight whether or not the tab is
+  // active, so nothing shifts; only the colour and the rule above change.
   label: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: theme.colors.muted,
+    fontFamily: theme.fonts.serif,
+    fontSize: 12,
+    color: theme.colors.faint,
   },
   labelActive: {
-    fontSize: 12,
-    fontWeight: '800',
     color: theme.colors.text,
   },
   badge: {
     position: 'absolute',
-    top: -2,
-    right: -2,
+    top: -3,
+    right: -4,
     minWidth: 16,
     height: 16,
     borderRadius: 8,
@@ -122,7 +126,7 @@ const styles = StyleSheet.create({
     borderColor: theme.colors.card,
   },
   badgeText: {
-    color: '#fff',
+    color: theme.colors.onAccent,
     fontSize: 9,
     fontWeight: '800',
     lineHeight: 11,

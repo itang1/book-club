@@ -4,9 +4,7 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 
 /** Handoffs oldest-first. The stored order is not trusted. */
 export function journey(book: Book): Handoff[] {
-  return [...book.handoffs].sort(
-    (a, b) => Date.parse(a.happenedAt) - Date.parse(b.happenedAt),
-  );
+  return [...book.handoffs].sort((a, b) => Date.parse(a.happenedAt) - Date.parse(b.happenedAt));
 }
 
 export function latestHandoff(book: Book): Handoff | undefined {
@@ -38,9 +36,7 @@ export function readingQueue(book: Book): ReadingQueueEntry[] {
 /** Everyone who has signed up and not had their turn yet, in sign-up order. */
 export function waitingList(book: Book): ReadingQueueEntry[] {
   const holder = holderId(book);
-  return readingQueue(book).filter(
-    (entry) => entry.status === 'waiting' && entry.id !== holder,
-  );
+  return readingQueue(book).filter((entry) => entry.status === 'waiting' && entry.id !== holder);
 }
 
 /**
@@ -84,7 +80,7 @@ export function isInTransit(book: Book): boolean {
 
 /** Who sent the book that's in the post, or null if nothing is. */
 export function senderId(book: Book): string | null {
-  return isInTransit(book) ? latestHandoff(book)?.fromFriend ?? null : null;
+  return isInTransit(book) ? (latestHandoff(book)?.fromFriend ?? null) : null;
 }
 
 /**
@@ -127,9 +123,10 @@ export function hasFinished(book: Book, friendId: string | null): boolean {
 }
 
 /**
- * Letters stay sealed until you've finished this copy yourself, so nobody's
- * opinion colours your read. You can always see a letter you wrote, and a
- * second read doesn't re-seal what you've already opened.
+ * Notes (the in-app stars and words about the book) stay sealed until you've
+ * finished this copy yourself, so nobody's opinion colours your read. You can
+ * always see a note you wrote, and a second read doesn't re-seal what you've
+ * already opened.
  */
 export function canReadLetter(book: Book, leg: Handoff, viewerId: string | null): boolean {
   if (!viewerId) {
@@ -151,9 +148,9 @@ export function recentActivity(books: Book[], limit: number): { book: Book; leg:
     .slice(0, limit);
 }
 
-/** One leg as a sentence: "Carmen passed Circe to Lena". First names only. */
+/** One leg as a sentence: "Carmen passed Circe to Lena". Full names, as everywhere a status reads. */
 export function describeLeg(book: Book, leg: Handoff): string {
-  const first = (id: string | null) => friendNameIn(book, id).split(' ')[0];
+  const first = (id: string | null) => friendNameIn(book, id);
 
   if (!leg.fromFriend) {
     return `${first(leg.toFriend)} put ${book.title} into circulation`;
@@ -200,9 +197,7 @@ export function placeOf(book: Book, leg: Handoff): Place | null {
 
 /** City and region together, case-insensitive: two Springfields stay two. */
 export function placeKey(place: Place | null): string | null {
-  return place
-    ? `${place.city.trim().toLowerCase()}|${place.region.trim().toLowerCase()}`
-    : null;
+  return place ? `${place.city.trim().toLowerCase()}|${place.region.trim().toLowerCase()}` : null;
 }
 
 /** The longest any single reader has held this copy, in days. */
@@ -294,4 +289,25 @@ export function formatDate(iso: string): string {
     day: 'numeric',
     year: 'numeric',
   });
+}
+
+/**
+ * How far along the current reader's stay is, against the group's gentle
+ * pace ("about N weeks"). Null when there's no pace, the copy is in the post,
+ * or it's with its owner (between readers, or before its first trip).
+ */
+export function stayProgress(
+  book: Book,
+  paceWeeks: number | null | undefined,
+  now: number = Date.now(),
+): { week: number; ofWeeks: number; days: number; over: boolean } | null {
+  const latest = latestHandoff(book);
+  if (!paceWeeks || !latest || isInTransit(book) || latest.toFriend === copyOwnerId(book)) {
+    return null;
+  }
+
+  const since = Date.parse(latest.receivedAt ?? latest.happenedAt);
+  const days = Math.max(0, Math.floor((now - since) / DAY_MS));
+  const week = Math.floor(days / 7) + 1;
+  return { week, ofWeeks: paceWeeks, days, over: week > paceWeeks };
 }

@@ -25,22 +25,23 @@ grant execute on all functions in schema test to authenticated;
 
 -- Ana lends a book in her group; Bea is next; Cat is in the group but not
 -- in line.
+-- Emails start off for everyone; these people have turned them on.
 insert into auth.users values
   ('00000000-0000-0000-0000-0000000000b1', 'ana@x'),
   ('00000000-0000-0000-0000-0000000000b2', 'bea@x'),
   ('00000000-0000-0000-0000-0000000000b3', 'cat@x');
 set role authenticated;
 select test.as_user('00000000-0000-0000-0000-0000000000b1');
-insert into friends (id, name, city, state, user_id) values ('h-ana', 'Ana', 'Austin', 'TX', '00000000-0000-0000-0000-0000000000b1');
+insert into friends (id, name, city, state, user_id, email_new_book, email_book_sent, email_book_arrived, email_next_in_line, email_friend_request, email_reminders) values ('h-ana', 'Ana', 'Austin', 'TX', '00000000-0000-0000-0000-0000000000b1', true, true, true, true, true, true);
 select create_group('g-h', 'Handoff club');
 reset role;
 select invite_code as code from groups where id = 'g-h' \gset
 set role authenticated;
 select test.as_user('00000000-0000-0000-0000-0000000000b2');
-insert into friends (id, name, city, state, user_id) values ('h-bea', 'Bea', 'Boston', 'MA', '00000000-0000-0000-0000-0000000000b2');
+insert into friends (id, name, city, state, user_id, email_new_book, email_book_sent, email_book_arrived, email_next_in_line, email_friend_request, email_reminders) values ('h-bea', 'Bea', 'Boston', 'MA', '00000000-0000-0000-0000-0000000000b2', true, true, true, true, true, true);
 select join_group(:'code');
 select test.as_user('00000000-0000-0000-0000-0000000000b3');
-insert into friends (id, name, city, state, user_id) values ('h-cat', 'Cat', 'Chicago', 'IL', '00000000-0000-0000-0000-0000000000b3');
+insert into friends (id, name, city, state, user_id, email_new_book, email_book_sent, email_book_arrived, email_next_in_line, email_friend_request, email_reminders) values ('h-cat', 'Cat', 'Chicago', 'IL', '00000000-0000-0000-0000-0000000000b3', true, true, true, true, true, true);
 select join_group(:'code');
 
 select test.as_user('00000000-0000-0000-0000-0000000000b1');
@@ -89,6 +90,34 @@ select test.refused('Cat cannot send Ana''s copy travelling', $$select unretire_
 select test.as_user('00000000-0000-0000-0000-0000000000b1');
 select unretire_book('h-book');
 select test.check('Ana sends it travelling again', exists (select 1 from books where id = 'h-book' and archived_at is null));
+
+
+-- Calling it home: Cat has it and Bea is waiting; Ana wants it back.
+select test.as_user('00000000-0000-0000-0000-0000000000b3');
+insert into reading_queue (book_id, friend_id, position, status) values ('h-book', 'h-cat', 2, 'waiting');
+select test.as_user('00000000-0000-0000-0000-0000000000b1');
+select pass_on('h-leg-4', 'h-book', 'h-cat', null, null);
+reset role;
+update reading_queue set status = 'waiting', position = 3 where book_id = 'h-book' and friend_id = 'h-bea';
+set role authenticated;
+select test.as_user('00000000-0000-0000-0000-0000000000b3');
+select mark_received('h-book');
+select test.refused('Cat cannot call Ana''s copy home', $$select call_home('h-book')$$);
+select test.as_user('00000000-0000-0000-0000-0000000000b1');
+select call_home('h-book');
+select test.check('Ana calls it home', exists (select 1 from books where id = 'h-book' and called_home_at is not null));
+reset role;
+select test.check('Cat is emailed that it''s been called home',
+  exists (select 1 from notifications where kind = 'called_home' and person_id = 'h-cat' and about_person = 'h-ana'));
+set role authenticated;
+select test.as_user('00000000-0000-0000-0000-0000000000b3');
+select test.refused('Called home, Cat cannot send it on to Bea', $$select pass_on('h-no', 'h-book', 'h-bea', null, null)$$);
+select pass_on('h-leg-5', 'h-book', 'h-ana', 'Back to you', null);
+select test.check('Sending it home answers the call', exists (select 1 from books where id = 'h-book' and called_home_at is null));
+select test.check('Bea keeps her place in line',
+  exists (select 1 from reading_queue where book_id = 'h-book' and friend_id = 'h-bea' and status = 'waiting'));
+select test.as_user('00000000-0000-0000-0000-0000000000b1');
+select test.refused('Ana cannot call home a copy she has', $$select call_home('h-book')$$);
 
 reset role;
 select 'ALL HANDOFF TESTS PASSED';

@@ -10,14 +10,15 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Book, Group, RootStackParamList } from '../types';
 import { BookCard } from '../components/BookCard';
 import { ClubYearCard } from '../components/ClubYearCard';
 import { AboutSheet } from '../components/AboutSheet';
-import { homage, tagline } from '../content/about';
-import { holderId, isInTransit } from '../lib/bookState';
+import { Letterhead } from '../components/Letterhead';
+import { homage } from '../content/about';
+import { copyOwnerId, holderId, isInTransit, relativeTime } from '../lib/bookState';
+import { lately } from '../lib/lately';
 import { theme } from '../theme';
 
 type HomeScreenProps = {
@@ -27,7 +28,12 @@ type HomeScreenProps = {
   currentUserId: string | null;
   refreshing: boolean;
   onRefresh: () => void;
+  /** Whether there's a Shelf tab to scan a bookshelf into (accounts only, not the demo). */
+  canScanShelf?: boolean;
 };
+
+/** Rules & About is hidden for now: newcomers found it confusing. The sheet is kept. */
+const SHOW_RULES_AND_ABOUT = false;
 
 type FilterMode = 'all' | 'hands' | 'ready' | 'travelling';
 
@@ -38,8 +44,8 @@ export function HomeScreen({
   currentUserId,
   refreshing,
   onRefresh,
+  canScanShelf = false,
 }: HomeScreenProps) {
-  const insets = useSafeAreaInsets();
   const [aboutOpen, setAboutOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterMode, setFilterMode] = useState<FilterMode>('all');
@@ -74,7 +80,7 @@ export function HomeScreen({
   );
   const sampleGroupIds = new Set(groups.filter((group) => group.isSample).map((group) => group.id));
   const isSampleBook = (book: Book) => Boolean(book.groupId && sampleGroupIds.has(book.groupId));
-  const others = activeBooks.filter((book) => !mine.includes(book) && !book.archivedAt);
+  const others = activeBooks.filter((book) => !book.archivedAt);
   const rested = activeBooks.filter((book) => Boolean(book.archivedAt));
 
   const sections = [...groups]
@@ -88,9 +94,17 @@ export function HomeScreen({
     .filter((group) => !group.isSample && currentUserId && group.memberIds.includes(currentUserId))
     .map((group) => group.name)
     .sort();
-  const groupName = (book: Book) => groups.find((group) => group.id === book.groupId)?.name;
   const ungrouped = others.filter(
     (book) => !sections.some((section) => section.books.includes(book)),
+  );
+
+  // Nothing of your own yet: the first thing to do is scan your shelf.
+  const ownsNothing =
+    currentUserId !== null &&
+    !books.some((book) => copyOwnerId(book) === currentUserId && !isSampleBook(book));
+  const recent = lately(
+    books.filter((book) => !book.archivedAt),
+    6,
   );
 
   const open = (book: Book) =>
@@ -111,34 +125,82 @@ export function HomeScreen({
         />
       }
     >
-      <View style={[styles.headerWrap, { paddingTop: insets.top + 20 }]}>
-        <Text style={styles.title}>The Traveling Books</Text>
-        <Text style={styles.subtitle}>{tagline}</Text>
-        <View style={styles.actions}>
-          <Pressable
-            style={styles.addButton}
-            onPress={() => navigation.navigate('AddBook')}
-            accessibilityRole="button"
-          >
-            <Ionicons name="add" size={18} color={theme.colors.onAccent} />
-            <Text style={styles.addButtonText}>Lend a new book</Text>
-          </Pressable>
-          <Pressable
-            style={styles.aboutButton}
-            onPress={() => setAboutOpen(true)}
-            accessibilityRole="button"
-          >
-            <Ionicons name="book-outline" size={17} color={theme.colors.accent} />
-            <Text style={styles.aboutButtonText}>Rules & About</Text>
-          </Pressable>
-        </View>
-        <Text style={styles.homage}>{homage}</Text>
+      <View style={styles.headerWrap}>
+        <Letterhead>
+          <View style={styles.actions}>
+            {canScanShelf ? (
+              <>
+                <Pressable
+                  style={({ pressed }) => [styles.addButton, pressed && styles.addButtonPressed]}
+                  onPress={() => navigation.getParent()?.navigate('Shelf')}
+                  accessibilityRole="button"
+                >
+                  <Ionicons name="camera-outline" size={16} color={theme.colors.accent} />
+                  <Text style={styles.addButtonText}>Scan your bookshelf</Text>
+                </Pressable>
+                <Pressable
+                  style={styles.aboutButton}
+                  onPress={() => navigation.navigate('AddBook')}
+                  accessibilityRole="button"
+                  hitSlop={8}
+                >
+                  <Text style={styles.aboutButtonText}>Lend one book</Text>
+                </Pressable>
+              </>
+            ) : (
+              <Pressable
+                style={({ pressed }) => [styles.addButton, pressed && styles.addButtonPressed]}
+                onPress={() => navigation.navigate('AddBook')}
+                accessibilityRole="button"
+              >
+                <Text style={styles.addButtonText}>Lend a new book</Text>
+              </Pressable>
+            )}
+            {SHOW_RULES_AND_ABOUT && (
+              <Pressable
+                style={styles.aboutButton}
+                onPress={() => setAboutOpen(true)}
+                accessibilityRole="button"
+                hitSlop={8}
+              >
+                <Text style={styles.aboutButtonText}>Rules & About</Text>
+              </Pressable>
+            )}
+          </View>
+          {canScanShelf && (
+            <Text style={styles.scanHint}>
+              Take one photo of your shelves and we'll read every spine, so your friends can see
+              what you have and ask to borrow it.
+            </Text>
+          )}
+          <Text style={styles.homage}>{homage}</Text>
+        </Letterhead>
       </View>
+
+      {canScanShelf && ownsNothing && (
+        <Pressable
+          style={styles.startCard}
+          onPress={() => navigation.getParent()?.navigate('Shelf')}
+          accessibilityRole="button"
+        >
+          <Text style={styles.startKicker}>Start here</Text>
+          <Text style={styles.startTitle}>Photograph your bookshelf</Text>
+          <Text style={styles.startBody}>
+            One picture of the shelves at home and we'll add every book we can read. No typing. Then
+            lend any of them to your group.
+          </Text>
+          <View style={styles.startButton}>
+            <Ionicons name="camera-outline" size={16} color={theme.colors.onAccent} />
+            <Text style={styles.startButtonText}>Scan my bookshelf</Text>
+          </View>
+        </Pressable>
+      )}
 
       {/* Search and filters */}
       <View style={styles.searchRow}>
         <Ionicons name="search" size={16} color={theme.colors.faint} style={styles.searchIcon} />
         <TextInput
+          accessibilityLabel="Search by title or author"
           value={searchQuery}
           onChangeText={setSearchQuery}
           placeholder="Search by title or author…"
@@ -147,7 +209,12 @@ export function HomeScreen({
           returnKeyType="search"
         />
         {searchQuery.length > 0 && (
-          <Pressable onPress={() => setSearchQuery('')} hitSlop={8} accessibilityRole="button">
+          <Pressable
+            onPress={() => setSearchQuery('')}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel="Clear search"
+          >
             <Ionicons name="close-circle" size={16} color={theme.colors.faint} />
           </Pressable>
         )}
@@ -190,6 +257,34 @@ export function HomeScreen({
         />
       )}
 
+      {!searchQuery && filterMode === 'all' && recent.length > 0 && (
+        <View style={styles.lately}>
+          <Text style={styles.latelyHeading}>Lately</Text>
+          {recent.map((event) => (
+            <Pressable
+              key={event.id}
+              style={({ pressed }) => [styles.latelyRow, pressed && styles.latelyPressed]}
+              onPress={() =>
+                navigation.navigate('BookDetail', { bookId: event.bookId, bookTitle: event.title })
+              }
+              accessibilityRole="button"
+            >
+              <Text style={styles.latelyText}>
+                <Text style={styles.latelyWho}>{event.who}</Text>
+                {event.verb === 'lent' ? ' put ' : event.verb === 'sent' ? ' sent ' : ' received '}
+                <Text style={styles.latelyTitle}>{event.title}</Text>
+                {event.verb === 'lent'
+                  ? ' into circulation'
+                  : event.verb === 'sent'
+                    ? ` to ${event.to}`
+                    : ''}
+              </Text>
+              <Text style={styles.latelyWhen}>{relativeTime(event.at)}</Text>
+            </Pressable>
+          ))}
+        </View>
+      )}
+
       {books.length > 0 && activeBooks.length === 0 && (
         <View style={styles.searchEmptyCard}>
           <Text style={styles.searchEmptyTitle}>Looking for another story?</Text>
@@ -209,24 +304,7 @@ export function HomeScreen({
         </View>
       )}
 
-      {mine.length > 0 && (
-        <>
-          <View style={styles.sectionHeader}>
-            <Text style={[styles.sectionTitle, styles.sectionTitleMine]}>In your hands</Text>
-          </View>
-          {mine.map((book) => (
-            <BookCard
-              key={book.id}
-              book={book}
-              currentUserId={currentUserId}
-              groupName={groupName(book)}
-              onPress={open}
-            />
-          ))}
-        </>
-      )}
-
-      {sections.length === 0 && mine.length === 0 && ungrouped.length === 0 && (
+      {sections.length === 0 && ungrouped.length === 0 && (
         <Text style={styles.empty}>
           Got a book you'd pass around? Lend it and its journey begins.
         </Text>
@@ -240,9 +318,6 @@ export function HomeScreen({
             accessibilityRole="button"
             accessibilityLabel={`${group.name} group`}
           >
-            <View style={styles.groupIcon}>
-              <Ionicons name="people" size={16} color={theme.colors.accent} />
-            </View>
             <View style={styles.groupHeaderText}>
               <Text style={styles.groupKicker}>{group.isSample ? 'Sample group' : 'Group'}</Text>
               <Text style={styles.sectionTitle}>{group.name}</Text>
@@ -251,7 +326,7 @@ export function HomeScreen({
                 {groupBooks.length} {groupBooks.length === 1 ? 'book' : 'books'}
               </Text>
             </View>
-            <Text style={styles.seeGroup}>See group ›</Text>
+            <Text style={styles.seeGroup}>See group →</Text>
           </Pressable>
           {groupBooks.map((book) => (
             <BookCard key={book.id} book={book} currentUserId={currentUserId} onPress={open} />
@@ -275,9 +350,7 @@ export function HomeScreen({
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Home shelf</Text>
           </View>
-          <Text style={styles.restedSubtitle}>
-            Resting copies, kept safe after their journeys.
-          </Text>
+          <Text style={styles.restedSubtitle}>Resting copies, kept safe after their journeys.</Text>
           {rested.map((book) => (
             <BookCard key={book.id} book={book} currentUserId={currentUserId} onPress={open} />
           ))}
@@ -300,131 +373,207 @@ const styles = StyleSheet.create({
   },
   actions: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginTop: 16,
-    marginRight: -10,
-  },
-  aboutButton: {
-    flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 1.5,
-    borderColor: theme.colors.accent,
-    backgroundColor: theme.colors.card,
-    borderRadius: 999,
-    paddingVertical: 9,
-    paddingLeft: 14,
-    paddingRight: 18,
-    marginRight: 10,
-    marginBottom: 10,
+    marginTop: 20,
   },
-  aboutButtonText: {
-    marginLeft: 6,
-    color: theme.colors.accent,
-    fontWeight: '700',
-    fontSize: 15,
-  },
-  headerWrap: {
-    backgroundColor: theme.colors.masthead,
+
+  aboutButton: {
+    marginLeft: 22,
     borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
+    borderBottomColor: theme.colors.brass,
+    paddingBottom: 2,
+  },
+
+  aboutButtonText: {
+    ...theme.caps,
+    color: theme.colors.onMasthead,
+    fontSize: 12,
+  },
+
+  headerWrap: {
     marginHorizontal: -20,
-    paddingHorizontal: 20,
-    paddingBottom: 16,
-    marginBottom: 24,
-  },
-  homage: {
-    fontSize: 11,
-    lineHeight: 15,
-    color: theme.colors.muted,
-    marginTop: 6,
-  },
-  title: {
-    fontFamily: theme.fonts.serif,
-    fontSize: 30,
-    lineHeight: 36,
-    fontWeight: '700',
-    color: theme.colors.text,
     marginBottom: 8,
   },
-  subtitle: {
-    fontSize: 16,
-    lineHeight: 24,
+
+  homage: {
+    fontSize: 12,
+    lineHeight: 15,
+    color: theme.colors.onMasthead,
+    opacity: 0.75,
+    textAlign: 'center',
+    marginTop: 20,
+  },
+
+  lately: {
+    marginTop: 26,
+  },
+  latelyHeading: {
+    ...theme.caps,
+    fontSize: 12,
+    letterSpacing: 2.4,
+    color: theme.colors.text,
+    borderBottomWidth: 2,
+    borderBottomColor: theme.colors.text,
+    paddingBottom: 8,
+  },
+  latelyRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    paddingVertical: 10,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: theme.colors.rule,
+  },
+  latelyPressed: {
+    backgroundColor: theme.colors.soft,
+  },
+  latelyText: {
+    flex: 1,
+    fontSize: 14,
+    lineHeight: 20,
     color: theme.colors.muted,
+  },
+  latelyWho: {
+    fontWeight: '700',
+    color: theme.colors.text,
+  },
+  latelyTitle: {
+    fontFamily: theme.fonts.serif,
+    fontStyle: 'italic',
+    color: theme.colors.text,
+  },
+  latelyWhen: {
+    ...theme.caps,
+    fontSize: 12,
+    color: theme.colors.faint,
+    marginLeft: 12,
+  },
+
+  startCard: {
+    backgroundColor: theme.colors.card,
+    borderWidth: 1,
+    borderColor: theme.colors.rule,
+    borderTopWidth: 4,
+    borderTopColor: theme.colors.letterhead,
+    borderRadius: theme.radius.md,
+    padding: 18,
+    marginTop: 16,
+  },
+  startKicker: {
+    ...theme.caps,
+    fontSize: 11,
+    letterSpacing: 2,
+    color: theme.colors.stamp,
+  },
+  startTitle: {
+    fontFamily: theme.fonts.serif,
+    fontSize: 22,
+    lineHeight: 28,
+    fontWeight: '700',
+    color: theme.colors.text,
+    marginTop: 4,
+  },
+  startBody: {
+    fontSize: 15,
+    lineHeight: 22,
+    color: theme.colors.text,
+    marginTop: 6,
+  },
+  startButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    gap: 8,
+    backgroundColor: theme.colors.accent,
+    borderRadius: theme.radius.sm,
+    paddingVertical: 11,
+    paddingHorizontal: 16,
+    marginTop: 14,
+  },
+  startButtonText: {
+    ...theme.caps,
+    fontSize: 12,
+    fontWeight: '700',
+    color: theme.colors.onAccent,
+  },
+  scanHint: {
+    fontSize: 13,
+    lineHeight: 19,
+    color: theme.colors.onMasthead,
+    opacity: 0.8,
+    textAlign: 'center',
+    marginTop: 12,
+    maxWidth: 320,
+  },
+  addButtonPressed: {
+    opacity: 0.85,
   },
   addButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    alignSelf: 'flex-start',
-    backgroundColor: theme.colors.accent,
-    borderRadius: 999,
-    paddingVertical: 10,
-    paddingLeft: 14,
-    paddingRight: 18,
-    marginRight: 10,
-    marginBottom: 10,
+    gap: 8,
+    backgroundColor: theme.colors.onMasthead,
+    borderRadius: theme.radius.sm,
+    paddingVertical: 11,
+    paddingHorizontal: 18,
   },
   addButtonText: {
-    color: theme.colors.onAccent,
+    ...theme.caps,
+    color: theme.colors.letterhead,
     fontWeight: '700',
-    fontSize: 15,
-    marginLeft: 6,
+    fontSize: 12,
   },
+
   sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 14,
-    marginTop: 4,
+    borderBottomWidth: 2,
+    borderBottomColor: theme.colors.text,
+    paddingBottom: 8,
+    marginTop: 28,
   },
+
   sectionTitle: {
     fontFamily: theme.fonts.serif,
-    fontSize: 20,
+    fontSize: 22,
+    lineHeight: 28,
     fontWeight: '700',
     color: theme.colors.text,
   },
-  sectionTitleMine: {
-    color: theme.colors.stamp,
-  },
+
   groupHeader: {
     flexDirection: 'row',
-    alignItems: 'center',
-    borderTopWidth: 1,
-    borderTopColor: theme.colors.border,
-    paddingTop: 18,
-    marginTop: 10,
-    marginBottom: 14,
+    alignItems: 'flex-end',
+    borderBottomWidth: 2,
+    borderBottomColor: theme.colors.text,
+    paddingBottom: 8,
+    marginTop: 28,
   },
-  groupIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: theme.colors.soft,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-  },
+
   groupHeaderText: {
     flex: 1,
   },
   groupKicker: {
+    ...theme.caps,
     fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 0.8,
+    letterSpacing: 1,
     textTransform: 'uppercase',
     color: theme.colors.muted,
-    marginBottom: 1,
+    marginBottom: 2,
   },
+
   groupMeta: {
+    ...theme.caps,
     fontSize: 12,
     color: theme.colors.muted,
-    marginTop: 2,
+    marginTop: 3,
   },
+
   seeGroup: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '700',
     color: theme.colors.accent,
     marginLeft: 8,
+    marginBottom: 2,
   },
+
   sectionMeta: {
     fontSize: 12,
     color: theme.colors.accent,
@@ -438,54 +587,56 @@ const styles = StyleSheet.create({
   searchRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: theme.colors.card,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    paddingHorizontal: 12,
-    paddingVertical: 9,
-    marginTop: 16,
-    marginBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.rule,
+    paddingVertical: 10,
+    marginTop: 12,
+    marginBottom: 6,
   },
+
   searchIcon: {
     marginRight: 8,
   },
   searchInput: {
     flex: 1,
-    fontSize: 14,
+    fontSize: 15,
     color: theme.colors.text,
     paddingVertical: 2,
-  },
+    outlineStyle: 'none',
+  } as object,
+
   chipsScroll: {
-    marginBottom: 14,
+    marginBottom: 8,
   },
+
   chipsContent: {
     flexDirection: 'row',
-    gap: 8,
+    gap: 20,
   },
+
   chip: {
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 16,
-    backgroundColor: theme.colors.soft,
-    borderWidth: 1,
-    borderColor: 'transparent',
+    paddingVertical: 8,
+    borderBottomWidth: 2,
+    borderBottomColor: 'transparent',
   },
+
   chipActive: {
-    backgroundColor: theme.colors.accent,
-    borderColor: theme.colors.accent,
+    borderBottomColor: theme.colors.accent,
   },
+
   chipText: {
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: '600',
     color: theme.colors.muted,
   },
+
   chipTextActive: {
-    color: theme.colors.onAccent,
+    color: theme.colors.text,
   },
+
   searchEmptyCard: {
     backgroundColor: theme.colors.card,
-    borderRadius: 12,
+    borderRadius: theme.radius.md,
     borderWidth: 1,
     borderColor: theme.colors.border,
     padding: 18,
@@ -507,24 +658,23 @@ const styles = StyleSheet.create({
   clearSearchButton: {
     alignSelf: 'flex-start',
     backgroundColor: theme.colors.accent,
-    borderRadius: 8,
+    borderRadius: theme.radius.md,
     paddingVertical: 8,
     paddingHorizontal: 14,
   },
   clearSearchButtonText: {
+    ...theme.caps,
     color: theme.colors.onAccent,
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '700',
   },
   restedSection: {
-    marginTop: 20,
-    borderTopWidth: 1,
-    borderTopColor: theme.colors.border,
-    paddingTop: 16,
+    marginTop: 12,
   },
+
   restedSubtitle: {
-    fontSize: 13,
+    fontSize: 14,
     color: theme.colors.muted,
-    marginBottom: 12,
+    marginTop: 8,
   },
 });

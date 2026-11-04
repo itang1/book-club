@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Friend } from '../types';
 import { theme } from '../theme';
+import { Letterhead } from '../components/Letterhead';
 import { tagline } from '../content/about';
 import { inviteCodeFromUrl } from '../lib/invite';
 import { groupPreview, unclaimedInGroup } from '../lib/bookClubService';
@@ -30,7 +30,6 @@ export function WelcomeScreen({
   email,
   onSignOut,
 }: WelcomeScreenProps) {
-  const insets = useSafeAreaInsets();
   const [name, setName] = useState('');
   const [city, setCity] = useState('');
   const [region, setRegion] = useState('');
@@ -53,82 +52,82 @@ export function WelcomeScreen({
   return (
     <ScrollView
       style={styles.container}
-      contentContainerStyle={[styles.content, { paddingTop: insets.top + 40 }]}
+      contentContainerStyle={styles.scroll}
       keyboardShouldPersistTaps="handled"
     >
-      <Text style={styles.title}>The Traveling Books</Text>
-      <Text style={styles.subtitle}>
-        {groupName ? `You're invited to ${groupName}. ${tagline}` : tagline}
-      </Text>
-
-      {claimable.length > 0 && (
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Already in {groupName ?? 'the club'}?</Text>
-          <Text style={styles.note}>Find yourself and pick up where your friends left off.</Text>
-          {claimable.map((person) => (
-            <View key={person.id} style={styles.personRow}>
-              <View style={styles.personInfo}>
-                <Text style={styles.personName}>{person.name}</Text>
-                <Text style={styles.personCity}>{person.city}</Text>
+      <Letterhead line={groupName ? `You're invited to ${groupName}.` : tagline} />
+      <View style={styles.content}>
+        {claimable.length > 0 && (
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>Already in {groupName ?? 'the club'}?</Text>
+            <Text style={styles.note}>Find yourself and pick up where your friends left off.</Text>
+            {claimable.map((person) => (
+              <View key={person.id} style={styles.personRow}>
+                <View style={styles.personInfo}>
+                  <Text style={styles.personName}>{person.name}</Text>
+                  <Text style={styles.personCity}>{person.city}</Text>
+                </View>
+                <Pressable
+                  style={styles.claimButton}
+                  onPress={() => onClaim(person.id, inviteCode)}
+                >
+                  <Text style={styles.claimButtonText}>That's me</Text>
+                </Pressable>
               </View>
-              <Pressable
-                style={styles.claimButton}
-                onPress={() => onClaim(person.id, inviteCode)}
-              >
-                <Text style={styles.claimButtonText}>That's me</Text>
-              </Pressable>
-            </View>
-          ))}
-        </View>
-      )}
+            ))}
+          </View>
+        )}
 
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>
-          {claimable.length > 0 ? 'New here? Join the circle' : 'Join the circle'}
-        </Text>
-        <TextInput
-          value={name}
-          onChangeText={setName}
-          placeholder="Your name"
-          placeholderTextColor={theme.colors.faint}
-          style={styles.input}
-        />
-        <TextInput
-          value={city}
-          onChangeText={setCity}
-          placeholder="City"
-          placeholderTextColor={theme.colors.faint}
-          style={styles.input}
-        />
-        {/* Free text, not a two-letter code: the club isn't all in the US. */}
-        <TextInput
-          value={region}
-          onChangeText={setRegion}
-          placeholder="State or country (optional)"
-          placeholderTextColor={theme.colors.faint}
-          style={styles.input}
-        />
-        <Text style={styles.note}>
-          Friends see your city so they know where their book has been.
-        </Text>
-
-        <Pressable
-          style={[styles.primaryButton, !ready && styles.disabled]}
-          disabled={!ready}
-          onPress={() => onCreate({ name, city, region }, inviteCode)}
-        >
-          <Text style={styles.primaryButtonText}>Join</Text>
-        </Pressable>
-      </View>
-
-      {email && onSignOut && (
-        <Pressable style={styles.footerLink} onPress={onSignOut}>
-          <Text style={styles.muted}>
-            Signed in as {email}. <Text style={styles.link}>Someone else? Sign out</Text>
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>
+            {claimable.length > 0 ? 'New here? Join the circle' : 'Join the circle'}
           </Text>
-        </Pressable>
-      )}
+          <TextInput
+            accessibilityLabel="Your name"
+            value={name}
+            onChangeText={setName}
+            placeholder="Your name"
+            placeholderTextColor={theme.colors.faint}
+            style={styles.input}
+          />
+          <TextInput
+            accessibilityLabel="City"
+            value={city}
+            onChangeText={setCity}
+            placeholder="City"
+            placeholderTextColor={theme.colors.faint}
+            style={styles.input}
+          />
+          {/* Free text, not a two-letter code: the club isn't all in the US. */}
+          <TextInput
+            accessibilityLabel="State or country"
+            value={region}
+            onChangeText={setRegion}
+            placeholder="State or country (optional)"
+            placeholderTextColor={theme.colors.faint}
+            style={styles.input}
+          />
+          <Text style={styles.note}>
+            Friends see your city so they know where their book has been.
+          </Text>
 
+          <Pressable
+            style={[styles.primaryButton, !ready && styles.disabled]}
+            disabled={!ready}
+            onPress={() => onCreate({ name, city, region }, inviteCode)}
+          >
+            <Text style={styles.primaryButtonText}>Join</Text>
+          </Pressable>
+        </View>
+
+        {email && onSignOut && (
+          <Pressable style={styles.footerLink} onPress={onSignOut}>
+            <Text style={styles.muted}>
+              Signed in as {email}. <Text style={styles.link}>Someone else? Sign out</Text>
+            </Text>
+          </Pressable>
+        )}
+      </View>
     </ScrollView>
   );
 }
@@ -138,29 +137,23 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: theme.colors.background,
   },
-  content: {
-    padding: 24,
+  scroll: {
     paddingBottom: 40,
   },
-  title: {
-    fontFamily: theme.fonts.serif,
-    fontSize: 32,
-    lineHeight: 38,
-    fontWeight: '700',
-    color: theme.colors.text,
-    marginBottom: 10,
-  },
-  subtitle: {
-    fontSize: 16,
-    lineHeight: 24,
-    color: theme.colors.muted,
-    marginBottom: 24,
+  content: {
+    padding: 20,
+    paddingTop: 24,
+    width: '100%',
+    maxWidth: 480,
+    alignSelf: 'center',
   },
   card: {
     backgroundColor: theme.colors.card,
     borderWidth: 1,
-    borderColor: theme.colors.border,
-    borderRadius: 16,
+    borderColor: theme.colors.rule,
+    borderTopWidth: 3,
+    borderTopColor: theme.colors.accent,
+    borderRadius: theme.radius.md,
     padding: 18,
     marginBottom: 16,
   },
@@ -188,6 +181,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   personName: {
+    fontFamily: theme.fonts.serif,
     fontSize: 15,
     fontWeight: '700',
     color: theme.colors.text,
@@ -199,18 +193,19 @@ const styles = StyleSheet.create({
   },
   claimButton: {
     backgroundColor: theme.colors.accent,
-    borderRadius: 999,
+    borderRadius: theme.radius.sm,
     paddingHorizontal: 14,
     paddingVertical: 8,
   },
   claimButtonText: {
+    ...theme.caps,
     color: theme.colors.onAccent,
     fontWeight: '700',
-    fontSize: 13,
+    fontSize: 12,
   },
   input: {
     backgroundColor: theme.colors.soft,
-    borderRadius: 12,
+    borderRadius: theme.radius.md,
     padding: 12,
     color: theme.colors.text,
     fontSize: 15,
@@ -220,7 +215,7 @@ const styles = StyleSheet.create({
   primaryButton: {
     marginTop: 6,
     backgroundColor: theme.colors.accent,
-    borderRadius: 12,
+    borderRadius: theme.radius.md,
     paddingVertical: 13,
     alignItems: 'center',
   },
@@ -228,9 +223,10 @@ const styles = StyleSheet.create({
     opacity: 0.45,
   },
   primaryButtonText: {
+    ...theme.caps,
     color: theme.colors.onAccent,
     fontWeight: '700',
-    fontSize: 15,
+    fontSize: 13,
   },
   footerLink: {
     marginTop: 12,
