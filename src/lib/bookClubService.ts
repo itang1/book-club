@@ -42,7 +42,6 @@ type BookRow = {
   cover_color: string;
   gifted_by: string | null;
   group_id: string | null;
-  cover_url: string | null;
   archived_at?: string | null;
   called_home_at?: string | null;
 };
@@ -205,7 +204,6 @@ function assembleBooks(
       coverColor: row.cover_color,
       giftedBy: row.gifted_by ?? undefined,
       groupId: row.group_id ?? undefined,
-      coverUrl: row.cover_url ?? undefined,
       archivedAt: row.archived_at ?? undefined,
       calledHomeAt: row.called_home_at ?? undefined,
       queue,
@@ -348,7 +346,6 @@ export async function createBook(book: Book): Promise<SaveError> {
       p_handoff_id: firstLeg.id,
       p_gifted_by: book.giftedBy ?? null,
       p_group_id: book.groupId ?? null,
-      p_cover_url: book.coverUrl ?? null,
     });
     if (error) {
       console.warn('Supabase lend_book failed:', error.message);
@@ -431,9 +428,6 @@ export const updateFriendRequestsFrom = (personId: string, value: 'groups' | 'no
     db.from('friends').update({ friend_requests_from: value }).eq('id', personId),
   );
 
-/** Set or clear a book's cover (owner only, enforced by the database). */
-export const setCover = (bookId: string, coverUrl: string | null) =>
-  save('setCover', (db) => db.rpc('set_cover', { p_book_id: bookId, p_cover_url: coverUrl }));
 
 /** Update a book's title and author (owner only). */
 export const updateBookDetails = (bookId: string, title: string, author: string) =>
@@ -454,6 +448,10 @@ export const callHome = (bookId: string) =>
 
 export const cancelCallHome = (bookId: string) =>
   save('cancelCallHome', (db) => db.rpc('cancel_call_home', { p_book_id: bookId }));
+
+/** Mark the current book as finished reading (holder only). */
+export const finishReading = (bookId: string) =>
+  save('finishReading', (db) => db.rpc('finish_reading', { p_book_id: bookId }));
 
 /** Rows store each pair once, smaller id first (see schema.sql). */
 const pairOf = (x: string, y: string) =>

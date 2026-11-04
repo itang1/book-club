@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Image, Platform, Pressable, ScrollView, Share, Text, View } from 'react-native';
+import { Platform, Pressable, ScrollView, Share, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import { Book, Group, Letter } from '../types';
@@ -37,12 +37,12 @@ type BookDetailScreenProps = {
   currentUserId: string | null;
   onHandOff: (bookId: string, toFriend: string, letter: Letter) => void;
   onMarkReceived: (bookId: string) => void;
-  onChangeCover: (bookId: string, mode: 'find' | 'clear') => void;
   onUpdateBookDetails?: (bookId: string, title: string, author: string) => void;
   onRetireBook?: (bookId: string) => void;
   onUnretireBook?: (bookId: string) => void;
   onCallHome?: (bookId: string) => void;
   onCancelCallHome?: (bookId: string) => void;
+  onFinishReading?: (bookId: string) => void;
   onJoinLine: (bookId: string) => void;
   onLeaveLine: (bookId: string) => void;
 };
@@ -54,12 +54,12 @@ export function BookDetailScreen({
   currentUserId,
   onHandOff,
   onMarkReceived,
-  onChangeCover,
   onUpdateBookDetails,
   onRetireBook,
   onUnretireBook,
   onCallHome,
   onCancelCallHome,
+  onFinishReading,
   onJoinLine,
   onLeaveLine,
 }: BookDetailScreenProps) {
@@ -98,6 +98,9 @@ export function BookDetailScreen({
   const myPlace = placeInLine(book, currentUserId);
   const stay = stayProgress(book, group?.paceWeeks);
   const goingHome = confirmingTo !== null && confirmingTo === owner && confirmingTo !== nextId;
+  const myQueueEntry = book.queue.find((entry) => entry.id === currentUserId);
+  const amReading = myQueueEntry?.status === 'reading';
+  const haveFinished = myQueueEntry?.status === 'done';
 
   const whereItIs = (() => {
     if (comingToMe) {
@@ -166,6 +169,19 @@ export function BookDetailScreen({
     }
 
     if (iHoldIt) {
+      if (amReading && !haveFinished && onFinishReading) {
+        return (
+          <View>
+            <Pressable style={styles.primaryButton} onPress={() => onFinishReading(book.id)}>
+              <Text style={styles.primaryButtonText}>Finished reading</Text>
+            </Pressable>
+            <Text style={styles.actionNote}>
+              Let your group know you've finished. You can pass it on whenever you're ready.
+            </Text>
+          </View>
+        );
+      }
+
       if (nextId) {
         return (
           <Pressable style={styles.primaryButton} onPress={() => setConfirmingTo(nextId)}>
@@ -228,23 +244,9 @@ export function BookDetailScreen({
   return (
     <>
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-        <View
-          style={[
-            styles.cover,
-            { backgroundColor: book.coverColor },
-            book.coverUrl && styles.coverWithImage,
-          ]}
-        >
+        <View style={[styles.cover, { backgroundColor: book.coverColor }]}>
           <View style={styles.coverSpine} />
-          {book.coverUrl ? (
-            <Image
-              source={{ uri: book.coverUrl }}
-              style={styles.coverImage}
-              resizeMode="cover"
-              accessibilityIgnoresInvertColors
-            />
-          ) : null}
-          <View style={book.coverUrl ? styles.coverTextBeside : undefined}>
+          <View>
             <Text style={styles.coverTitle}>{book.title}</Text>
             <Text style={styles.coverAuthor}>{book.author}</Text>
             {book.giftedBy ? (
@@ -282,15 +284,6 @@ export function BookDetailScreen({
         </View>
         {currentUserId !== null && currentUserId === owner && !isSample && (
           <View style={styles.ownerActions}>
-            <Pressable
-              style={styles.ownerAction}
-              onPress={() => onChangeCover(book.id, book.coverUrl ? 'clear' : 'find')}
-              accessibilityRole="button"
-            >
-              <Text style={styles.ownerActionText}>
-                {book.coverUrl ? 'Use colour swatch' : 'Find cover image'}
-              </Text>
-            </Pressable>
             {onUpdateBookDetails && (
               <Pressable
                 style={styles.ownerAction}

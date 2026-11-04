@@ -1116,6 +1116,35 @@ begin
 end;
 $$;
 
+-- Mark a book as finished reading (holder only). Sets status to 'done' but
+-- keeps the book with you; you can still pass it on later or let others know
+-- it's ready for the next reader.
+create or replace function public.finish_reading(p_book_id text) returns void
+language plpgsql security definer set search_path = public
+as $$
+declare
+  me_id text := public.me();
+  holder text;
+begin
+  select to_friend into holder from public.handoffs
+  where book_id = p_book_id order by happened_at desc limit 1;
+
+  if me_id is null or holder is distinct from me_id then
+    raise exception 'Only the person holding a book can mark it as finished';
+  end if;
+
+  if exists (
+    select 1 from public.reading_queue
+    where book_id = p_book_id and friend_id = me_id and status = 'done'
+  ) then
+    raise exception 'You''ve already marked this book as finished';
+  end if;
+
+  update public.reading_queue set status = 'done'
+  where book_id = p_book_id and friend_id = me_id;
+end;
+$$;
+
 -- ---------------------------------------------------------------
 -- The letters (note and stars) this person may open: the ones they wrote,
 -- and every letter in a copy they've finished themselves (passed on at least
@@ -1156,7 +1185,7 @@ revoke all on function public.me(), public.is_member(text), public.can_see_book(
   public.retire_book(text), public.unretire_book(text),
   public.call_home(text), public.cancel_call_home(text),
   public.pass_on(text, text, text, text, smallint),
-  public.mark_received(text), public.readable_letters()
+  public.mark_received(text), public.finish_reading(text), public.readable_letters()
   from public, anon;
 grant execute on function public.me(), public.is_member(text), public.can_see_book(text),
   public.is_sample_group(text), public.is_sample_book(text), public.has_account(text),
@@ -1175,7 +1204,7 @@ grant execute on function public.me(), public.is_member(text), public.can_see_bo
   public.retire_book(text), public.unretire_book(text),
   public.call_home(text), public.cancel_call_home(text),
   public.pass_on(text, text, text, text, smallint),
-  public.mark_received(text), public.readable_letters()
+  public.mark_received(text), public.finish_reading(text), public.readable_letters()
   to authenticated;
 
 -- Someone opening an invite link isn't signed in yet, so the sign-in screen

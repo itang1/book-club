@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { Book, Friend, Group } from '../types';
 import { theme } from '../theme';
@@ -167,11 +167,7 @@ export function GroupScreen({
                 style={[styles.bookRow, index > 0 && styles.divider]}
                 onPress={() => onOpenBook(book.id)}
               >
-                {book.coverUrl ? (
-                  <Image source={{ uri: book.coverUrl }} style={styles.bookCover} />
-                ) : (
-                  <View style={[styles.bookCover, { backgroundColor: book.coverColor }]} />
-                )}
+                <View style={[styles.bookCover, { backgroundColor: book.coverColor }]} />
                 <View style={styles.bookText}>
                   <Text style={styles.bookTitle}>{book.title}</Text>
                   <Text style={styles.bookMeta}>

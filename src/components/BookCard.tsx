@@ -74,7 +74,6 @@ export function BookCard({ book, currentUserId, isSample, groupName, onPress }: 
         title={book.title}
         author={book.author}
         color={book.coverColor}
-        imageUrl={book.coverUrl}
         width={78}
       />
 

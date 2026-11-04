@@ -116,8 +116,6 @@ export type Book = {
   giftedBy?: string;
   /** The group it's lent within. */
   groupId?: string;
-  /** A cover image from Open Library; without one, the colour swatch. */
-  coverUrl?: string;
   /** When the owner rested this copy from circulation. */
   archivedAt?: string;
   /** The owner has asked for it back: it goes home next, and the line waits. */

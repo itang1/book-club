@@ -33,7 +33,6 @@ export const booksSeed: Book[] = sampleClubs.flatMap((club) =>
     title: book.title,
     author: book.author,
     coverColor: book.color,
-    coverUrl: book.cover ? `https://covers.openlibrary.org/b/id/${book.cover}-M.jpg` : undefined,
     giftedBy: book.giftedBy,
     groupId: club.id,
     queue: sampleQueue(book).map(({ friendId, position, status }) => ({

@@ -31,19 +31,6 @@ export const styles = StyleSheet.create({
     fontSize: 13,
     color: theme.colors.coverInk,
   },
-  coverWithImage: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-  },
-  coverImage: {
-    width: 96,
-    height: 144,
-    borderRadius: 4,
-    marginRight: 16,
-  },
-  coverTextBeside: {
-    flex: 1,
-  },
   ownerActions: {
     flexDirection: 'row',
     flexWrap: 'wrap',

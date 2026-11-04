@@ -33,8 +33,6 @@ export type SampleBook = {
   title: string;
   author: string;
   color: string;
-  /** Open Library cover id. */
-  cover?: string;
   giftedBy?: string;
   journey: SampleStop[];
   /** Signed up and waiting, in order. */
@@ -67,7 +65,6 @@ export const sampleClubs: SampleClub[] = [
         title: 'Pride and Prejudice',
         author: 'Jane Austen',
         color: '#c89366',
-        cover: '14348537',
         journey: [
           { to: 'friend-carmen', sent: 41 },
           {
@@ -85,7 +82,6 @@ export const sampleClubs: SampleClub[] = [
         title: 'A Room with a View',
         author: 'E. M. Forster',
         color: '#c7a6b5',
-        cover: '1748132',
         journey: [
           { to: 'friend-lena', sent: 63 },
           {
@@ -103,7 +99,6 @@ export const sampleClubs: SampleClub[] = [
         title: 'Little Women',
         author: 'Louisa May Alcott',
         color: '#a8927d',
-        cover: '8775559',
         giftedBy: 'Grandma',
         journey: [
           { to: 'friend-tibby', sent: 94 },
@@ -128,7 +123,6 @@ export const sampleClubs: SampleClub[] = [
         title: 'Anne of Green Gables',
         author: 'L. M. Montgomery',
         color: '#8f9bb0',
-        cover: '14641084',
         journey: [
           { to: 'friend-bridget', sent: 121 },
           {
@@ -161,7 +155,6 @@ export const sampleClubs: SampleClub[] = [
         title: 'Jane Eyre',
         author: 'Charlotte Brontë',
         color: '#b4b8a9',
-        cover: '8235363',
         journey: [
           { to: 'friend-lena', sent: 200 },
           {

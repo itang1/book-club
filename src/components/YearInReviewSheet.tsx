@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import {
-  Image,
   Modal,
   Platform,
   Pressable,
@@ -36,11 +35,7 @@ function listOf(names: string[]): string {
 function BookLine({ book, detail }: { book: Book; detail: string }) {
   return (
     <View style={styles.bookLine}>
-      {book.coverUrl ? (
-        <Image source={{ uri: book.coverUrl }} style={styles.bookCover} />
-      ) : (
-        <View style={[styles.bookCover, { backgroundColor: book.coverColor }]} />
-      )}
+      <View style={[styles.bookCover, { backgroundColor: book.coverColor }]} />
       <View style={styles.bookText}>
         <Text style={styles.bookTitle}>{book.title}</Text>
         <Text style={styles.bookAuthor}>{book.author}</Text>

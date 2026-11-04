@@ -1,23 +1,20 @@
-import { Image, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 import { theme } from '../theme';
 
 /**
  * A copy drawn as a book: cloth board, the hinge where the spine bends, and a
- * blind-stamped frame with the title set inside it. With a cover photo, the
- * photo replaces the board and keeps the hinge.
+ * blind-stamped frame with the title set inside it.
  */
 export function BookCover({
   title,
   author,
   color,
-  imageUrl,
   width,
 }: {
   title: string;
   author?: string;
   color: string;
-  imageUrl?: string | null;
   width: number;
 }) {
   const height = Math.round(width * 1.42);
@@ -28,36 +25,27 @@ export function BookCover({
 
   return (
     <View style={[styles.board, { width, height, backgroundColor: color }]}>
-      {imageUrl ? (
-        <Image
-          source={{ uri: imageUrl }}
-          style={StyleSheet.absoluteFill}
-          resizeMode="cover"
-          accessibilityIgnoresInvertColors
-        />
-      ) : (
-        <View
-          style={[
-            styles.frame,
-            { top: inset, bottom: inset, left: hinge + inset, right: inset, padding: inset * 0.5 },
-          ]}
+      <View
+        style={[
+          styles.frame,
+          { top: inset, bottom: inset, left: hinge + inset, right: inset, padding: inset * 0.5 },
+        ]}
+      >
+        <Text
+          style={[styles.title, { fontSize: titleSize, lineHeight: Math.round(titleSize * 1.2) }]}
+          numberOfLines={5}
         >
+          {title}
+        </Text>
+        {author && width >= 70 ? (
           <Text
-            style={[styles.title, { fontSize: titleSize, lineHeight: Math.round(titleSize * 1.2) }]}
-            numberOfLines={5}
+            style={[styles.author, { fontSize: Math.max(8, titleSize * 0.62) }]}
+            numberOfLines={2}
           >
-            {title}
+            {author}
           </Text>
-          {author && width >= 70 ? (
-            <Text
-              style={[styles.author, { fontSize: Math.max(8, titleSize * 0.62) }]}
-              numberOfLines={2}
-            >
-              {author}
-            </Text>
-          ) : null}
-        </View>
-      )}
+        ) : null}
+      </View>
       <View style={[styles.hinge, { width: hinge }]} />
       <View style={[styles.hingeLine, { left: hinge }]} />
     </View>

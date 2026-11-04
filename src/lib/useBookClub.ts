@@ -23,7 +23,7 @@ import {
   unretireBook,
   callHome,
   cancelCallHome,
-  setCover,
+  finishReading,
   updateBookDetails,
   updateEmailPrefs,
   updateFriendRequestsFrom,
@@ -33,7 +33,6 @@ import {
 import type { BookClubData } from './bookClubService';
 import { claimProfile, deleteMyAccount, onSessionChange, signOutEverywhere } from './auth';
 import { clearCachedClubData, loadCachedClubData, saveCachedClubData } from './cache';
-import { findCoverUrl } from './covers';
 import { hasFinished, holderId } from './bookState';
 import { isDevMode } from './devMode';
 import { clearInviteFromUrl } from './invite';
@@ -311,43 +310,15 @@ export function useBookClub() {
 
   const handleAddBook = (book: Book) => {
     setBooks((currentBooks) => [book, ...currentBooks]);
-    // Lend straight away; find the cover alongside and add it once both
-    // are done, so a slow lookup never holds up lending.
-    const cover = findCoverUrl(book.title, book.author);
     track(
       `add ${book.title}`,
-      createBook(book).then(async (reason) => {
+      createBook(book).then((reason) => {
         if (!reason) {
           countMilestone('book-lent');
         }
-        const url = await cover;
-        if (reason || !url) {
-          return reason;
-        }
-        updateBook(book.id, (candidate) => ({ ...candidate, coverUrl: url }));
-        return setCover(book.id, url);
+        return reason;
       }),
     );
-  };
-
-  /** Owner only: find a cover now, or go back to the colour swatch. */
-  const handleChangeCover = async (bookId: string, mode: 'find' | 'clear') => {
-    const book = books.find((candidate) => candidate.id === bookId);
-    if (!book) {
-      return;
-    }
-
-    const url = mode === 'find' ? await findCoverUrl(book.title, book.author) : null;
-    if (mode === 'find' && !url) {
-      setSaveProblem({
-        action: `find a cover for ${book.title}`,
-        reason: 'The colour swatch stays for now; try again once Open Library adds this cover.',
-      });
-      return;
-    }
-
-    updateBook(bookId, (candidate) => ({ ...candidate, coverUrl: url ?? undefined }));
-    track(mode === 'find' ? 'add the cover' : 'remove the cover', setCover(bookId, url));
   };
 
   /**
@@ -724,6 +695,23 @@ export function useBookClub() {
     );
   };
 
+  const handleFinishReading = (bookId: string) => {
+    const book = books.find((candidate) => candidate.id === bookId);
+    if (!book) {
+      return;
+    }
+
+    updateBook(bookId, (candidate) => ({
+      ...candidate,
+      queue: candidate.queue.map((entry) =>
+        entry.id === currentUserId && entry.status === 'reading'
+          ? { ...entry, status: 'done' }
+          : entry,
+      ),
+    }));
+    track(`mark ${book.title} as finished`, finishReading(bookId));
+  };
+
   return {
     usesAccounts,
     signedIn: session !== null,
@@ -757,12 +745,12 @@ export function useBookClub() {
     resetInviteLink: handleResetInviteLink,
     setGroupPace: handleSetGroupPace,
     addBook: handleAddBook,
-    changeCover: handleChangeCover,
     updateBookDetails: handleUpdateBookDetails,
     retireBook: handleRetireBook,
     unretireBook: handleUnretireBook,
     callHome: (bookId: string) => handleCallHome(bookId, true),
     cancelCallHome: (bookId: string) => handleCallHome(bookId, false),
+    finishReading: handleFinishReading,
     joinLine: handleJoinLine,
     markReceived: handleMarkReceived,
     updateProfile: handleUpdateProfile,

@@ -34,7 +34,6 @@ export function AddBookScreen({
 }: AddBookScreenProps) {
   const [isbn, setIsbn] = useState('');
   const [lookingUp, setLookingUp] = useState(false);
-  const [lookupCoverUrl, setLookupCoverUrl] = useState<string | undefined>(undefined);
   const [lookupMessage, setLookupMessage] = useState<string | null>(null);
   const [scannerOpen, setScannerOpen] = useState(false);
 
@@ -58,7 +57,6 @@ export function AddBookScreen({
     if (result) {
       if (result.title) setTitle(result.title);
       if (result.author) setAuthor(result.author);
-      if (result.coverUrl) setLookupCoverUrl(result.coverUrl);
       setLookupMessage(`Found ${result.title}.`);
     } else {
       setLookupMessage('Add the title and author by hand below to put it into circulation.');
@@ -74,7 +72,6 @@ export function AddBookScreen({
     if (result) {
       if (result.title) setTitle(result.title);
       if (result.author) setAuthor(result.author);
-      if (result.coverUrl) setLookupCoverUrl(result.coverUrl);
       setLookupMessage(`Found ${result.title}.`);
     } else {
       setLookupMessage('Add the title and author by hand below to put it into circulation.');
@@ -99,7 +96,6 @@ export function AddBookScreen({
       title: title.trim(),
       author: author.trim(),
       coverColor: coverColorFor(title.trim(), author.trim()),
-      coverUrl: lookupCoverUrl,
       giftedBy: isGift && giftedBy.trim() ? giftedBy.trim() : undefined,
       groupId: group.id,
       // Only the owner starts in the queue. Everyone else signs up from the

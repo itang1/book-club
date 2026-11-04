@@ -48,9 +48,6 @@ export function sampleSql(clubs: SampleClub[] = sampleClubs): string {
       }),
     ),
   );
-  const covers = clubs.flatMap((club) =>
-    club.books.filter((b) => b.cover).map((b) => `  (${q(b.id)}, ${q(b.cover)})`),
-  );
 
   return `-- The sample groups: ${clubs.map((club) => club.name).join(', ')}.
 --
@@ -102,12 +99,5 @@ insert into public.group_members (group_id, person_id)
 select g.id, f.id from public.groups g cross join public.friends f
 where g.is_sample
 on conflict do nothing;
-
--- Covers from Open Library.
-update public.books b set cover_url = 'https://covers.openlibrary.org/b/id/' || c.cover_id || '-M.jpg'
-from (values
-${rows(covers)}
-) as c(book_id, cover_id)
-where b.id = c.book_id and b.cover_url is null;
 `;
 }
